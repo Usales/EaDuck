@@ -1,4 +1,4 @@
-package com.template.backend.stub;
+package com.eaduck.backend.stub;
 
 import com.template.backend.model.dummy.Dummy;
 

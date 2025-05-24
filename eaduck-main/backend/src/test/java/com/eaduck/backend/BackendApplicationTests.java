@@ -1,4 +1,4 @@
-package com.template.backend;
+package com.eaduck.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

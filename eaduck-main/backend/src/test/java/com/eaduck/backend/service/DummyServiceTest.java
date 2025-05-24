@@ -1,7 +1,7 @@
-package com.template.backend.service;
+package com.eaduck.backend.service;
 
 import com.template.backend.model.dummy.Dummy;
-import com.template.backend.repository.DummyRepository;
+import com.eaduck.backend.repository.DummyRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
