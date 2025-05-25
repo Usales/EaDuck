@@ -1,3 +1,4 @@
+// src/app/layout/layout.component.ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -59,7 +60,7 @@ import { RouterModule, Router } from '@angular/router';
           </ul>
         </nav>
       </aside>
-      <main class="flex-1 p-8">
+      <main class="flex-1 p-10">
         <ng-content></ng-content>
       </main>
     </div>

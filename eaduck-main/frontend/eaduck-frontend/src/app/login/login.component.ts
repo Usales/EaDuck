@@ -10,7 +10,7 @@ import { CardComponent } from '../card/card.component';
   standalone: true,
   imports: [FormsModule, CommonModule, RouterModule, CardComponent],
   template: `
-    <app-card title="Login EaDuck" subtitle="Conecte-se à sua conta para acessar o painel" size="small">
+   <app-card title="Login EaDuck" subtitle="Conecte-se à sua conta para acessar o painel" size="small" subtitleColor="text-white">
       <form (ngSubmit)="onSubmit()">
         <div class="mb-4 relative">
           <label for="email" class="block text-sm font-medium text-gray-300">E-mail</label>

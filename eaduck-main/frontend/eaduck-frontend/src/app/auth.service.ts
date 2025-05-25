@@ -1,62 +1,61 @@
+// src/app/services/auth.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { User } from '../models/models';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/auth';
-  private notificationUrl = 'http://localhost:8080/api/notifications';
+  private apiUrl = 'http://localhost:3000/api';
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  login(email: string, password: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${this.apiUrl}/login`, { email, password });
-  }
-
-  register(email: string, password: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${this.apiUrl}/register`, { email, password });
-  }
-
-  resetPassword(email: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/reset-password`, { email });
-  }
-
-  confirmResetPassword(token: string, newPassword: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/confirm-reset-password`, { token, newPassword });
-  }
-
-  createNotification(message: string): Observable<any> {
-    const token = localStorage.getItem('token');
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-    return this.http.post(`${this.notificationUrl}/create`, { message }, { headers });
-  }
-
-  validateToken(token: string): Observable<boolean> {
-    return this.http.post<boolean>(`${this.apiUrl}/validate-token`, { token }).pipe(
-      map(response => {
-        return response === true;
-      }),
-      catchError(error => {
-        console.error('Erro ao validar token:', error);
-        // Remove o token se inválido
-        localStorage.removeItem('token');
-        return of(false);
-      })
+  login(email: string, password: string): Observable<User> {
+    return this.http.post<User>(`${this.apiUrl}/auth/login`, { email, password }).pipe(
+      tap(user => this.currentUserSubject.next(user))
     );
   }
 
-  isAuthenticated(): Observable<boolean> {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      return of(false);
-    }
-    return this.validateToken(token);
+  registerStudent(email: string, name: string, password: string): Observable<User> {
+    return this.http.post<User>(`${this.apiUrl}/auth/register-student`, {
+      email,
+      name,
+      password,
+      role: 'student',
+      isActive: false
+    });
+  }
+
+  activateStudent(studentId: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/auth/activate-student/${studentId}`, { isActive: true });
+  }
+
+  getStudents(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/users/students`);
+  }
+
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  isLoggedIn(): boolean {
+    return !!this.getCurrentUser();
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    this.currentUserSubject.next(null);
+  }
+
+  updateUser(updatedUser: User): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/users/${updatedUser.id}`, updatedUser).pipe(
+      tap(() => {
+        if (this.getCurrentUser()?.id === updatedUser.id) {
+          this.currentUserSubject.next(updatedUser);
+        }
+      })
+    );
   }
 }
