@@ -132,9 +132,12 @@ public class AuthController {
     public ResponseEntity<?> validateToken(@RequestBody ValidateTokenRequest request) {
         try {
             boolean isValid = jwtService.validateToken(request.getToken());
-            return ResponseEntity.ok(isValid);
+            if (!isValid) {
+                return ResponseEntity.status(401).body(new ResponseMessage("Token inválido."));
+            }
+            return ResponseEntity.ok(true);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(new ResponseMessage("Token inválido."));
+            return ResponseEntity.status(401).body(new ResponseMessage("Token inválido: " + e.getMessage()));
         }
     }
 }

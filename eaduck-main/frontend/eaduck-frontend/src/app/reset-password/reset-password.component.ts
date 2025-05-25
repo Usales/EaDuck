@@ -1,43 +1,47 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { Router } from '@angular/router';
+import { CardComponent } from '../card/card.component';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [FormsModule, CommonModule, RouterModule],
+  imports: [FormsModule, CommonModule, RouterModule, CardComponent],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gray-100">
-      <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 class="text-2xl font-bold text-center mb-6">Redefinir Senha 🔑</h2>
-        <form (ngSubmit)="onSubmit()">
-          <div class="mb-4">
-            <label for="email" class="block text-sm font-medium text-gray-700">E-mail</label>
-            <input [(ngModel)]="email" type="email" id="email" name="email" class="mt-1 block w-full p-2 border rounded-md" placeholder="seu@email.com" required>
+    <app-card title="Recuperação de Senha" subtitle="Insira seu e-mail para receber um link de redefinição">
+      <form (ngSubmit)="onSubmit()">
+        <div class="mb-4 relative">
+          <label for="email" class="block text-sm font-medium text-gray-300">E-mail</label>
+          <div class="relative">
+            <input [(ngModel)]="email" type="email" id="email" name="email" required #emailInput="ngModel"
+                   class="mt-1 block w-full p-3 pl-10 border rounded-md bg-white bg-opacity-20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                   [class.border-red-500]="emailInput.invalid && emailInput.touched" placeholder="seu@email.com">
+            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12h2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4h2m0 0a4 4 0 004-4 4 4 0 00-4-4 4 4 0 00-4 4m8 0a4 4 0 014 4 4 4 0 01-4 4z"/>
+            </svg>
           </div>
-          <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Enviar Link</button>
-          <p class="mt-4 text-center">
-            <a [routerLink]="['/login']" class="text-blue-600 hover:underline cursor-pointer">Voltar ao login</a>
-          </p>
-        </form>
-      </div>
-
+          <div *ngIf="emailInput.invalid && emailInput.touched" class="text-red-500 text-sm mt-1">E-mail é obrigatório ou inválido.</div>
+        </div>
+        <button type="submit" class="w-full bg-cyan-500 text-white p-3 rounded-md hover:bg-cyan-600 hover:scale-105 transition-all">Enviar Link</button>
+        <p class="mt-4 text-center">
+          <a [routerLink]="['/login']" class="text-cyan-400 hover:underline cursor-pointer hover:scale-105 transition-all">Voltar para Login</a>
+        </p>
+      </form>
       <!-- Modal para Mensagens -->
-      <div *ngIf="showModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <div *ngIf="showModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fade-in">
         <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-          <h3 class="text-lg font-semibold {{ errorMessage ? 'text-red-600' : 'text-green-600' }} mb-4">
+          <h3 class="text-lg font-semibold" [ngClass]="errorMessage ? 'text-red-600' : 'text-green-600'" class="mb-4">
             {{ errorMessage ? 'Erro' : 'Sucesso' }}
           </h3>
           <p class="text-gray-700">{{ errorMessage || successMessage }}</p>
           <div class="mt-6 flex justify-end">
-            <button (click)="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Fechar</button>
+            <button (click)="closeModal()" class="bg-cyan-500 text-white px-4 py-2 rounded-md hover:bg-cyan-600 hover:scale-105 transition-all">Fechar</button>
           </div>
         </div>
       </div>
-    </div>
+    </app-card>
   `,
   styleUrls: ['./reset-password.component.scss']
 })
@@ -50,16 +54,15 @@ export class ResetPasswordComponent {
   constructor(private authService: AuthService, private router: Router) { }
 
   onSubmit() {
+    console.log('onSubmit chamado com email:', this.email);
     if (!this.email) {
       this.errorMessage = 'Por favor, insira seu e-mail.';
-      this.successMessage = '';
       this.showModal = true;
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.email)) {
       this.errorMessage = 'Por favor, insira um e-mail válido.';
-      this.successMessage = '';
       this.showModal = true;
       return;
     }
@@ -69,13 +72,10 @@ export class ResetPasswordComponent {
     this.authService.resetPassword(this.email).subscribe(
       response => {
         this.successMessage = response.message || 'Link de redefinição enviado para seu e-mail.';
-        this.errorMessage = '';
         this.showModal = true;
       },
       error => {
-        const errorMsg = error.error?.message || 'Erro ao solicitar redefinição. Tente novamente.';
-        this.errorMessage = errorMsg;
-        this.successMessage = '';
+        this.errorMessage = error.error?.message || 'Erro ao solicitar redefinição. Tente novamente.';
         this.showModal = true;
         console.error('Erro no reset-password:', error);
       }

@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private apiUrl = 'http://localhost:8080/api/auth';
+  private notificationUrl = 'http://localhost:8080/api/notifications';
 
   constructor(private http: HttpClient) { }
 
@@ -26,8 +28,24 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/confirm-reset-password`, { token, newPassword });
   }
 
+  createNotification(message: string): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.post(`${this.notificationUrl}/create`, { message }, { headers });
+  }
+
   validateToken(token: string): Observable<boolean> {
-    return this.http.post<boolean>(`${this.apiUrl}/validate-token`, { token });
+    return this.http.post<boolean>(`${this.apiUrl}/validate-token`, { token }).pipe(
+      map(response => {
+        return response === true;
+      }),
+      catchError(error => {
+        console.error('Erro ao validar token:', error);
+        // Remove o token se inválido
+        localStorage.removeItem('token');
+        return of(false);
+      })
+    );
   }
 
   isAuthenticated(): Observable<boolean> {

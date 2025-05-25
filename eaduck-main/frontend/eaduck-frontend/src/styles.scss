@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+body {
+  background: linear-gradient(135deg, #1A2E44 0%, #2C3E50 100%);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Roboto', sans-serif;
+}
+
+input.ng-invalid.ng-touched {
+  border-color: #ef4444;
+}
+
+.links-container {
+  a {
+    padding: 0.5rem 1rem; /* Aumenta a área clicável */
+    display: inline-block; /* Garante que o padding funcione */
+  }
+}
