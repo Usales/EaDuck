@@ -43,6 +43,7 @@ public class SecurityConfig {
                         "/webjars/**",
                         "/h2-console/**"
                 ).permitAll()
+                .antMatchers("/api/notifications/**").authenticated() // Exige autenticação para notificações
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()

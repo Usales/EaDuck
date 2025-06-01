@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { TaskCreateComponent } from './teacher/task-create/task-create.component';
+import { UserManagementComponent } from './admin/user-management/user-management.component';
 import { LoginComponent } from './login/login.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { ConfirmResetPasswordComponent } from './confirm-reset-password/confirm-reset-password.component';
@@ -9,6 +11,9 @@ import { NotificationsComponent } from './notifications/notifications.component'
 import { AuthGuard } from './auth.guard';
 
 export const routes: Routes = [
+  { path: 'admin/users', component: UserManagementComponent },
+  { path: 'teacher/tasks/create', component: TaskCreateComponent },
+  { path: 'notifications', component: NotificationsComponent },
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
