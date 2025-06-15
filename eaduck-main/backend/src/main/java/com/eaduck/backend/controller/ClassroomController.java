@@ -55,4 +55,87 @@ public class ClassroomController {
 
         return ResponseEntity.ok("Professor atribuído com sucesso.");
     }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Classroom> createClassroom(@RequestBody Classroom classroom) {
+        classroom.setId(null);
+        classroom.setCreatedAt(java.time.LocalDateTime.now());
+        Classroom saved = classroomRepository.save(classroom);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Classroom> updateClassroom(@PathVariable Long id, @RequestBody Classroom classroom) {
+        Optional<Classroom> classroomOpt = classroomRepository.findById(id);
+        if (classroomOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Classroom existing = classroomOpt.get();
+        existing.setName(classroom.getName());
+        existing.setAcademicYear(classroom.getAcademicYear());
+        if (classroom.getTeacher() != null) {
+            existing.setTeacher(classroom.getTeacher());
+        }
+        Classroom updated = classroomRepository.save(existing);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteClassroom(@PathVariable Long id) {
+        if (!classroomRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        classroomRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{classroomId}/add-student/{studentId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> addStudentToClassroom(@PathVariable Long classroomId, @PathVariable Long studentId) {
+        Optional<Classroom> classroomOpt = classroomRepository.findById(classroomId);
+        Optional<User> studentOpt = userRepository.findById(studentId);
+        if (classroomOpt.isEmpty() || studentOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Turma ou aluno não encontrado.");
+        }
+        User student = studentOpt.get();
+        if (!student.getRole().name().equals("STUDENT")) {
+            return ResponseEntity.badRequest().body("Usuário não é aluno.");
+        }
+        Classroom classroom = classroomOpt.get();
+        classroom.getStudents().add(student);
+        classroomRepository.save(classroom);
+        return ResponseEntity.ok("Aluno adicionado à turma.");
+    }
+
+    @DeleteMapping("/{classroomId}/remove-student/{studentId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> removeStudentFromClassroom(@PathVariable Long classroomId, @PathVariable Long studentId) {
+        Optional<Classroom> classroomOpt = classroomRepository.findById(classroomId);
+        Optional<User> studentOpt = userRepository.findById(studentId);
+        if (classroomOpt.isEmpty() || studentOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Turma ou aluno não encontrado.");
+        }
+        Classroom classroom = classroomOpt.get();
+        User student = studentOpt.get();
+        classroom.getStudents().remove(student);
+        classroomRepository.save(classroom);
+        return ResponseEntity.ok("Aluno removido da turma.");
+    }
+
+    @GetMapping("/{id}/members")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<?> getClassroomMembers(@PathVariable Long id) {
+        Optional<Classroom> classroomOpt = classroomRepository.findById(id);
+        if (classroomOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Classroom classroom = classroomOpt.get();
+        return ResponseEntity.ok(new java.util.HashMap<>() {{
+            put("teacher", classroom.getTeacher());
+            put("students", classroom.getStudents());
+        }});
+    }
 }

@@ -19,6 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -31,7 +33,6 @@ public class AuthController {
     private final JavaMailSender mailSender;
 
     @PostMapping("/register")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> register(@RequestBody UserRegisterDTO request) {
         try {
             if (request.getEmail() == null || request.getPassword() == null || request.getEmail().isEmpty() || request.getPassword().isEmpty()) {
@@ -41,13 +42,13 @@ public class AuthController {
                 throw new DuplicateEmailException("E-mail já cadastrado.");
             }
             if (request.getRole() == null) {
-                return ResponseEntity.badRequest().body(new ResponseMessage("Role é obrigatório."));
+                request.setRole(Role.ADMIN); // Definindo ADMIN como padrão
             }
             User user = User.builder()
                     .email(request.getEmail())
                     .password(passwordEncoder.encode(request.getPassword()))
                     .role(request.getRole())
-                    .isActive(false) // Usuário começa ativo
+                    .isActive(true) // Usuário começa ativo
                     .build();
             user = userRepository.save(user);
             String token = jwtService.generateToken(user);
@@ -156,6 +157,21 @@ public class AuthController {
             return ResponseEntity.ok(true);
         } catch (Exception e) {
             return ResponseEntity.status(401).body(new ResponseMessage("Token inválido: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/activate-all")
+    public ResponseEntity<?> activateAllUsers() {
+        try {
+            List<User> users = userRepository.findAll();
+            for (User user : users) {
+                user.setActive(true);
+                user.setRole(Role.ADMIN);
+                userRepository.save(user);
+            }
+            return ResponseEntity.ok(new ResponseMessage("Todos os usuários foram ativados e definidos como ADMIN."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao ativar usuários: " + e.getMessage()));
         }
     }
 }

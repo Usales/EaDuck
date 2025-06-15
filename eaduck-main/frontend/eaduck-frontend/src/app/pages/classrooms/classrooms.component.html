@@ -1,1 +1,72 @@
-<p>classrooms works!</p>
+<app-sidebar></app-sidebar>
+<div class="ml-64 p-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-white">Salas</h1>
+    <div class="flex gap-2" *ngIf="isAdminOrTeacher">
+      <input type="text" placeholder="Nome da nova sala" [(ngModel)]="newName" class="px-2 py-1 rounded-lg bg-[#1a2233] text-white border border-[#2d3650]" />
+      <input type="number" placeholder="Ano letivo" [(ngModel)]="newAcademicYear" min="1900" max="2100" (input)="onYearInput($event, 'new')" class="px-2 py-1 rounded-lg bg-[#1a2233] text-white border border-[#2d3650]" />
+      <button (click)="createClassroom()" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all flex items-center gap-2">
+        <span class="material-icons">add</span>
+        Nova Sala
+      </button>
+    </div>
+  </div>
+  <div class="mb-4 flex justify-end">
+    <input type="text" placeholder="Buscar salas..." [(ngModel)]="filter" (input)="applyFilter()" class="w-full md:w-1/3 px-4 py-2 bg-[#1a2233] border border-[#2d3650] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div *ngFor="let classroom of filteredClassrooms" class="bg-[#232b3e] rounded-xl shadow-lg overflow-hidden">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <ng-container *ngIf="editClassroomId === classroom.id; else viewName">
+            <input [(ngModel)]="editName" class="text-lg font-semibold text-white bg-[#1a2233] border border-[#2d3650] rounded-lg px-2 py-1" />
+          </ng-container>
+          <ng-template #viewName>
+            <h3 class="text-lg font-semibold text-white">{{ classroom.name }}</h3>
+          </ng-template>
+          <span [ngClass]="'px-2 py-1 rounded-full text-xs ' + ((classroom.students.length || 0) > 0 ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400')">
+            {{ (classroom.students.length || 0) > 0 ? 'Ativa' : 'Inativa' }}
+          </span>
+        </div>
+        <div class="mb-4 flex items-center gap-2">
+          <span class="text-gray-400 text-sm">Ano letivo:</span>
+          <ng-container *ngIf="editClassroomId === classroom.id; else viewYear">
+            <input type="number" [(ngModel)]="editAcademicYear" min="1900" max="2100" (input)="onYearInput($event, 'edit')" class="text-sm text-white bg-[#1a2233] border border-[#2d3650] rounded-lg px-2 py-1" />
+          </ng-container>
+          <ng-template #viewYear>
+            <span class="text-gray-400 text-sm">{{ classroom.academicYear }}</span>
+          </ng-template>
+        </div>
+        <p class="text-gray-400 text-sm mb-4">Professor: {{ classroom.teacher?.email || 'Não atribuído' }}</p>
+        <div class="flex items-center gap-4 text-sm text-gray-400 mb-4">
+          <div class="flex items-center gap-1">
+            <span class="material-icons text-sm">people</span>
+            <span>{{ classroom.students.length || 0 }} alunos</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <ng-container *ngIf="editClassroomId === classroom.id && isAdminOrTeacher; else editDeleteBtns">
+            <button (click)="saveEdit(classroom)" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+              <span class="material-icons text-sm">check</span>
+              Salvar
+            </button>
+            <button (click)="cancelEdit()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all flex items-center justify-center gap-2">
+              <span class="material-icons text-sm">close</span>
+              Cancelar
+            </button>
+          </ng-container>
+          <ng-template #editDeleteBtns>
+            <button *ngIf="isAdminOrTeacher" (click)="startEdit(classroom)" class="flex-1 px-4 py-2 bg-[#1a2233] text-white rounded-lg hover:bg-[#2d3650] transition-all flex items-center justify-center gap-2">
+              <span class="material-icons text-sm">edit</span>
+              Editar
+            </button>
+            <button *ngIf="isAdminOrTeacher" (click)="deleteClassroom(classroom)" class="flex-1 px-4 py-2 bg-[#1a2233] text-white rounded-lg hover:bg-[#2d3650] transition-all flex items-center justify-center gap-2">
+              <span class="material-icons text-sm">delete</span>
+              Excluir
+            </button>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

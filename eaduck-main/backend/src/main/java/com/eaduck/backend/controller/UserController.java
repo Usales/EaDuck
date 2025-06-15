@@ -4,10 +4,12 @@ import com.eaduck.backend.model.classroom.Classroom;
 import com.eaduck.backend.model.enums.Role;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.UserRepository;
+import com.eaduck.backend.model.auth.dto.UserRegisterDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,36 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createUser(@RequestBody UserRegisterDTO request) {
+        try {
+            if (request.getEmail() == null || request.getPassword() == null || 
+                request.getEmail().isEmpty() || request.getPassword().isEmpty()) {
+                return ResponseEntity.badRequest().body("E-mail e senha são obrigatórios.");
+            }
+            
+            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+                return ResponseEntity.badRequest().body("E-mail já cadastrado.");
+            }
+
+            User user = User.builder()
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .role(request.getRole() != null ? request.getRole() : Role.STUDENT)
+                    .isActive(true)
+                    .build();
+
+            user = userRepository.save(user);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao criar usuário: " + e.getMessage());
+        }
+    }
 
     @GetMapping("/me/classrooms")
     public ResponseEntity<Set<Classroom>> getUserClassrooms(Authentication authentication) {
@@ -39,6 +71,103 @@ public class UserController {
             return ResponseEntity.ok(userRepository.findByRole(roleEnum));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userRepository.findAll());
+    }
+
+    @PutMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<User> updateUserRole(@PathVariable Long id, @RequestParam String role, Authentication authentication) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        User userToUpdate = userOpt.get();
+
+        // Pega o usuário autenticado
+        User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (currentUser == null) {
+            return ResponseEntity.status(403).build();
+        }
+
+        // Regra: só o admin master (id=1) pode alterar outros admins (exceto ele mesmo)
+        if (userToUpdate.getRole() == Role.ADMIN) {
+            if (!currentUser.getId().equals(1L)) {
+                // Se não for o admin master, não pode alterar outro admin
+                return ResponseEntity.status(403).body(null);
+            }
+            if (userToUpdate.getId().equals(1L)) {
+                // Nem o admin master pode alterar ele mesmo
+                return ResponseEntity.status(403).body(null);
+            }
+        }
+
+        try {
+            Role newRole = Role.valueOf(role.toUpperCase());
+            userToUpdate.setRole(newRole);
+            userRepository.save(userToUpdate);
+            return ResponseEntity.ok(userToUpdate);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Retornar apenas dados essenciais
+            return ResponseEntity.ok(new java.util.HashMap<>() {{
+                put("id", user.getId());
+                put("email", user.getEmail());
+                put("role", user.getRole());
+                put("isActive", user.isActive());
+            }});
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateUserStatus(@PathVariable Long id, @RequestParam boolean isActive, Authentication authentication) {
+        try {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            User userToUpdate = userOpt.get();
+
+            // Pega o usuário autenticado
+            User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (currentUser == null) {
+                return ResponseEntity.status(403).build();
+            }
+
+            // Regra: só o admin master (id=1) pode alterar outros admins (exceto ele mesmo)
+            if (userToUpdate.getRole() == Role.ADMIN) {
+                if (!currentUser.getId().equals(1L)) {
+                    // Se não for o admin master, não pode alterar outro admin
+                    return ResponseEntity.status(403).body(null);
+                }
+                if (userToUpdate.getId().equals(1L)) {
+                    // Nem o admin master pode alterar ele mesmo
+                    return ResponseEntity.status(403).body(null);
+                }
+            }
+
+            userToUpdate.setActive(isActive);
+            userRepository.save(userToUpdate);
+            return ResponseEntity.ok(userToUpdate);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao atualizar status do usuário: " + e.getMessage());
         }
     }
 }

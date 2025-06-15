@@ -1,6 +1,6 @@
 package com.eaduck.backend.stub;
 
-import com.template.backend.model.dummy.Dummy;
+import com.eaduck.backend.model.dummy.Dummy;
 
 public class DummyStub {
 

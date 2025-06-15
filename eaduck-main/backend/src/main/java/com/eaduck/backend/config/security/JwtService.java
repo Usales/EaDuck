@@ -7,6 +7,8 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
+
     @Value("${jwt.secret}")
     private String secretKey;
     private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hora;
@@ -32,8 +36,11 @@ public class JwtService {
 
     public String extractUsername(String token) {
         try {
-            return extractClaim(token, Claims::getSubject);
+            String username = extractClaim(token, Claims::getSubject);
+            logger.info("[JWT Service] Usuário extraído do token: {}", username);
+            return username;
         } catch (Exception e) {
+            logger.error("[JWT Service] Erro ao extrair usuário do token: {}", e.getMessage(), e);
             throw new RuntimeException("Erro ao extrair usuário do token: " + e.getMessage());
         }
     }
@@ -64,7 +71,9 @@ public class JwtService {
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("authorities", userDetails.getAuthorities());
-        return createToken(claims, userDetails.getUsername());
+        String token = createToken(claims, userDetails.getUsername());
+        logger.info("[JWT Service] Token gerado para usuário: {}", userDetails.getUsername());
+        return token;
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -84,8 +93,11 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
             final String username = extractUsername(token);
-            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+            boolean valid = (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+            logger.info("[JWT Service] Token válido para {}? {}", username, valid);
+            return valid;
         } catch (Exception e) {
+            logger.error("[JWT Service] Erro ao validar token: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -104,8 +116,10 @@ public class JwtService {
                     .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token);
+            logger.info("[JWT Service] Token validado com sucesso");
             return true;
         } catch (Exception e) {
+            logger.error("[JWT Service] Erro ao validar token: {}", e.getMessage(), e);
             return false;
         }
     }

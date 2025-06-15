@@ -33,4 +33,16 @@ public class Submission {
 
     @Column(name = "submitted_at", nullable = false)
     private LocalDateTime submittedAt;
+
+    @Column(name = "file_url")
+    private String fileUrl;
+
+    @Column(name = "grade")
+    private Double grade;
+
+    @Column(name = "feedback", columnDefinition = "TEXT")
+    private String feedback;
+
+    @Column(name = "evaluated_at")
+    private java.time.LocalDateTime evaluatedAt;
 } 

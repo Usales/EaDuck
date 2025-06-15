@@ -9,6 +9,9 @@ export interface Submission {
   content: string;
   fileUrl?: string;
   submittedAt: string;
+  grade?: number;
+  feedback?: string;
+  evaluatedAt?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -23,5 +26,13 @@ export class SubmissionService {
 
   deleteSubmission(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  getSubmissionsByTask(taskId: number): Observable<Submission[]> {
+    return this.http.get<Submission[]>(`${this.apiUrl}/task/${taskId}`);
+  }
+
+  evaluateSubmission(id: number, grade: number, feedback: string): Observable<Submission> {
+    return this.http.put<Submission>(`${this.apiUrl}/${id}/evaluate`, { grade, feedback });
   }
 } 

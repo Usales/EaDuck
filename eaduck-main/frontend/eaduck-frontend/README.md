@@ -1,27 +1,90 @@
-# EaduckFrontend
+# EaDuck - Frontend
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.3.
+## Sobre o Projeto
+EaDuck é uma plataforma de ensino a distância desenvolvida com Angular, oferecendo uma interface moderna e intuitiva para estudantes e professores.
 
-## Development server
+## Funcionalidades Implementadas
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+### Autenticação e Registro
+- Sistema completo de login e registro de usuários
+- Validação de formulários em tempo real
+- Feedback visual para erros e sucessos
+- Integração com JWT para autenticação segura
 
-## Code scaffolding
+### Interface do Usuário
+- Design responsivo utilizando Tailwind CSS
+- Componentes reutilizáveis e modulares
+- Navegação intuitiva entre páginas
+- Feedback visual para ações do usuário
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+### Componentes Principais
+- **Login**: Formulário de autenticação com validação
+- **Registro**: Cadastro de novos usuários com validação de campos
+- **Card**: Componente reutilizável para exibição de conteúdo
+- **Layout**: Estrutura base da aplicação com header e navegação
 
-## Build
+### Tecnologias Utilizadas
+- Angular 17
+- Tailwind CSS para estilização
+- TypeScript
+- SCSS para estilos personalizados
+- Angular Material para componentes UI
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+### Estrutura do Projeto
+```
+src/
+├── app/
+│   ├── components/
+│   │   ├── card/
+│   │   └── layout/
+│   │   
+│   ├── pages/
+│   │   ├── login/
+│   │   └── register/
+│   │   
+│   ├── services/
+│   │   └── auth.service.ts
+│   │   
+│   └── models/
+│       └── user.model.ts
+│   
+├── assets/
+└── styles/
+    └── styles.scss
+```
 
-## Running unit tests
+## Como Executar
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+1. Instale as dependências:
+```bash
+npm install
+```
 
-## Running end-to-end tests
+2. Execute o servidor de desenvolvimento:
+```bash
+ng serve
+```
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+3. Acesse a aplicação em `http://localhost:4200`
 
-## Further help
+## Desenvolvimento
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### Melhorias Implementadas
+- Sistema de feedback visual para ações do usuário
+- Validação de formulários em tempo real
+- Integração com backend via serviços
+- Componentes reutilizáveis para melhor manutenção
+
+### Próximos Passos
+- Implementação de dashboard do usuário
+- Sistema de notificações
+- Integração com sistema de cursos
+- Melhorias de acessibilidade
+
+## Contribuição
+Para contribuir com o projeto:
+1. Faça um fork do repositório
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request

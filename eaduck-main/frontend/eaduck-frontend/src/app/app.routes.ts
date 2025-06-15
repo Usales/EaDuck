@@ -1,25 +1,28 @@
 import { Routes } from '@angular/router';
-import { TaskCreateComponent } from './teacher/task-create/task-create.component';
-import { UserManagementComponent } from './admin/user-management/user-management.component';
-import { LoginComponent } from './login/login.component';
-import { ResetPasswordComponent } from './reset-password/reset-password.component';
-import { ConfirmResetPasswordComponent } from './confirm-reset-password/confirm-reset-password.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
-import { HomeComponent } from './home/home.component';
-import { RegisterComponent } from './register/register.component';
-import { NotificationsComponent } from './notifications/notifications.component';
+import { LoginComponent } from './pages/login/login.component';
+import { RegisterComponent } from './pages/register/register.component';
+import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
+import { HomeComponent } from './pages/home/home.component';
+import { UsersComponent } from './pages/users/users.component';
+import { ClassroomsComponent } from './pages/classrooms/classrooms.component';
+import { NotificationsComponent } from './pages/notifications/notifications.component';
+import { TasksComponent } from './pages/tasks/tasks.component';
 import { AuthGuard } from './auth.guard';
+import { ConfirmResetPasswordComponent } from './pages/confirm-reset-password/confirm-reset-password.component';
+// import { DashboardComponent } from './pages/dashboard/dashboard.component'; // será criado
 
 export const routes: Routes = [
-  { path: 'admin/users', component: UserManagementComponent },
-  { path: 'teacher/tasks/create', component: TaskCreateComponent },
-  { path: 'notifications', component: NotificationsComponent },
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path: 'reset-password', component: ResetPasswordComponent },
-  { path: 'confirm-reset-password', component: ConfirmResetPasswordComponent },
-  { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'register', component: RegisterComponent },
-  { path: 'notifications', component: NotificationsComponent, canActivate: [AuthGuard] }
+  { path: 'reset-password', component: ResetPasswordComponent },
+  { path: 'forgot-password', component: ResetPasswordComponent },
+  { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },
+  { path: 'users', component: UsersComponent, canActivate: [AuthGuard] },
+  { path: 'classrooms', component: ClassroomsComponent, canActivate: [AuthGuard] },
+  { path: 'notifications', component: NotificationsComponent, canActivate: [AuthGuard] },
+  { path: 'tasks', component: TasksComponent, canActivate: [AuthGuard] },
+  { path: 'confirm-reset-password', component: ConfirmResetPasswordComponent },
+  { path: '**', redirectTo: '/login' }
+  // { path: 'dashboard', component: DashboardComponent },
 ];

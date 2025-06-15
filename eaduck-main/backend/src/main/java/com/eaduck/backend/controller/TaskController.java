@@ -36,4 +36,34 @@ public class TaskController {
         List<Task> tasks = taskRepository.findByClassroomId(classroomId);
         return ResponseEntity.ok(tasks);
     }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<List<Task>> getAllTasks() {
+        return ResponseEntity.ok(taskRepository.findAll());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody TaskDTO dto) {
+        return taskRepository.findById(id)
+            .map(task -> {
+                task.setTitle(dto.getTitle());
+                task.setDescription(dto.getDescription());
+                task.setDueDate(dto.getDueDate());
+                taskRepository.save(task);
+                return ResponseEntity.ok(task);
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<?> deleteTask(@PathVariable Long id) {
+        if (!taskRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        taskRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
 }

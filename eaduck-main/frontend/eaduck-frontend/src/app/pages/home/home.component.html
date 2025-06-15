@@ -1,1 +1,36 @@
-<p>home works!</p>
+<app-sidebar></app-sidebar>
+<div class="ml-64 p-8">
+  <h1 class="text-2xl font-bold text-white mb-6">Dashboard</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <span class="material-icons text-indigo-400 text-3xl mb-2">people</span>
+      <p class="text-gray-400 text-sm">Total de Usuários</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalUsers }}</h2>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <span class="material-icons text-green-400 text-3xl mb-2">school</span>
+      <p class="text-gray-400 text-sm">Total de Salas</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalClassrooms }}</h2>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <span class="material-icons text-yellow-400 text-3xl mb-2">notifications</span>
+      <p class="text-gray-400 text-sm">Notificações</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalNotifications }}</h2>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <span class="material-icons text-red-400 text-3xl mb-2">assignment</span>
+      <p class="text-gray-400 text-sm">Tarefas Pendentes</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalTasks }}</h2>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <h3 class="text-lg font-semibold text-white mb-4">Distribuição de Usuários por Tipo</h3>
+      <apx-chart [series]="chartOptions.series" [chart]="chartOptions.chart" [labels]="chartOptions.labels" [colors]="chartOptions.colors" [legend]="chartOptions.legend" [dataLabels]="chartOptions.dataLabels" class="w-full max-w-md"></apx-chart>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center justify-center">
+      <h3 class="text-lg font-semibold text-white mb-4">Bem-vindo ao EaDuck!</h3>
+      <p class="text-gray-400 text-center">Gerencie usuários, salas, notificações e tarefas de forma centralizada e moderna.<br>Os dados e gráficos são atualizados automaticamente.</p>
+    </div>
+  </div>
+</div>

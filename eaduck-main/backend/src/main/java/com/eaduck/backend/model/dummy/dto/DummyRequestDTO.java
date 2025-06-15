@@ -1,4 +1,4 @@
-package com.template.backend.model.dummy.dto;
+package com.eaduck.backend.model.dummy.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

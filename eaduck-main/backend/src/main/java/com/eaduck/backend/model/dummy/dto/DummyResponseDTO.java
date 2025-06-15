@@ -1,4 +1,4 @@
-package com.template.backend.model.dummy.dto;
+package com.eaduck.backend.model.dummy.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -33,5 +33,9 @@ export class ClassroomService {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
+  getMyClassrooms(): Observable<Classroom[]> {
+    return this.http.get<Classroom[]>('http://localhost:8080/api/users/me/classrooms');
+  }
+
   // Métodos para adicionar/remover alunos e atribuir professor podem ser adicionados aqui
 } 

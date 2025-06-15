@@ -46,7 +46,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return id.toString(); // Usa ID como username
+        return email; // Usa o e-mail como username!
     }
 
     @Override
@@ -67,5 +67,9 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return isActive;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
