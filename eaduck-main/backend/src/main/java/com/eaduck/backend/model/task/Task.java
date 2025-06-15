@@ -11,6 +11,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "tasks")
 @Data
 @Builder
 @NoArgsConstructor

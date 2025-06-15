@@ -33,6 +33,23 @@
                  class="w-full pl-10 pr-4 py-2 bg-[#1a2233] border border-[#2d3650] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                  placeholder="Digite a senha">
         </div>
+        <div class="w-full mt-1">
+          <div class="h-2 rounded transition-all"
+               [ngClass]="{
+                 'bg-red-500': passwordStrength <= 1,
+                 'bg-yellow-500': passwordStrength === 2,
+                 'bg-green-500': passwordStrength === 3 || passwordStrength === 4,
+                 'bg-blue-600': passwordStrength === 5
+               }"
+               [style.width]="(passwordStrength * 20) + '%'">
+          </div>
+          <span class="text-xs mt-1 block" [ngClass]="{
+            'text-red-400': passwordStrength <= 1,
+            'text-yellow-400': passwordStrength === 2,
+            'text-green-400': passwordStrength === 3 || passwordStrength === 4,
+            'text-blue-400': passwordStrength === 5
+          }">Força da senha: {{ passwordStrengthLabel }}</span>
+        </div>
         <p class="text-gray-500 text-xs mt-1">A senha deve ter pelo menos 6 caracteres</p>
       </div>
       <div>

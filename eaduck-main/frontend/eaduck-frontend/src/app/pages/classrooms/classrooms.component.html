@@ -24,8 +24,8 @@
           <ng-template #viewName>
             <h3 class="text-lg font-semibold text-white">{{ classroom.name }}</h3>
           </ng-template>
-          <span [ngClass]="'px-2 py-1 rounded-full text-xs ' + ((classroom.students.length || 0) > 0 ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400')">
-            {{ (classroom.students.length || 0) > 0 ? 'Ativa' : 'Inativa' }}
+          <span [ngClass]="'px-2 py-1 rounded-full text-xs ' + ((classroom.students?.length || 0) > 0 ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400')">
+            {{ (classroom.students?.length || 0) > 0 ? 'Ativa' : 'Inativa' }}
           </span>
         </div>
         <div class="mb-4 flex items-center gap-2">
@@ -37,11 +37,40 @@
             <span class="text-gray-400 text-sm">{{ classroom.academicYear }}</span>
           </ng-template>
         </div>
-        <p class="text-gray-400 text-sm mb-4">Professor: {{ classroom.teacher?.email || 'Não atribuído' }}</p>
+        <p class="text-gray-400 text-sm mb-4">
+          Professores:
+          <ng-container *ngIf="classroom.teachers?.length; else noProf">
+            <span *ngFor="let t of classroom.teachers" class="inline-block bg-blue-700 text-white rounded px-2 py-1 text-xs mr-1">{{ t.email }}</span>
+          </ng-container>
+          <ng-template #noProf>
+            <span class="text-gray-500">Nenhum professor atribuído</span>
+          </ng-template>
+        </p>
+        <div *ngIf="isAdminOrTeacher" class="mb-2">
+          <button (click)="openAssignTeacher(classroom)" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs">Atribuir Professores</button>
+        </div>
+        <div *ngIf="assignClassroomId === classroom.id" class="mb-2 flex flex-col gap-2">
+          <div class="flex flex-wrap gap-1 mb-1">
+            <span *ngFor="let id of selectedTeacherIds">
+              <span class="inline-flex items-center bg-blue-700 text-white rounded px-2 py-1 text-xs mr-1">
+                {{ getTeacherEmailById(id) }}
+                <button (click)="removeTeacherFromSelection(id)" class="ml-1 text-xs text-red-300 hover:text-red-500">&times;</button>
+              </span>
+            </span>
+          </div>
+          <input type="text" [(ngModel)]="searchTeacher" (input)="filterTeachers()" placeholder="Buscar professor..." class="px-2 py-1 rounded bg-[#1a2233] text-white border border-[#2d3650] mb-1" />
+          <div class="max-h-24 overflow-y-auto bg-[#1a2233] rounded shadow p-1" *ngIf="filteredTeachers.length && searchTeacher">
+            <div *ngFor="let teacher of filteredTeachers" (click)="addTeacherToSelection(teacher)" class="cursor-pointer px-2 py-1 hover:bg-blue-800 rounded text-white text-xs">{{ teacher.email }}</div>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button (click)="saveTeachers()" [disabled]="selectedTeacherIds.length === 0" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs">Salvar</button>
+            <button (click)="cancelAssignTeacher()" class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs">Cancelar</button>
+          </div>
+        </div>
         <div class="flex items-center gap-4 text-sm text-gray-400 mb-4">
           <div class="flex items-center gap-1">
             <span class="material-icons text-sm">people</span>
-            <span>{{ classroom.students.length || 0 }} alunos</span>
+            <span>{{ classroom.students?.length || 0 }} alunos</span>
           </div>
         </div>
         <div class="flex items-center gap-2">

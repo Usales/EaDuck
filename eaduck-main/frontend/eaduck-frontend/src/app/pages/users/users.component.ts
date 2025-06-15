@@ -219,4 +219,24 @@ export class UsersComponent implements OnInit {
   get isAdmin(): boolean {
     return this.currentUser?.role === 'ADMIN';
   }
+
+  // Termômetro de senha
+  get passwordStrength(): number {
+    const password = this.newUser.password || '';
+    let score = 0;
+    if (password.length >= 6) score++;
+    if (password.length >= 10) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score;
+  }
+
+  get passwordStrengthLabel(): string {
+    const s = this.passwordStrength;
+    if (s <= 1) return 'Fraca';
+    if (s === 2) return 'Média';
+    if (s === 3 || s === 4) return 'Forte';
+    return 'Excelente';
+  }
 }

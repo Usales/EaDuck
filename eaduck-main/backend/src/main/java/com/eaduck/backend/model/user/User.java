@@ -9,11 +9,13 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.Objects;
 
 @Entity
 @Data
@@ -38,6 +40,9 @@ public class User implements UserDetails {
 
     @ManyToMany(mappedBy = "students")
     private Set<Classroom> classrooms;
+
+    @ManyToMany(mappedBy = "teachers")
+    private Set<Classroom> classroomsAsTeacher;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -71,5 +76,18 @@ public class User implements UserDetails {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

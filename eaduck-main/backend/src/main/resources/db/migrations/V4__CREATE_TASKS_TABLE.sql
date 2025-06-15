@@ -1,12 +1,11 @@
--- V4__CREATE_TASKS_TABLE.sql
 CREATE TABLE tasks (
-    id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    due_date TIMESTAMP,
-    classroom_id BIGINT,
-    created_by BIGINT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                       id BIGSERIAL PRIMARY KEY,
+                       title VARCHAR(255) NOT NULL,
+                       description TEXT,
+                       due_date TIMESTAMP,
+                       classroom_id BIGINT,
+                       created_by BIGINT,
+                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE tasks

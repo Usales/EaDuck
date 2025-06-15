@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { Observable } from 'rxjs';
 import { User } from '../../services/user.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-classrooms',
@@ -26,9 +27,39 @@ export class ClassroomsComponent implements OnInit {
   newAcademicYear = '';
 
   currentUser$: Observable<User | null>;
+  teachers: User[] = [];
+  selectedTeacherIds: number[] = [];
+  searchTeacher = '';
+  filteredTeachers: User[] = [];
+  assignClassroomId: number | null = null;
 
-  constructor(private classroomService: ClassroomService, private authService: AuthService) {
+  constructor(private classroomService: ClassroomService, private authService: AuthService, private userService: UserService) {
     this.currentUser$ = this.authService.currentUser$;
+  }
+
+  deleteClassroom(classroom: Classroom) {
+    this.classroomService.deleteClassroom(classroom.id).subscribe(() => {
+      this.classrooms = this.classrooms.filter(c => c.id !== classroom.id);
+      this.applyFilter();
+    });
+  }
+
+  createClassroom() {
+    if (!this.newName || !this.newAcademicYear) return;
+    const classroomData: any = {
+      name: this.newName,
+      academicYear: this.newAcademicYear
+    };
+    if (this.selectedTeacherIds && this.selectedTeacherIds.length > 0) {
+      classroomData.teachers = this.selectedTeacherIds.map(id => ({ id }));
+    }
+    this.classroomService.createClassroom(classroomData).subscribe(newClass => {
+      this.classrooms.push(newClass);
+      this.applyFilter();
+      this.newName = '';
+      this.newAcademicYear = '';
+      this.selectedTeacherIds = [];
+    });
   }
 
   ngOnInit() {
@@ -40,6 +71,9 @@ export class ClassroomsComponent implements OnInit {
         this.classrooms = classrooms;
         this.applyFilter();
       });
+    }
+    if (user?.role === 'ADMIN') {
+      this.loadTeachers();
     }
   }
 
@@ -79,23 +113,6 @@ export class ClassroomsComponent implements OnInit {
     });
   }
 
-  deleteClassroom(classroom: Classroom) {
-    this.classroomService.deleteClassroom(classroom.id).subscribe(() => {
-      this.classrooms = this.classrooms.filter(c => c.id !== classroom.id);
-      this.applyFilter();
-    });
-  }
-
-  createClassroom() {
-    if (!this.newName || !this.newAcademicYear) return;
-    this.classroomService.createClassroom({ name: this.newName, academicYear: this.newAcademicYear }).subscribe(newClass => {
-      this.classrooms.push(newClass);
-      this.applyFilter();
-      this.newName = '';
-      this.newAcademicYear = '';
-    });
-  }
-
   onYearInput(event: any, type: 'new' | 'edit') {
     let value = event.target.value;
     if (value.length > 4) {
@@ -113,4 +130,59 @@ export class ClassroomsComponent implements OnInit {
     const user = this.authService.getCurrentUser();
     return user?.role === 'ADMIN' || user?.role === 'TEACHER';
   }
-}
+
+  loadTeachers() {
+    this.userService.getUsersByRole('TEACHER').subscribe(teachers => {
+      this.teachers = teachers;
+    });
+  }
+
+  openAssignTeacher(classroom: Classroom) {
+    this.assignClassroomId = classroom.id;
+    this.selectedTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
+    this.searchTeacher = '';
+    this.filteredTeachers = this.teachers;
+  }
+
+  filterTeachers() {
+    const search = this.searchTeacher.toLowerCase();
+    this.filteredTeachers = this.teachers.filter(t => t.email.toLowerCase().includes(search) && !this.selectedTeacherIds.includes(t.id));
+  }
+
+  addTeacherToSelection(teacher: User) {
+    if (!this.selectedTeacherIds.includes(teacher.id)) {
+      this.selectedTeacherIds.push(teacher.id);
+      this.filterTeachers();
+    }
+    this.searchTeacher = '';
+  }
+
+  removeTeacherFromSelection(teacherId: number) {
+    this.selectedTeacherIds = this.selectedTeacherIds.filter(id => id !== teacherId);
+    this.filterTeachers();
+  }
+
+  saveTeachers() {
+    if (!this.assignClassroomId) return;
+    const classroom = this.classrooms.find(c => c.id === this.assignClassroomId);
+    if (!classroom) return;
+    // Adiciona professores que não estão na sala
+    const toAdd = this.selectedTeacherIds.filter(id => !classroom.teachers?.some((t: any) => t.id === id));
+    // Remove professores que foram desmarcados
+    const toRemove = (classroom.teachers || []).filter((t: any) => !this.selectedTeacherIds.includes(t.id)).map((t: any) => t.id);
+    toAdd.forEach(id => this.classroomService.addTeacher(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
+    toRemove.forEach(id => this.classroomService.removeTeacher(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
+    this.assignClassroomId = null;
+    this.selectedTeacherIds = [];
+  }
+
+  cancelAssignTeacher() {
+    this.assignClassroomId = null;
+    this.selectedTeacherIds = [];
+  }
+
+  getTeacherEmailById(id: number): string {
+    const teacher = this.teachers.find(t => t.id === id);
+    return teacher ? teacher.email : '';
+  }
+} 

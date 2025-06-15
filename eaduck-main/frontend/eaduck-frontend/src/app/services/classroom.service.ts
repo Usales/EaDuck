@@ -6,9 +6,9 @@ export interface Classroom {
   id: number;
   name: string;
   academicYear: string;
-  teacher: any;
+  teachers?: any[];
   createdAt: string;
-  students: any[];
+  students?: any[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +35,18 @@ export class ClassroomService {
 
   getMyClassrooms(): Observable<Classroom[]> {
     return this.http.get<Classroom[]>('http://localhost:8080/api/users/me/classrooms');
+  }
+
+  assignTeacher(classroomId: number, teacherId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${classroomId}/assign-teacher/${teacherId}`, {});
+  }
+
+  addTeacher(classroomId: number, teacherId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${classroomId}/add-teacher/${teacherId}`, {});
+  }
+
+  removeTeacher(classroomId: number, teacherId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${classroomId}/remove-teacher/${teacherId}`);
   }
 
   // Métodos para adicionar/remover alunos e atribuir professor podem ser adicionados aqui

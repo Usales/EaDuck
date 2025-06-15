@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -13,7 +14,7 @@ public class ClassroomDTO {
     private Long id;
     private String name;
     private String academicYear;
-    private Long teacherId;
-    private String teacherName;
+    private List<Long> teacherIds;
+    private List<String> teacherNames;
     private int studentCount;
 } 
