@@ -1,4 +1,3 @@
--- V9__ADD_EVALUATION_TO_SUBMISSIONS.sql
 ALTER TABLE submissions ADD COLUMN grade DOUBLE PRECISION;
 ALTER TABLE submissions ADD COLUMN feedback TEXT;
-ALTER TABLE submissions ADD COLUMN evaluated_at TIMESTAMP; 
+ALTER TABLE submissions ADD COLUMN evaluated_at TIMESTAMP;
