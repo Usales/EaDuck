@@ -1,5 +1,8 @@
 <app-sidebar></app-sidebar>
 <div class="ml-64 p-8">
+  <div class="flex justify-end items-center mb-4">
+    <span class="text-gray-400 text-sm">Usuário logado: <span class="text-white font-semibold">{{ currentUser?.email }}</span> ({{ currentUser?.role }})</span>
+  </div>
   <h1 class="text-2xl font-bold text-white mb-6">Dashboard</h1>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">

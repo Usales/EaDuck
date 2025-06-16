@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, timer } from 'rxjs';
 import { User } from './user.service';
 import { HttpClient } from '@angular/common/http';
-import { catchError, map, tap, switchMap } from 'rxjs/operators';
+import { catchError, map, tap, switchMap, takeUntil } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +13,9 @@ export class AuthService {
   private apiUrl = 'http://localhost:8080/api/auth';
   private userId: number | null = null;
   private TOKEN_EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2 horas
+  private TOKEN_REFRESH_MS = 25 * 60 * 1000; // 25 minutos
+  private lastActivity = Date.now();
+  private refreshTimer: any;
 
   constructor(private http: HttpClient) {
     // Recupera o usuário do localStorage ao iniciar
@@ -30,6 +33,54 @@ export class AuthService {
           this.logout(); // Se não conseguir carregar o perfil, faz logout
         }
       });
+    }
+
+    // Iniciar timer de renovação
+    this.startRefreshTimer();
+
+    // Monitorar atividade do usuário
+    window.addEventListener('click', () => this.updateLastActivity());
+    window.addEventListener('keypress', () => this.updateLastActivity());
+    window.addEventListener('mousemove', () => this.updateLastActivity());
+  }
+
+  private updateLastActivity() {
+    this.lastActivity = Date.now();
+  }
+
+  private startRefreshTimer() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+    }
+
+    this.refreshTimer = setInterval(() => {
+      const now = Date.now();
+      const inactiveTime = now - this.lastActivity;
+
+      if (this.isAuthenticated() && inactiveTime < this.TOKEN_REFRESH_MS) {
+        // Se o usuário está ativo, renova o token
+        this.refreshToken();
+      } else if (inactiveTime >= this.TOKEN_REFRESH_MS) {
+        // Se o usuário está inativo por mais de 25 minutos, faz logout
+        this.logout();
+      }
+    }, 60000); // Verifica a cada minuto
+  }
+
+  private refreshToken() {
+    const token = this.getToken();
+    if (token) {
+      this.http.post<{ token: string }>(`${this.apiUrl}/refresh`, { token })
+        .subscribe({
+          next: (response) => {
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('token_last_used', Date.now().toString());
+          },
+          error: (error) => {
+            console.error('Erro ao renovar token:', error);
+            this.logout();
+          }
+        });
     }
   }
 
@@ -53,6 +104,7 @@ export class AuthService {
         localStorage.setItem('token', response.token);
         localStorage.setItem('token_last_used', Date.now().toString());
         this.userId = parseInt(response.userId, 10);
+        this.updateLastActivity();
       }),
       switchMap(() => this.getProfile()),
       tap(user => {
@@ -66,6 +118,7 @@ export class AuthService {
       tap(response => {
         localStorage.setItem('token', response.token);
         this.userId = parseInt(response.userId, 10);
+        this.updateLastActivity();
       })
     );
   }
@@ -99,6 +152,9 @@ export class AuthService {
     localStorage.removeItem('token_last_used');
     this.currentUserSubject.next(null);
     this.userId = null;
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+    }
   }
 
   getToken(): string | null {

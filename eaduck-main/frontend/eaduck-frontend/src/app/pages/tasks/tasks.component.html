@@ -24,7 +24,7 @@
           </div>
         </div>
         <div class="divide-y divide-[#2d3650]">
-          <div *ngFor="let task of tasks" class="p-4 hover:bg-[#1a2233] transition-all">
+          <div *ngFor="let task of filteredTasks" class="p-4 hover:bg-[#1a2233] transition-all">
             <div class="flex items-start gap-4">
               <div class="flex-1">
                 <div class="flex items-center justify-between mb-1">
@@ -34,6 +34,13 @@
                   <ng-template #viewTitle>
                     <h3 class="text-white font-semibold">{{ task.title }}</h3>
                   </ng-template>
+                  <span [ngClass]="{
+                    'bg-yellow-500 text-black': getTaskStatus(task) === 'pendente',
+                    'bg-red-600 text-white': getTaskStatus(task) === 'atrasada',
+                    'bg-green-600 text-white': getTaskStatus(task) === 'concluida'
+                  }" class="px-2 py-1 rounded-full text-xs font-bold">
+                    {{ getTaskStatus(task) === 'pendente' ? 'Pendente' : (getTaskStatus(task) === 'atrasada' ? 'Atrasada' : 'Concluída') }}
+                  </span>
                   <div class="flex gap-2">
                     <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="startEdit(task)" class="text-blue-400 hover:text-blue-600"><span class="material-icons">edit</span></button>
                     <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="deleteTask(task)" class="text-red-400 hover:text-red-600"><span class="material-icons">delete</span></button>
@@ -55,7 +62,7 @@
                       <input type="date" [(ngModel)]="editDueDate" class="text-white bg-[#1a2233] border border-[#2d3650] rounded-lg px-2 py-1" />
                     </ng-container>
                     <ng-template #viewDue>
-                      <span>{{ task.dueDate | date:'shortDate' }}</span>
+                      <span>{{ task.dueDate | date:'dd/MM/yyyy' }}</span>
                     </ng-template>
                   </div>
                 </div>
@@ -75,19 +82,19 @@
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <span class="text-gray-400">Total de Tarefas</span>
-            <span class="text-white font-semibold">12</span>
+            <span class="text-white font-semibold">{{ totalTasks }}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-gray-400">Concluídas</span>
-            <span class="text-green-400 font-semibold">5</span>
+            <span class="text-green-400 font-semibold">{{ totalConcluidas }}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-gray-400">Pendentes</span>
-            <span class="text-yellow-400 font-semibold">4</span>
+            <span class="text-yellow-400 font-semibold">{{ totalPendentes }}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-gray-400">Atrasadas</span>
-            <span class="text-red-400 font-semibold">3</span>
+            <span class="text-red-400 font-semibold">{{ totalAtrasadas }}</span>
           </div>
         </div>
       </div>
@@ -96,20 +103,18 @@
         <div class="space-y-4">
           <div>
             <label class="block text-gray-400 text-sm mb-2">Status</label>
-            <select class="w-full bg-[#1a2233] border border-[#2d3650] rounded-lg text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <select class="w-full bg-[#1a2233] border border-[#2d3650] rounded-lg text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" [(ngModel)]="filterStatus" (change)="applyFilters()">
               <option value="all">Todos</option>
-              <option value="pending">Pendentes</option>
-              <option value="completed">Concluídas</option>
-              <option value="overdue">Atrasadas</option>
+              <option value="pendente">Pendentes</option>
+              <option value="concluida">Concluídas</option>
+              <option value="atrasada">Atrasadas</option>
             </select>
           </div>
           <div>
             <label class="block text-gray-400 text-sm mb-2">Sala</label>
-            <select class="w-full bg-[#1a2233] border border-[#2d3650] rounded-lg text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <select class="w-full bg-[#1a2233] border border-[#2d3650] rounded-lg text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" [(ngModel)]="filterClassroomId" (change)="applyFilters()">
               <option value="all">Todas</option>
-              <option value="math">Matemática Básica</option>
-              <option value="physics">Física Quântica</option>
-              <option value="web">Programação Web</option>
+              <option *ngFor="let c of classrooms" [ngValue]="c.id">{{ c.name }}</option>
             </select>
           </div>
           <div>
@@ -184,10 +189,18 @@
             <a *ngIf="sub.fileUrl" [href]="sub.fileUrl" target="_blank" class="text-blue-400 underline">Arquivo</a>
             <span *ngIf="!sub.fileUrl">-</span>
           </td>
-          <td>{{ sub.grade ?? '-' }}</td>
-          <td>{{ sub.feedback ?? '-' }}</td>
           <td>
-            <button (click)="openEvalModal(sub)" class="text-yellow-400 hover:text-yellow-600"><span class="material-icons">rate_review</span></button>
+            <span *ngIf="sub.grade !== undefined && sub.grade !== null" class="font-bold text-green-400">{{ sub.grade }}</span>
+            <span *ngIf="sub.grade === undefined || sub.grade === null">-</span>
+          </td>
+          <td>
+            <span *ngIf="sub.feedback" class="italic text-blue-300">{{ sub.feedback }}</span>
+            <span *ngIf="!sub.feedback">-</span>
+          </td>
+          <td>
+            <button *ngIf="isAdminOrTeacher" (click)="openEvalModal(sub)" class="text-yellow-400 hover:text-yellow-600" title="Avaliar submissão">
+              <span class="material-icons">rate_review</span>
+            </button>
           </td>
         </tr>
       </tbody>

@@ -3,6 +3,8 @@ package com.eaduck.backend.controller;
 import com.eaduck.backend.model.submission.Submission;
 import com.eaduck.backend.model.task.Task;
 import com.eaduck.backend.model.user.User;
+import com.eaduck.backend.model.submission.dto.SubmissionDTO;
+import com.eaduck.backend.model.user.dto.UserDTO;
 import com.eaduck.backend.repository.SubmissionRepository;
 import com.eaduck.backend.repository.TaskRepository;
 import com.eaduck.backend.repository.UserRepository;
@@ -43,8 +45,20 @@ public class SubmissionController {
                 .content(content)
                 .submittedAt(LocalDateTime.now())
                 .build();
-        submissionRepository.save(submission);
-        return ResponseEntity.ok(submission);
+        submission = submissionRepository.save(submission);
+        SubmissionDTO dto = SubmissionDTO.builder()
+                .id(submission.getId())
+                .taskId(submission.getTask().getId())
+                .student(UserDTO.builder()
+                    .id(submission.getStudent().getId())
+                    .email(submission.getStudent().getEmail())
+                    .role(submission.getStudent().getRole())
+                    .isActive(submission.getStudent().isActive())
+                    .build())
+                .content(submission.getContent())
+                .submittedAt(submission.getSubmittedAt())
+                .build();
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping("/task/{taskId}/upload")
@@ -90,14 +104,40 @@ public class SubmissionController {
 
     @GetMapping("/task/{taskId}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    public ResponseEntity<List<Submission>> getSubmissionsByTask(@PathVariable Long taskId) {
-        return ResponseEntity.ok(submissionRepository.findByTaskId(taskId));
+    public ResponseEntity<List<SubmissionDTO>> getSubmissionsByTask(@PathVariable Long taskId) {
+        List<Submission> submissions = submissionRepository.findByTaskId(taskId);
+        List<SubmissionDTO> dtos = submissions.stream().map(sub -> SubmissionDTO.builder()
+            .id(sub.getId())
+            .taskId(sub.getTask().getId())
+            .student(UserDTO.builder()
+                .id(sub.getStudent().getId())
+                .email(sub.getStudent().getEmail())
+                .role(sub.getStudent().getRole())
+                .isActive(sub.getStudent().isActive())
+                .build())
+            .content(sub.getContent())
+            .submittedAt(sub.getSubmittedAt())
+            .build()).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN') or #studentId == authentication.name")
-    public ResponseEntity<List<Submission>> getSubmissionsByStudent(@PathVariable Long studentId) {
-        return ResponseEntity.ok(submissionRepository.findByStudentId(studentId));
+    public ResponseEntity<List<SubmissionDTO>> getSubmissionsByStudent(@PathVariable Long studentId) {
+        List<Submission> submissions = submissionRepository.findByStudentId(studentId);
+        List<SubmissionDTO> dtos = submissions.stream().map(sub -> SubmissionDTO.builder()
+            .id(sub.getId())
+            .taskId(sub.getTask().getId())
+            .student(UserDTO.builder()
+                .id(sub.getStudent().getId())
+                .email(sub.getStudent().getEmail())
+                .role(sub.getStudent().getRole())
+                .isActive(sub.getStudent().isActive())
+                .build())
+            .content(sub.getContent())
+            .submittedAt(sub.getSubmittedAt())
+            .build()).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/{id}")

@@ -27,7 +27,11 @@ public class JwtService {
 
     @Value("${jwt.secret}")
     private String secretKey;
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hora;
+    
+    // Aumentar para 2 horas
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 2; // 2 horas
+    // Adicionar margem de tolerância de 5 minutos
+    private static final long CLOCK_SKEW = 1000 * 60 * 5; // 5 minutos
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Base64.getDecoder().decode(secretKey);
@@ -54,6 +58,7 @@ public class JwtService {
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .setAllowedClockSkewSeconds(CLOCK_SKEW / 1000) // Adicionar tolerância
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
@@ -103,7 +108,14 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            Date expiration = extractExpiration(token);
+            // Adicionar margem de tolerância
+            return expiration.before(new Date(System.currentTimeMillis() - CLOCK_SKEW));
+        } catch (Exception e) {
+            logger.error("[JWT Service] Erro ao verificar expiração do token: {}", e.getMessage());
+            return true;
+        }
     }
 
     private Date extractExpiration(String token) {
@@ -114,6 +126,7 @@ public class JwtService {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
+                    .setAllowedClockSkewSeconds(CLOCK_SKEW / 1000) // Adicionar tolerância
                     .build()
                     .parseClaimsJws(token);
             logger.info("[JWT Service] Token validado com sucesso");

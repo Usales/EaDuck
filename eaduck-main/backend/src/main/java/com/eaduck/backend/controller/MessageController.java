@@ -2,6 +2,8 @@ package com.eaduck.backend.controller;
 
 import com.eaduck.backend.model.message.Message;
 import com.eaduck.backend.model.user.User;
+import com.eaduck.backend.model.message.dto.MessageDTO;
+import com.eaduck.backend.model.user.dto.UserDTO;
 import com.eaduck.backend.repository.MessageRepository;
 import com.eaduck.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +39,25 @@ public class MessageController {
                 .content(content)
                 .sentAt(LocalDateTime.now())
                 .build();
-        messageRepository.save(message);
-        return ResponseEntity.ok(message);
+        message = messageRepository.save(message);
+        MessageDTO dto = MessageDTO.builder()
+                .id(message.getId())
+                .sender(UserDTO.builder()
+                    .id(message.getSender().getId())
+                    .email(message.getSender().getEmail())
+                    .role(message.getSender().getRole())
+                    .isActive(message.getSender().isActive())
+                    .build())
+                .receiver(UserDTO.builder()
+                    .id(message.getReceiver().getId())
+                    .email(message.getReceiver().getEmail())
+                    .role(message.getReceiver().getRole())
+                    .isActive(message.getReceiver().isActive())
+                    .build())
+                .content(message.getContent())
+                .sentAt(message.getSentAt())
+                .build();
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/sent")

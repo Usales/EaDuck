@@ -5,6 +5,7 @@ import com.eaduck.backend.model.enums.Role;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.model.auth.dto.UserRegisterDTO;
+import com.eaduck.backend.model.user.dto.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +26,15 @@ public class UserController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    private UserDTO toDTO(User user) {
+        return UserDTO.builder()
+            .id(user.getId())
+            .email(user.getEmail())
+            .role(user.getRole())
+            .isActive(user.isActive())
+            .build();
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -47,7 +57,7 @@ public class UserController {
                     .build();
 
             user = userRepository.save(user);
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(toDTO(user));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Erro ao criar usuário: " + e.getMessage());
         }
@@ -65,10 +75,11 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getUsersByRole(@RequestParam String role) {
+    public ResponseEntity<List<UserDTO>> getUsersByRole(@RequestParam String role) {
         try {
             Role roleEnum = Role.valueOf(role.toUpperCase());
-            return ResponseEntity.ok(userRepository.findByRole(roleEnum));
+            List<UserDTO> dtos = userRepository.findByRole(roleEnum).stream().map(this::toDTO).toList();
+            return ResponseEntity.ok(dtos);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         }
@@ -76,13 +87,14 @@ public class UserController {
 
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userRepository.findAll());
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        List<UserDTO> dtos = userRepository.findAll().stream().map(this::toDTO).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/{id}/role")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> updateUserRole(@PathVariable Long id, @RequestParam String role, Authentication authentication) {
+    public ResponseEntity<UserDTO> updateUserRole(@PathVariable Long id, @RequestParam String role, Authentication authentication) {
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -111,7 +123,7 @@ public class UserController {
             Role newRole = Role.valueOf(role.toUpperCase());
             userToUpdate.setRole(newRole);
             userRepository.save(userToUpdate);
-            return ResponseEntity.ok(userToUpdate);
+            return ResponseEntity.ok(toDTO(userToUpdate));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -165,7 +177,7 @@ public class UserController {
 
             userToUpdate.setActive(isActive);
             userRepository.save(userToUpdate);
-            return ResponseEntity.ok(userToUpdate);
+            return ResponseEntity.ok(toDTO(userToUpdate));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Erro ao atualizar status do usuário: " + e.getMessage());
         }

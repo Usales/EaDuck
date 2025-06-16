@@ -1,5 +1,6 @@
 package com.eaduck.backend.model.submission.dto;
 
+import com.eaduck.backend.model.user.dto.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +14,7 @@ import java.time.LocalDateTime;
 public class SubmissionDTO {
     private Long id;
     private Long taskId;
-    private String taskTitle;
-    private Long studentId;
-    private String studentEmail;
+    private UserDTO student;
     private String content;
     private LocalDateTime submittedAt;
 } 

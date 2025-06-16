@@ -7,9 +7,11 @@ import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.service.NotificationService;
 import com.eaduck.backend.model.classroom.dto.ClassroomDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomCreateDTO;
+import com.eaduck.backend.model.user.dto.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -34,8 +36,14 @@ public class ClassroomController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<List<ClassroomDTO>> getAllClassrooms() {
-        List<Classroom> classrooms = classroomRepository.findAll();
+    public ResponseEntity<List<ClassroomDTO>> getAllClassrooms(Authentication authentication) {
+        List<Classroom> classrooms;
+        Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+        if (userOpt.isPresent() && userOpt.get().getRole().name().equals("TEACHER")) {
+            classrooms = userOpt.get().getClassroomsAsTeacher().stream().toList();
+        } else {
+            classrooms = classroomRepository.findAll();
+        }
         List<ClassroomDTO> dtos = classrooms.stream().map(classroom -> {
             List<Long> teacherIds = classroom.getTeachers().stream().map(User::getId).toList();
             List<String> teacherNames = classroom.getTeachers().stream().map(User::getEmail).toList();
@@ -104,16 +112,24 @@ public class ClassroomController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ClassroomDTO> updateClassroom(@PathVariable Long id, @RequestBody Classroom classroom) {
+    public ResponseEntity<ClassroomDTO> updateClassroom(@PathVariable Long id, @RequestBody ClassroomCreateDTO dto) {
         Optional<Classroom> classroomOpt = classroomRepository.findById(id);
         if (classroomOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         Classroom existing = classroomOpt.get();
-        existing.setName(classroom.getName());
-        existing.setAcademicYear(classroom.getAcademicYear());
+        existing.setName(dto.getName());
+        existing.setAcademicYear(dto.getAcademicYear());
+        // Atualizar professores se teacherIds vierem preenchidos
+        if (dto.getTeacherIds() != null) {
+            Set<User> teachers = new HashSet<>();
+            for (Long teacherId : dto.getTeacherIds()) {
+                userRepository.findById(teacherId).ifPresent(teachers::add);
+            }
+            existing.setTeachers(teachers);
+        }
         Classroom updated = classroomRepository.save(existing);
-        ClassroomDTO dto = ClassroomDTO.builder()
+        ClassroomDTO response = ClassroomDTO.builder()
             .id(updated.getId())
             .name(updated.getName())
             .academicYear(updated.getAcademicYear())
@@ -121,7 +137,7 @@ public class ClassroomController {
             .teacherNames(updated.getTeachers().stream().map(User::getEmail).toList())
             .studentCount(updated.getStudents() != null ? updated.getStudents().size() : 0)
             .build();
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
@@ -175,9 +191,25 @@ public class ClassroomController {
             return ResponseEntity.notFound().build();
         }
         Classroom classroom = classroomOpt.get();
+        List<UserDTO> teacherDTOs = classroom.getTeachers().stream()
+            .map(user -> UserDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .isActive(user.isActive())
+                .build())
+            .toList();
+        List<UserDTO> studentDTOs = classroom.getStudents().stream()
+            .map(user -> UserDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .isActive(user.isActive())
+                .build())
+            .toList();
         return ResponseEntity.ok(new java.util.HashMap<>() {{
-            put("teachers", classroom.getTeachers());
-            put("students", classroom.getStudents());
+            put("teachers", teacherDTOs);
+            put("students", studentDTOs);
         }});
     }
 

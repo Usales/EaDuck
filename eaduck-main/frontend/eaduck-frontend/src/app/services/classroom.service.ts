@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Classroom {
   id: number;
@@ -18,7 +19,15 @@ export class ClassroomService {
   constructor(private http: HttpClient) {}
 
   getAllClassrooms(): Observable<Classroom[]> {
-    return this.http.get<Classroom[]>(`${this.apiUrl}`);
+    return this.http.get<any[]>(`${this.apiUrl}`).pipe(
+      map(classrooms => classrooms.map(c => ({
+        ...c,
+        teachers: c.teacherIds && c.teacherNames ? c.teacherIds.map((id: number, idx: number) => ({
+          id,
+          email: c.teacherNames[idx]
+        })) : []
+      })))
+    );
   }
 
   createClassroom(classroom: Partial<Classroom>): Observable<Classroom> {

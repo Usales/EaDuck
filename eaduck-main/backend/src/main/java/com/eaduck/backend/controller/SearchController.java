@@ -3,6 +3,7 @@ package com.eaduck.backend.controller;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.model.classroom.Classroom;
 import com.eaduck.backend.model.task.Task;
+import com.eaduck.backend.model.user.dto.UserDTO;
 import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.repository.ClassroomRepository;
 import com.eaduck.backend.repository.TaskRepository;
@@ -30,8 +31,14 @@ public class SearchController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> search(@RequestParam("q") String query) {
         Map<String, Object> result = new HashMap<>();
-        List<User> users = userRepository.findAll().stream()
+        List<UserDTO> users = userRepository.findAll().stream()
                 .filter(u -> u.getEmail().toLowerCase().contains(query.toLowerCase()))
+                .map(user -> UserDTO.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .role(user.getRole())
+                    .isActive(user.isActive())
+                    .build())
                 .collect(Collectors.toList());
         List<Classroom> classrooms = classroomRepository.findAll().stream()
                 .filter(c -> c.getName().toLowerCase().contains(query.toLowerCase()))

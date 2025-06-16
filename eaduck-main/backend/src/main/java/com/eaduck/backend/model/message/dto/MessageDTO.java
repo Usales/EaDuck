@@ -1,5 +1,6 @@
 package com.eaduck.backend.model.message.dto;
 
+import com.eaduck.backend.model.user.dto.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,10 +13,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MessageDTO {
     private Long id;
-    private Long senderId;
-    private String senderEmail;
-    private Long receiverId;
-    private String receiverEmail;
+    private UserDTO sender;
+    private UserDTO receiver;
     private String content;
     private LocalDateTime sentAt;
 } 

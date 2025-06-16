@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { UserService } from '../../services/user.service';
 import { HttpClient } from '@angular/common/http';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { AuthService } from '../../services/auth.service';
+import { User } from '../../services/user.service';
 
 @Component({
   selector: 'app-home',
@@ -21,9 +23,12 @@ export class HomeComponent implements OnInit {
 
   chartOptions: any = {};
 
-  constructor(private userService: UserService, private http: HttpClient) {}
+  currentUser: User | null = null;
+
+  constructor(private userService: UserService, private http: HttpClient, private authService: AuthService) {}
 
   ngOnInit() {
+    this.currentUser = this.authService.getCurrentUser();
     this.loadDashboardData();
   }
 

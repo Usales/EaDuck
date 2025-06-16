@@ -27,6 +27,7 @@ export class ClassroomsComponent implements OnInit {
   newAcademicYear = '';
 
   currentUser$: Observable<User | null>;
+  currentUser: User | null = null;
   teachers: User[] = [];
   selectedTeacherIds: number[] = [];
   searchTeacher = '';
@@ -64,6 +65,7 @@ export class ClassroomsComponent implements OnInit {
 
   ngOnInit() {
     const user = this.authService.getCurrentUser();
+    this.currentUser = user;
     if (user?.role === 'ADMIN' || user?.role === 'TEACHER') {
       this.loadClassrooms();
     } else {
@@ -184,5 +186,16 @@ export class ClassroomsComponent implements OnInit {
   getTeacherEmailById(id: number): string {
     const teacher = this.teachers.find(t => t.id === id);
     return teacher ? teacher.email : '';
+  }
+
+  getTeacherColor(index: number): string {
+    const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6610f2', '#fd7e14'];
+    return colors[index % colors.length];
+  }
+
+  removeTeacherFromClassroom(classroom: Classroom, teacherId: number) {
+    this.classroomService.removeTeacher(classroom.id, teacherId).subscribe(() => {
+      classroom.teachers = (classroom.teachers || []).filter((t: any) => t.id !== teacherId);
+    });
   }
 } 

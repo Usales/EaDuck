@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -172,6 +173,29 @@ public class AuthController {
             return ResponseEntity.ok(new ResponseMessage("Todos os usuários foram ativados e definidos como ADMIN."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao ativar usuários: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            if (token == null || token.isEmpty()) {
+                return ResponseEntity.badRequest().body(new ResponseMessage("Token não fornecido."));
+            }
+
+            String userEmail = jwtService.extractUsername(token);
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+            if (!jwtService.isTokenValid(token, user)) {
+                return ResponseEntity.status(401).body(new ResponseMessage("Token inválido."));
+            }
+
+            String newToken = jwtService.generateToken(user);
+            return ResponseEntity.ok(new AuthResponse(newToken, String.valueOf(user.getId())));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(new ResponseMessage("Erro ao renovar token: " + e.getMessage()));
         }
     }
 }
