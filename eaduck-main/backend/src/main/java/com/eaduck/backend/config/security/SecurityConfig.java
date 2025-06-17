@@ -50,6 +50,7 @@ public class SecurityConfig {
                         "/webjars/**",
                         "/h2-console/**"
                 ).permitAll()
+                .antMatchers("/files/**").permitAll()
                 .antMatchers("/api/users/me").authenticated()
                 .antMatchers("/api/users/me/classrooms").authenticated()
                 .antMatchers("/api/users/**").hasRole("ADMIN")

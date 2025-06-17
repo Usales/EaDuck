@@ -21,6 +21,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private isLoginPage = false;
   private routeSubscription: Subscription | null = null;
   private userSubscription: Subscription | null = null;
+  private notificationsSubscription: Subscription | null = null;
 
   constructor(
     private notificationService: NotificationService,
@@ -41,6 +42,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.userSubscription = this.authService.currentUser$.subscribe(() => {
       this.handleNotifications();
     });
+    // Inscreve-se nas notificações globais
+    this.notificationsSubscription = this.notificationService.notifications$.subscribe(notifs => {
+      this.notifications = notifs.sort((a, b) => b.id - a.id);
+    });
   }
 
   private handleNotifications() {
@@ -48,7 +53,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     const currentUser = this.authService.getCurrentUser();
 
     if (isAuthenticated && currentUser && !this.isLoginPage) {
-      this.loadNotifications();
+      this.notificationService.loadNotifications();
       this.setupUpdateInterval();
     } else {
       this.clearNotifications();
@@ -61,7 +66,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
     this.updateSubscription = interval(30000).subscribe(() => {
       if (!this.isLoginPage && this.authService.isAuthenticated()) {
-        this.loadNotifications();
+        this.notificationService.loadNotifications();
       }
     });
   }
@@ -84,34 +89,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (this.userSubscription) {
       this.userSubscription.unsubscribe();
     }
-  }
-
-  loadNotifications() {
-    const user = this.authService.getCurrentUser();
-    if (!user || !this.authService.isAuthenticated() || this.isLoginPage) {
-      this.clearNotifications();
-      return;
+    if (this.notificationsSubscription) {
+      this.notificationsSubscription.unsubscribe();
     }
-    
-    this.loading = true;
-    this.notificationService.getUserNotifications(user.id).pipe(
-      catchError(error => {
-        console.error('Erro ao carregar notificações:', error);
-        this.loading = false;
-        this.clearNotifications();
-        return of([]);
-      })
-    ).subscribe({
-      next: (notifs) => {
-        this.notifications = notifs.sort((a, b) => b.id - a.id);
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Erro ao carregar notificações:', error);
-        this.loading = false;
-        this.clearNotifications();
-      }
-    });
   }
 
   getUnreadCount(): number {
@@ -129,12 +109,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
         console.error('Erro ao marcar notificação como lida:', error);
         return of(null);
       })
-    ).subscribe({
-      next: () => {
-        notification.isRead = true;
-        // Força atualização do contador
-        this.loadNotifications();
-      }
-    });
+    ).subscribe();
   }
 } 

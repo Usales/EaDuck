@@ -331,16 +331,30 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   saveEvaluation() {
     if (!this.evalSubmission) return;
-    this.submissionService.evaluateSubmission(this.evalSubmission.id, this.evalGrade ?? 0, this.evalFeedback).subscribe(updated => {
-      if (updated && updated.id) {
-        const idx = this.submissions.findIndex(s => s && s.id === updated.id);
-        if (idx !== -1) this.submissions[idx] = updated;
+    this.submissionService.evaluateSubmission(this.evalSubmission.id, this.evalGrade ?? 0, this.evalFeedback).subscribe({
+      next: (updated) => {
+        if (updated && updated.id) {
+          // Atualiza a submissão na lista principal
+          const idx = this.submissions.findIndex(s => s && s.id === updated.id);
+          if (idx !== -1) {
+            this.submissions[idx] = updated;
+          }
+          
+          // Atualiza a submissão na lista filtrada
+          if (this.selectedTask) {
+            const filteredIdx = this.filteredSubmissions.findIndex(s => s.id === updated.id);
+            if (filteredIdx !== -1) {
+              this.filteredSubmissions[filteredIdx] = updated;
+            }
+          }
+        }
+        this.closeEvalModal();
+        this.showEvalSuccessModal = true;
+      },
+      error: (error) => {
+        console.error('Erro ao avaliar submissão:', error);
+        this.closeEvalModal();
       }
-      this.closeEvalModal();
-      if (this.selectedTask) {
-        this.filteredSubmissions = this.submissions.filter(s => s.taskId === this.selectedTask!.id);
-      }
-      this.showEvalSuccessModal = true;
     });
   }
 
@@ -451,7 +465,7 @@ export class TasksComponent implements OnInit, OnDestroy {
       formData.append('file', this.selectedFile);
     }
     this.submissionService.submitTask(this.selectedTaskForSubmit.id, formData).subscribe({
-      next: () => {
+      next: (response: any) => {
         this.loadingStatus = 'success';
         this.submitSuccess = true;
         // Atualiza submissões do aluno para refletir status concluído
@@ -461,6 +475,14 @@ export class TasksComponent implements OnInit, OnDestroy {
       error: (error: any) => {
         this.loadingStatus = 'error';
         if (error && error.error) {
+          // Se o erro for uma string (mensagem de sucesso), trata como sucesso
+          if (typeof error.error === 'string' && error.error.includes('sucesso')) {
+            this.loadingStatus = 'success';
+            this.submitSuccess = true;
+            this.loadMySubmissions();
+            setTimeout(() => this.showLoadingModal = false, 1000);
+            return;
+          }
           this.fileError = typeof error.error === 'string' ? error.error : 'Erro ao enviar tarefa.';
         }
         setTimeout(() => this.showLoadingModal = false, 2500);

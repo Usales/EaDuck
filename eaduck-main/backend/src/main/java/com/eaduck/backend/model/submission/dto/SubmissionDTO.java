@@ -14,4 +14,6 @@ public class SubmissionDTO {
     private Double grade;
     private String feedback;
     private LocalDateTime evaluatedAt;
+    private String studentName;
+    private String studentEmail;
 } 

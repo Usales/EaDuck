@@ -347,6 +347,8 @@ public class SubmissionController {
         dto.setGrade(submission.getGrade());
         dto.setFeedback(submission.getFeedback());
         dto.setEvaluatedAt(submission.getEvaluatedAt());
+        dto.setStudentName(submission.getStudent().getName());
+        dto.setStudentEmail(submission.getStudent().getEmail());
         return dto;
     }
 } 

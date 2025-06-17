@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import javax.persistence.EntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -37,6 +39,9 @@ public class NotificationController {
 
     @Autowired
     private ClassroomRepository classroomRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
@@ -101,20 +106,11 @@ public class NotificationController {
 
             // Verifica permissões
             boolean hasPermission = false;
-            
             if (authenticatedUser.getRole().name().equals("ROLE_ADMIN")) {
-                // Admin pode ver todas as notificações
                 hasPermission = true;
             } else if (authenticatedUser.getRole().name().equals("ROLE_TEACHER")) {
-                // Professor só pode ver notificações de alunos das suas turmas
-                Set<Classroom> teacherClassrooms = authenticatedUser.getClassroomsAsTeacher();
-                Set<Classroom> studentClassrooms = targetUser.getClassrooms();
-                
-                // Verifica se o aluno está em alguma das turmas do professor
-                hasPermission = teacherClassrooms.stream()
-                    .anyMatch(classroom -> studentClassrooms.contains(classroom));
+                hasPermission = authenticatedUser.getId().equals(userId);
             } else {
-                // Usuário comum só pode ver suas próprias notificações
                 hasPermission = authenticatedUser.getId().equals(userId);
             }
 
@@ -123,10 +119,22 @@ public class NotificationController {
             }
 
             List<Notification> notifications = notificationRepository.findByUserId(userId);
-            return ResponseEntity.ok(notifications);
+            List<NotificationDTO> dtos = notifications.stream().map(this::toDTO).toList();
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro ao buscar notificações: " + e.getMessage());
         }
+    }
+
+    private NotificationDTO toDTO(Notification n) {
+        NotificationDTO dto = new NotificationDTO();
+        dto.setId(n.getId());
+        dto.setMessage(n.getMessage());
+        dto.setNotificationType(n.getNotificationType());
+        dto.setCreatedAt(n.getCreatedAt());
+        dto.setRead(n.isRead());
+        dto.setTitle(n.getTitle());
+        return dto;
     }
 
     @GetMapping
@@ -140,13 +148,15 @@ public class NotificationController {
         }
     }
 
+    @Transactional
     @PutMapping("/{id}/read")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> markAsRead(@PathVariable Long id) {
         return notificationRepository.findById(id)
                 .map(notification -> {
                     notification.setRead(true);
-                    notificationRepository.save(notification);
+                    entityManager.merge(notification);
+                    entityManager.flush();
                     return ResponseEntity.ok().build();
                 })
                 .orElse(ResponseEntity.notFound().build());

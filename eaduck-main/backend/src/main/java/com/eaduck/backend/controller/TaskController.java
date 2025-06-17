@@ -185,7 +185,7 @@ public class TaskController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task task, Authentication authentication) {
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody TaskDTO taskDTO, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElse(null);
         if (user == null) {
             return ResponseEntity.badRequest().build();
@@ -211,10 +211,10 @@ public class TaskController {
         }
 
         // Atualiza apenas os campos enviados
-        if (task.getTitle() != null) existingTask.setTitle(task.getTitle());
-        if (task.getDescription() != null) existingTask.setDescription(task.getDescription());
-        if (task.getDueDate() != null) existingTask.setDueDate(task.getDueDate());
-        if (task.getType() != null) existingTask.setType(task.getType());
+        if (taskDTO.getTitle() != null) existingTask.setTitle(taskDTO.getTitle());
+        if (taskDTO.getDescription() != null) existingTask.setDescription(taskDTO.getDescription());
+        if (taskDTO.getDueDate() != null) existingTask.setDueDate(taskDTO.getDueDate());
+        if (taskDTO.getType() != null) existingTask.setType(taskDTO.getType());
 
         Task updatedTask = taskRepository.save(existingTask);
         return ResponseEntity.ok(updatedTask);

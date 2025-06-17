@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { CommonModule } from '@angular/common';
 import { NotificationService, Notification } from '../../services/notification.service';
@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { UserService, User } from '../../services/user.service';
 import { ClassroomService, Classroom } from '../../services/classroom.service';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-notifications',
@@ -15,7 +16,7 @@ import { Router } from '@angular/router';
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.scss'
 })
-export class NotificationsComponent implements OnInit {
+export class NotificationsComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
   loading = false;
   showModal = false;
@@ -29,6 +30,7 @@ export class NotificationsComponent implements OnInit {
   filterType: string = 'ALL';
   filterRead: string = 'ALL';
   sendError: string | null = null;
+  private notificationsSubscription: Subscription | null = null;
 
   constructor(
     private notificationService: NotificationService,
@@ -46,23 +48,10 @@ export class NotificationsComponent implements OnInit {
     }
     if (user.role === 'STUDENT') {
       this.classroomService.getMyClassrooms().subscribe(classrooms => {
-        const userId = user.id;
-        this.loading = true;
-        this.notificationService.getUserNotifications(userId).subscribe({
-          next: (notifs) => {
-            this.notifications = notifs.sort((a, b) => b.id - a.id);
-            this.loading = false;
-          },
-          error: (err) => {
-            this.loading = false;
-            if (err.status === 403) {
-              // Não faz nada, apenas ignora
-            }
-          }
-        });
+        this.notificationService.loadNotifications();
       });
     } else if (user.role === 'ADMIN' || user.role === 'TEACHER') {
-      this.loadNotifications();
+      this.notificationService.loadNotifications();
       this.userService.getAllUsers().subscribe({
         next: users => this.users = users,
         error: (err) => {
@@ -80,27 +69,20 @@ export class NotificationsComponent implements OnInit {
         }
       });
     }
+    this.notificationsSubscription = this.notificationService.notifications$.subscribe(notifs => {
+      this.notifications = notifs.sort((a, b) => b.id - a.id);
+    });
   }
 
-  loadNotifications() {
-    const user = this.authService.getCurrentUser();
-    if (!user) return;
-    this.loading = true;
-    this.notificationService.getUserNotifications(user.id).subscribe({
-      next: (notifs) => {
-        this.notifications = notifs.sort((a, b) => b.id - a.id);
-        this.loading = false;
-      },
-      error: () => { this.loading = false; }
-    });
+  ngOnDestroy() {
+    if (this.notificationsSubscription) {
+      this.notificationsSubscription.unsubscribe();
+    }
   }
 
   markAsRead(notification: Notification) {
     if (notification.isRead) return;
-    this.notificationService.markAsRead(notification.id).subscribe(() => {
-      notification.isRead = true;
-      this.loadNotifications();
-    });
+    this.notificationService.markAsRead(notification.id).subscribe();
   }
 
   openModal() {
@@ -138,7 +120,7 @@ export class NotificationsComponent implements OnInit {
         this.newNotification = { title: '', message: '', notificationType: 'AVISO' };
         this.selectedUserId = null;
         this.selectedClassroomId = null;
-        this.loadNotifications();
+        this.notificationService.loadNotifications();
       },
       error: (err) => {
         this.sendError = err?.error || 'Erro ao enviar notificação.';

@@ -12,6 +12,8 @@ export interface Submission {
   grade?: number;
   feedback?: string;
   evaluatedAt?: string;
+  studentName?: string;
+  studentEmail?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,8 +38,10 @@ export class SubmissionService {
     return this.http.put<Submission>(`${this.apiUrl}/${id}/evaluate`, { grade, feedback });
   }
 
-  submitTask(taskId: number, formData: FormData): Observable<Submission> {
-    return this.http.post<Submission>(`${this.apiUrl}/task/${taskId}/upload`, formData);
+  submitTask(taskId: number, formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}/task/${taskId}/upload`, formData, {
+      responseType: 'text'
+    });
   }
 
   getSubmissionsByStudent(studentId: number) {

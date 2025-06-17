@@ -51,7 +51,6 @@
                       {{ getTaskStatus(task) === 'pendente' ? 'Pendente' : (getTaskStatus(task) === 'atrasada' ? 'Atrasada' : 'Concluída') }}
                     </span>
                     <div class="flex gap-2">
-                      <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="startEdit(task)" class="text-blue-400 hover:text-blue-600"><span class="material-icons">edit</span></button>
                       <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="deleteTask(task)" class="text-red-400 hover:text-red-600"><span class="material-icons">delete</span></button>
                       <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="openSubmissionsModal(task)" class="text-green-400 hover:text-green-600"><span class="material-icons">assignment_turned_in</span></button>
                       <button *ngIf="!isAdminOrTeacher && editTaskId !== task.id && getTaskStatus(task) !== 'concluida'" (click)="openSubmitModal(task)" class="text-indigo-400 hover:text-indigo-600"><span class="material-icons">upload_file</span></button>
@@ -207,6 +206,7 @@
       <thead>
         <tr>
           <th class="text-left py-2">Aluno</th>
+          <th class="text-left py-2">E-mail</th>
           <th class="text-left py-2">Conteúdo</th>
           <th class="text-left py-2">Arquivo</th>
           <th class="text-left py-2">Nota</th>
@@ -217,9 +217,13 @@
       <tbody>
         <tr *ngFor="let sub of filteredSubmissions">
           <td>{{ sub.studentId }}</td>
+          <td>{{ sub.studentEmail }}</td>
           <td>{{ sub.content }}</td>
           <td>
-            <a *ngIf="sub.fileUrl" [href]="sub.fileUrl" target="_blank" class="text-blue-400 underline">Arquivo</a>
+            <a *ngIf="sub.fileUrl" [href]="'http://localhost:8080' + (sub.fileUrl.startsWith('/') ? sub.fileUrl : '/' + sub.fileUrl)" target="_blank" class="text-blue-400 hover:text-blue-300 underline">
+              <span class="material-icons text-sm align-middle mr-1">file_download</span>
+              Download
+            </a>
             <span *ngIf="!sub.fileUrl">-</span>
           </td>
           <td>

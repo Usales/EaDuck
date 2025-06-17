@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NotificationService } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-notification-list',
@@ -57,8 +58,9 @@ import { AuthService } from '../../services/auth.service';
     }
   `]
 })
-export class NotificationListComponent implements OnInit {
+export class NotificationListComponent implements OnInit, OnDestroy {
   notifications: any[] = [];
+  private notifSub?: Subscription;
 
   constructor(
     private notificationService: NotificationService,
@@ -66,31 +68,17 @@ export class NotificationListComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.loadNotifications();
+    this.notifSub = this.notificationService.notifications$.subscribe(notifs => {
+      this.notifications = notifs;
+    });
+    this.notificationService.loadNotifications();
   }
 
-  loadNotifications() {
-    this.notificationService.getNotifications().subscribe(
-      notifications => {
-        this.notifications = notifications;
-      },
-      error => {
-        console.error('Erro ao carregar notificações:', error);
-      }
-    );
+  ngOnDestroy() {
+    this.notifSub?.unsubscribe();
   }
 
   markAsRead(notificationId: number) {
-    this.notificationService.markAsRead(notificationId).subscribe(
-      () => {
-        const notification = this.notifications.find(n => n.id === notificationId);
-        if (notification) {
-          notification.isRead = true;
-        }
-      },
-      error => {
-        console.error('Erro ao marcar notificação como lida:', error);
-      }
-    );
+    this.notificationService.markAsRead(notificationId).subscribe();
   }
 } 
