@@ -16,6 +16,15 @@ O EaDuck nasceu para resolver desafios reais na educação, como a comunicação
 | Gestão 🗂️ | Otimizar processos administrativos, como tarefas e eventos. |
 | Engajamento 🤝 | Incentivar a participação ativa da comunidade escolar. |
 
+## Diferenciais e Benefícios 🚀
+
+- **Interface moderna e responsiva**: experiência fluida em qualquer dispositivo.
+- **Notificações em tempo real**: mantenha todos informados sobre novidades, prazos e eventos.
+- **Gestão centralizada**: controle total de usuários, turmas, tarefas e materiais.
+- **Segurança**: autenticação JWT, criptografia de senhas e conformidade com LGPD.
+- **Acesso facilitado a documentos**: upload e download de arquivos didáticos e tarefas.
+- **Relatórios e dashboards**: visão clara do desempenho acadêmico e engajamento.
+
 ## Funcionalidades Principais ✨
 
 A EaDuck oferece um conjunto robusto de recursos para atender às necessidades escolares:
@@ -29,6 +38,16 @@ A EaDuck oferece um conjunto robusto de recursos para atender às necessidades e
 | Relatórios | Geração de relatórios acadêmicos e financeiros. | Média |
 | Segurança de Dados | Criptografia de senhas e conformidade com LGPD. | Alta |
 
+## Fluxo de Uso 🧭
+
+1. **Login**: Usuários acessam a plataforma conforme seu perfil (aluno, professor, admin).
+2. **Gestão de Usuários**: Admins cadastram e gerenciam contas.
+3. **Criação de Salas e Tarefas**: Professores e admins criam turmas e atividades.
+4. **Submissão de Tarefas**: Alunos enviam arquivos e comentários para avaliação.
+5. **Avaliação**: Professores corrigem e atribuem notas e feedbacks.
+6. **Notificações**: Todos recebem alertas sobre eventos, prazos e mensagens.
+7. **Acesso a Materiais**: Alunos e professores compartilham e baixam documentos.
+
 ## Tecnologias Utilizadas 🛠️
 
 Construímos a EaDuck com ferramentas modernas para garantir desempenho, escalabilidade e usabilidade:
@@ -36,7 +55,7 @@ Construímos a EaDuck com ferramentas modernas para garantir desempenho, escalab
 | **Camada** | **Tecnologia** | **Finalidade** |
 |------------|----------------|----------------|
 | Front-end | Angular, TypeScript, TailwindCSS, SCSS | Interface dinâmica e responsiva |
-| Back-end | Java | Lógica de negócios e APIs |
+| Back-end | Java (Spring Boot) | Lógica de negócios e APIs |
 | Banco de Dados | PostgreSQL | Armazenamento relacional de dados |
 | Design | Figma | Prototipagem de interfaces intuitivas |
 
@@ -72,7 +91,7 @@ Quer explorar a EaDuck? Siga os passos abaixo para configurar o projeto localmen
 
    # Configure o back-end
    cd ../backend
-   mvn install
+   mvnw.cmd install # ou mvn install
 
    # Configure o banco de dados
    psql -U postgres -f schema.sql
@@ -86,7 +105,7 @@ Quer explorar a EaDuck? Siga os passos abaixo para configurar o projeto localmen
 
    # Inicie o back-end
    cd ../backend
-   mvn spring-boot:run
+   mvnw.cmd spring-boot:run # ou mvn spring-boot:run
    ```
 
 4. **Acesse**:
@@ -102,6 +121,186 @@ Identificamos possíveis desafios e planejamos soluções:
 | Não conformidade com LGPD | Médio | Auditorias legais regulares |
 | Falha no backup de dados | Extremo | Backups automatizados diários |
 | Interface confusa | Médio | Testes de usabilidade com usuários |
+
+## Planos de Teste 🧪
+
+Abaixo estão os principais planos e casos de teste para validação das funcionalidades do EaDuck:
+
+### 1. Login
+
+##### Condicionais
+* Realizar o login como administrador, professor ou aluno
+
+##### Casos de teste
+* DADO que eu preciso realizar o login
+* E insiro o login do usuário
+* E insiro a senha do usuário
+* Quando clico em logar
+* Então o sistema realiza o login e redireciona para a tela inicial
+
+##### Ambiente de homologação:
+WEB: /login
+
+---
+
+### 2. Cadastro de Usuário (Admin)
+
+##### Condicionais
+* Estar logado como administrador
+
+##### Casos de teste
+* DADO que estou logado como administrador
+* E acesso a tela de cadastro de usuário
+* E preencho os campos obrigatórios (nome, e-mail, senha, papel)
+* Quando clico em cadastrar
+* Então o sistema cria o usuário e exibe mensagem de sucesso
+
+##### Ambiente de homologação:
+WEB: /users
+
+---
+
+### 3. Listagem de Usuários (Admin)
+
+##### Condicionais
+* Estar logado como administrador
+
+##### Casos de teste
+* DADO que estou logado como administrador
+* E acesso a tela de usuários
+* Quando a tela é carregada
+* Então o sistema exibe a lista de todos os usuários cadastrados
+
+##### Ambiente de homologação:
+WEB: /users
+
+---
+
+### 4. Cadastro de Sala de Aula (Admin/Professor)
+
+##### Condicionais
+* Estar logado como administrador ou professor
+
+##### Casos de teste
+* DADO que estou logado como administrador ou professor
+* E acesso a tela de salas de aula
+* E clico em "Criar sala"
+* E preencho os campos obrigatórios (nome, ano letivo, professores, alunos)
+* Quando clico em salvar
+* Então o sistema cria a sala de aula e exibe mensagem de sucesso
+
+##### Ambiente de homologação:
+WEB: /classrooms
+
+---
+
+### 5. Listagem de Salas de Aula
+
+##### Condicionais
+* Estar logado no sistema
+
+##### Casos de teste
+* DADO que estou logado
+* E acesso a tela de salas de aula
+* Quando a tela é carregada
+* Então o sistema exibe a lista de salas de aula disponíveis
+
+##### Ambiente de homologação:
+WEB: /classrooms
+
+---
+
+### 6. Cadastro de Tarefa (Admin/Professor)
+
+##### Condicionais
+* Estar logado como administrador ou professor
+* Ter pelo menos uma sala de aula cadastrada
+
+##### Casos de teste
+* DADO que estou logado como administrador ou professor
+* E acesso a tela de tarefas
+* E clico em "Criar tarefa"
+* E preencho os campos obrigatórios (título, descrição, data de entrega, sala, tipo)
+* Quando clico em salvar
+* Então o sistema cria a tarefa e exibe mensagem de sucesso
+
+##### Ambiente de homologação:
+WEB: /tasks
+
+---
+
+### 7. Listagem de Tarefas
+
+##### Condicionais
+* Estar logado no sistema
+
+##### Casos de teste
+* DADO que estou logado
+* E acesso a tela de tarefas
+* Quando a tela é carregada
+* Então o sistema exibe a lista de tarefas disponíveis
+
+##### Ambiente de homologação:
+WEB: /tasks
+
+---
+
+### 8. Submissão de Tarefa (Aluno)
+
+##### Condicionais
+* Estar logado como aluno
+* Ter pelo menos uma tarefa disponível
+
+##### Casos de teste
+* DADO que estou logado como aluno
+* E acesso a tela de tarefas
+* E clico em "Enviar tarefa" em uma tarefa disponível
+* E preencho o campo de comentário (opcional)
+* E seleciono um arquivo permitido
+* Quando clico em enviar
+* Então o sistema realiza o upload e exibe mensagem de sucesso
+
+##### Ambiente de homologação:
+WEB: /tasks
+
+---
+
+### 9. Avaliação de Submissão (Professor/Admin)
+
+##### Condicionais
+* Estar logado como professor ou administrador
+* Ter pelo menos uma submissão de tarefa para avaliar
+
+##### Casos de teste
+* DADO que estou logado como professor ou administrador
+* E acesso a tela de tarefas
+* E clico em "Ver alunos" em uma tarefa
+* E clico em "Avaliar" em uma submissão
+* E preencho a nota e o feedback
+* Quando clico em salvar avaliação
+* Então o sistema salva a avaliação e exibe mensagem de sucesso
+
+##### Ambiente de homologação:
+WEB: /tasks
+
+---
+
+### 10. Notificações
+
+##### Condicionais
+* Estar logado no sistema
+
+##### Casos de teste
+* DADO que estou logado
+* E acesso o sino de notificações ou a tela de notificações
+* Quando há notificações não lidas
+* Então o sistema exibe o badge de notificações
+* E ao clicar em uma notificação, ela é marcada como lida
+
+##### Ambiente de homologação:
+WEB: /notifications
+
+---
 
 ## Conclusão 🌈
 
