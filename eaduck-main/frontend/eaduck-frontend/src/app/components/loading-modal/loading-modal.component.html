@@ -1,0 +1,25 @@
+<div *ngIf="show" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-sm flex flex-col items-center animate-fade-in">
+    <ng-container [ngSwitch]="status">
+      <ng-container *ngSwitchCase="'loading'">
+        <div class="loader mb-4"></div>
+        <p class="text-white text-lg font-semibold mb-2">Enviando tarefa e e-mail...</p>
+        <p class="text-gray-400 text-sm">Por favor, aguarde.</p>
+      </ng-container>
+      <ng-container *ngSwitchCase="'success'">
+        <div class="mb-4">
+          <span class="material-icons text-green-400 text-5xl animate-bounce">check_circle</span>
+        </div>
+        <p class="text-green-400 text-lg font-semibold mb-2">Sucesso!</p>
+        <p class="text-white text-sm">{{ successMessage }}</p>
+      </ng-container>
+      <ng-container *ngSwitchCase="'error'">
+        <div class="mb-4">
+          <span class="material-icons text-red-400 text-5xl animate-bounce">error</span>
+        </div>
+        <p class="text-red-400 text-lg font-semibold mb-2">Erro!</p>
+        <p class="text-white text-sm">{{ errorMessage }}</p>
+      </ng-container>
+    </ng-container>
+  </div>
+</div> 
