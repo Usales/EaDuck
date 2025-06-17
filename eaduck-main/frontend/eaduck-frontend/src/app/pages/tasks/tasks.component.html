@@ -371,3 +371,29 @@
     </div>
   </div>
 </div>
+
+<!-- Modal de Erro de Edição -->
+<div *ngIf="showEditErrorModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-md relative">
+    <button (click)="showEditErrorModal = false" class="absolute top-2 right-2 text-gray-400 hover:text-white"><span class="material-icons">close</span></button>
+    <div class="flex flex-col items-center justify-center py-4">
+      <span class="material-icons text-red-400 text-5xl mb-2">error</span>
+      <div class="text-red-400 text-lg font-semibold mb-2">Erro ao editar tarefa</div>
+      <div class="text-gray-300 text-sm text-center mb-4">{{ editErrorModalMessage }}</div>
+      <button (click)="showEditErrorModal = false" class="px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 transition-all mt-2">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Erro de Exclusão -->
+<div *ngIf="showDeleteErrorModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-md relative">
+    <button (click)="showDeleteErrorModal = false" class="absolute top-2 right-2 text-gray-400 hover:text-white"><span class="material-icons">close</span></button>
+    <div class="flex flex-col items-center justify-center py-4">
+      <span class="material-icons text-red-400 text-5xl mb-2">error</span>
+      <div class="text-red-400 text-lg font-semibold mb-2">Erro ao excluir tarefa</div>
+      <div class="text-gray-300 text-sm text-center mb-4">{{ deleteErrorModalMessage }}</div>
+      <button (click)="showDeleteErrorModal = false" class="px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 transition-all mt-2">Fechar</button>
+    </div>
+  </div>
+</div>

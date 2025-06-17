@@ -106,7 +106,18 @@ public class SubmissionController {
     }
 
     @GetMapping("/task/{taskId}")
-    public ResponseEntity<List<SubmissionDTO>> getAllSubmissions(@PathVariable Long taskId) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<List<SubmissionDTO>> getAllSubmissions(@PathVariable Long taskId, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) return ResponseEntity.badRequest().build();
+        Task task = taskRepository.findById(taskId).orElse(null);
+        if (task == null) return ResponseEntity.notFound().build();
+        if (user.getRole().name().equals("ROLE_TEACHER")) {
+            // Verifica se o professor leciona na turma da tarefa
+            if (task.getClassroom() == null || !user.getClassroomsAsTeacher().contains(task.getClassroom())) {
+                return ResponseEntity.status(403).build();
+            }
+        }
         List<Submission> submissions = submissionRepository.findByTaskId(taskId);
         List<SubmissionDTO> dtos = submissions.stream().map(this::toDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);

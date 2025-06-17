@@ -107,8 +107,8 @@ public class NotificationController {
                 hasPermission = true;
             } else if (authenticatedUser.getRole().name().equals("ROLE_TEACHER")) {
                 // Professor só pode ver notificações de alunos das suas turmas
-                Set<Classroom> teacherClassrooms = classroomRepository.findByTeachersContaining(authenticatedUser);
-                Set<Classroom> studentClassrooms = classroomRepository.findByStudentsContaining(targetUser);
+                Set<Classroom> teacherClassrooms = authenticatedUser.getClassroomsAsTeacher();
+                Set<Classroom> studentClassrooms = targetUser.getClassrooms();
                 
                 // Verifica se o aluno está em alguma das turmas do professor
                 hasPermission = teacherClassrooms.stream()

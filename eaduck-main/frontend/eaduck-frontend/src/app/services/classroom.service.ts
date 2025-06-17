@@ -72,5 +72,22 @@ export class ClassroomService {
     return this.http.delete(`${this.apiUrl}/${classroomId}/remove-student/${studentId}`);
   }
 
+  getClassroomById(id: number): Observable<Classroom> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map(c => ({
+        ...c,
+        teachers: c.teacherIds && c.teacherNames ? c.teacherIds.map((id: number, idx: number) => ({
+          id,
+          email: c.teacherNames[idx]
+        })) : [],
+        students: c.studentIds && c.studentNames ? c.studentIds.map((id: number, idx: number) => ({
+          id,
+          email: c.studentNames[idx],
+          name: c.studentNames[idx]
+        })) : []
+      }))
+    );
+  }
+
   // Métodos para adicionar/remover alunos e atribuir professor podem ser adicionados aqui
 } 

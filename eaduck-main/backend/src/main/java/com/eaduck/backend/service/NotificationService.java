@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class NotificationService {
@@ -94,8 +95,17 @@ public class NotificationService {
         }
     }
 
-    public List<Notification> getNotificationsByUser(Long userId) {
-        return notificationRepository.findByUserId(userId);
+    public List<Notification> getNotificationsForUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (user.getRole().equals("ROLE_ADMIN")) {
+            return notificationRepository.findAll();
+        } else if (user.getRole().equals("ROLE_TEACHER")) {
+            return notificationRepository.findByUser(user);
+        } else {
+            return notificationRepository.findByUser(user);
+        }
     }
 
     private void sendEmail(Long userId, String message) {

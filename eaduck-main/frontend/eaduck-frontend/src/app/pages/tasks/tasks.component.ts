@@ -89,11 +89,17 @@ export class TasksComponent implements OnInit, OnDestroy {
   errorModalMessage = '';
 
   showStudentsModal = false;
-  selectedTaskStudents: { email: string; submitted: boolean; submission?: Submission }[] = [];
+  selectedTaskStudents: { email: string; name: string; submitted: boolean; submission?: Submission }[] = [];
   allStudents: User[] = [];
 
   private updateInterval: any;
   private readonly UPDATE_INTERVAL_MS = 1000; // 1 segundo
+
+  showEditErrorModal = false;
+  editErrorModalMessage = '';
+
+  showDeleteErrorModal = false;
+  deleteErrorModalMessage = '';
 
   constructor(
     private taskService: TaskService,
@@ -218,6 +224,12 @@ export class TasksComponent implements OnInit, OnDestroy {
         this.editTaskId = null;
       },
       error: (error) => {
+        if (error && error.status === 409) {
+          this.editErrorModalMessage = 'Não é possível editar esta tarefa pois já existem respostas enviadas por alunos.';
+        } else {
+          this.editErrorModalMessage = 'Erro ao atualizar tarefa.';
+        }
+        this.showEditErrorModal = true;
         console.error('Erro ao atualizar tarefa:', error);
       }
     });
@@ -232,12 +244,11 @@ export class TasksComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         if (error && error.status === 409 && error.error) {
-          this.errorModalMessage = error.error;
-          this.showErrorModal = true;
+          this.deleteErrorModalMessage = error.error;
         } else {
-          this.errorModalMessage = 'Erro ao excluir tarefa.';
-          this.showErrorModal = true;
+          this.deleteErrorModalMessage = 'Erro ao excluir tarefa.';
         }
+        this.showDeleteErrorModal = true;
         console.error('Erro ao excluir tarefa:', error);
       }
     });
@@ -484,15 +495,22 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   openStudentsModal(task: Task) {
     this.selectedTask = task;
-    this.selectedTaskStudents = this.allStudents.map(student => {
-      const submission = this.submissions.find(s => s.studentId === student.id && s.taskId === task.id);
-      return {
-        email: student.email,
-        submitted: !!submission,
-        submission: submission
-      };
-    });
     this.showStudentsModal = true;
+    this.selectedTaskStudents = [];
+    // Buscar alunos da turma da tarefa
+    this.classroomService.getClassroomById(task.classroomId).subscribe({
+      next: (classroom) => {
+        this.selectedTaskStudents = (classroom.students || []).map(student => {
+          const submission = this.submissions.find(s => s.studentId === student.id && s.taskId === task.id);
+          return {
+            email: student.email,
+            name: student.name || '',
+            submitted: !!submission,
+            submission: submission
+          };
+        });
+      }
+    });
   }
 
   closeStudentsModal() {

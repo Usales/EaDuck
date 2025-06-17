@@ -36,6 +36,8 @@ export class NotificationService {
   }
 
   createNotification(notification: Partial<Notification>): Observable<Notification> {
-    return this.http.post<Notification>(`${this.apiUrl}`, notification);
+    return this.http.post<Notification>(`${this.apiUrl}`, notification, {
+      headers: this.authService.getAuthHeaders()
+    });
   }
 } 

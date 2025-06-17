@@ -196,6 +196,11 @@ public class TaskController {
             return ResponseEntity.notFound().build();
         }
 
+        // Bloqueio: se já houver submissões, não permite edição
+        if (!submissionRepository.findByTaskId(id).isEmpty()) {
+            return ResponseEntity.status(409).body(null);
+        }
+
         // Verifica se o professor tem acesso à tarefa
         if (user.getRole() == Role.TEACHER) {
             boolean hasAccess = user.getClassroomsAsTeacher().stream()
@@ -205,8 +210,13 @@ public class TaskController {
             }
         }
 
-        task.setId(id);
-        Task updatedTask = taskRepository.save(task);
+        // Atualiza apenas os campos enviados
+        if (task.getTitle() != null) existingTask.setTitle(task.getTitle());
+        if (task.getDescription() != null) existingTask.setDescription(task.getDescription());
+        if (task.getDueDate() != null) existingTask.setDueDate(task.getDueDate());
+        if (task.getType() != null) existingTask.setType(task.getType());
+
+        Task updatedTask = taskRepository.save(existingTask);
         return ResponseEntity.ok(updatedTask);
     }
 
