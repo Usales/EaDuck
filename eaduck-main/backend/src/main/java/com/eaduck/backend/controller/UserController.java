@@ -6,6 +6,7 @@ import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.model.auth.dto.UserRegisterDTO;
 import com.eaduck.backend.model.user.dto.UserDTO;
+import com.eaduck.backend.model.classroom.dto.ClassroomSimpleDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -64,11 +65,21 @@ public class UserController {
     }
 
     @GetMapping("/me/classrooms")
-    public ResponseEntity<Set<Classroom>> getUserClassrooms(Authentication authentication) {
-        Long userId = Long.valueOf(authentication.getName());
-        Optional<User> userOpt = userRepository.findById(userId);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ClassroomSimpleDTO>> getUserClassrooms(Authentication authentication) {
+        String email = authentication.getName();
+        Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
-            return ResponseEntity.ok(userOpt.get().getClassrooms());
+            List<ClassroomSimpleDTO> dtos = userOpt.get().getClassrooms().stream()
+                .map(c -> ClassroomSimpleDTO.builder()
+                    .id(c.getId())
+                    .name(c.getName())
+                    .academicYear(c.getAcademicYear())
+                    .studentCount(c.getStudents() != null ? c.getStudents().size() : 0)
+                    .teacherNames(c.getTeachers().stream().map(t -> t.getEmail()).toList())
+                    .build())
+                .toList();
+            return ResponseEntity.ok(dtos);
         }
         return ResponseEntity.notFound().build();
     }

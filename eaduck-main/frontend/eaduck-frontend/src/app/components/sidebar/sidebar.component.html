@@ -12,7 +12,7 @@
     <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/classrooms']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
       <span class="material-icons">school</span> Salas
     </a>
-    <a [routerLink]="['/notifications']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/notifications']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
       <span class="material-icons">notifications</span> Notificações
     </a>
     <a [routerLink]="['/tasks']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">

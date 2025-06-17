@@ -5,13 +5,24 @@ import com.eaduck.backend.model.task.Task;
 import com.eaduck.backend.repository.TaskRepository;
 import com.eaduck.backend.service.TaskService;
 import com.eaduck.backend.repository.UserRepository;
+import com.eaduck.backend.model.user.User;
+import com.eaduck.backend.model.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.eaduck.backend.service.NotificationService;
+import com.eaduck.backend.repository.ClassroomRepository;
+import com.eaduck.backend.model.classroom.Classroom;
+import java.time.LocalDateTime;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
+import com.eaduck.backend.model.task.dto.TaskSimpleDTO;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -26,97 +37,235 @@ public class TaskController {
     @Autowired
     private UserRepository userRepository;
 
-    @PostMapping
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO dto, Authentication authentication) {
-        String email = authentication.getName();
-        Long creatorId = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("Usuário não encontrado")).getId();
-        Task task = taskService.createTask(dto, creatorId);
-        TaskDTO response = TaskDTO.builder()
-            .id(task.getId())
-            .title(task.getTitle())
-            .description(task.getDescription())
-            .dueDate(task.getDueDate())
-            .classroomId(task.getClassroom().getId())
-            .classroomName(task.getClassroom().getName())
-            .createdById(task.getCreatedBy().getId())
-            .createdByName(task.getCreatedBy().getEmail())
-            .createdAt(task.getCreatedAt())
-            .build();
-        return ResponseEntity.ok(response);
-    }
+    @Autowired
+    private NotificationService notificationService;
 
-    @GetMapping("/classroom/{classroomId}")
-    @PreAuthorize("hasRole('STUDENT') or hasRole('TEACHER') or hasRole('ADMIN')")
-    public ResponseEntity<List<TaskDTO>> getTasksByClassroom(@PathVariable Long classroomId) {
-        List<Task> tasks = taskRepository.findByClassroomId(classroomId);
-        List<TaskDTO> dtos = tasks.stream().map(task -> TaskDTO.builder()
-            .id(task.getId())
-            .title(task.getTitle())
-            .description(task.getDescription())
-            .dueDate(task.getDueDate())
-            .classroomId(task.getClassroom().getId())
-            .classroomName(task.getClassroom().getName())
-            .createdById(task.getCreatedBy().getId())
-            .createdByName(task.getCreatedBy().getEmail())
-            .createdAt(task.getCreatedAt())
-            .build()
-        ).toList();
-        return ResponseEntity.ok(dtos);
-    }
+    @Autowired
+    private ClassroomRepository classroomRepository;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<TaskSimpleDTO>> getAllTasks(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (user.getRole() == Role.ADMIN) {
+            List<TaskSimpleDTO> dtos = taskRepository.findAll().stream()
+                .map(task -> new TaskSimpleDTO(
+                    task.getId(),
+                    task.getTitle(),
+                    task.getDescription(),
+                    task.getDueDate(),
+                    task.getType(),
+                    task.getClassroom().getId(),
+                    task.getClassroom().getName()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+            return ResponseEntity.ok(dtos);
+        } else if (user.getRole() == Role.TEACHER) {
+            Set<TaskSimpleDTO> teacherTasks = new java.util.HashSet<>();
+            user.getClassroomsAsTeacher().forEach(classroom ->
+                classroom.getTasks().forEach(task -> teacherTasks.add(new TaskSimpleDTO(
+                    task.getId(),
+                    task.getTitle(),
+                    task.getDescription(),
+                    task.getDueDate(),
+                    task.getType(),
+                    classroom.getId(),
+                    classroom.getName()
+                )))
+            );
+            return ResponseEntity.ok(new java.util.ArrayList<>(teacherTasks));
+        } else {
+            Set<TaskSimpleDTO> studentTasks = new java.util.HashSet<>();
+            user.getClassrooms().forEach(classroom ->
+                classroom.getTasks().forEach(task -> studentTasks.add(new TaskSimpleDTO(
+                    task.getId(),
+                    task.getTitle(),
+                    task.getDescription(),
+                    task.getDueDate(),
+                    task.getType(),
+                    classroom.getId(),
+                    classroom.getName()
+                )))
+            );
+            return ResponseEntity.ok(new java.util.ArrayList<>(studentTasks));
+        }
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Task> getTaskById(@PathVariable Long id, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Task task = taskRepository.findById(id).orElse(null);
+        if (task == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verifica se o usuário tem acesso à tarefa
+        boolean hasAccess = false;
+        if (user.getRole() == Role.ADMIN) {
+            hasAccess = true;
+        } else if (user.getRole() == Role.TEACHER) {
+            hasAccess = user.getClassroomsAsTeacher().stream()
+                .anyMatch(classroom -> classroom.getTasks().contains(task));
+        } else {
+            hasAccess = user.getClassrooms().stream()
+                .anyMatch(classroom -> classroom.getTasks().contains(task));
+        }
+
+        if (!hasAccess) {
+            return ResponseEntity.status(403).build();
+        }
+
+        return ResponseEntity.ok(task);
+    }
+
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-        List<Task> tasks = taskRepository.findAll();
-        List<TaskDTO> dtos = tasks.stream().map(task -> TaskDTO.builder()
-            .id(task.getId())
-            .title(task.getTitle())
-            .description(task.getDescription())
-            .dueDate(task.getDueDate())
-            .classroomId(task.getClassroom().getId())
-            .classroomName(task.getClassroom().getName())
-            .createdById(task.getCreatedBy().getId())
-            .createdByName(task.getCreatedBy().getEmail())
-            .createdAt(task.getCreatedAt())
-            .build()
-        ).toList();
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<TaskSimpleDTO> createTask(@RequestBody TaskDTO dto, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Classroom classroom = classroomRepository.findById(dto.getClassroomId()).orElse(null);
+        if (classroom == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Verifica se o professor tem acesso à sala
+        if (user.getRole() == Role.TEACHER) {
+            boolean hasAccess = user.getClassroomsAsTeacher().stream()
+                .anyMatch(c -> c.getId().equals(classroom.getId()));
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+        }
+
+        Task task = Task.builder()
+            .title(dto.getTitle())
+            .description(dto.getDescription())
+            .dueDate(dto.getDueDate())
+            .type(dto.getType())
+            .classroom(classroom)
+            .createdBy(user)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+        Task savedTask = taskRepository.save(task);
+        // Notifica os estudantes da sala
+        notificationService.notifyClassroom(
+            classroom.getId(),
+            savedTask.getId(),
+            "Nova tarefa: " + savedTask.getTitle(),
+            "TAREFA"
+        );
+        TaskSimpleDTO dtoResp = new TaskSimpleDTO(
+            savedTask.getId(),
+            savedTask.getTitle(),
+            savedTask.getDescription(),
+            savedTask.getDueDate(),
+            savedTask.getType(),
+            classroom.getId(),
+            classroom.getName()
+        );
+        return ResponseEntity.ok(dtoResp);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @RequestBody TaskDTO dto) {
-        return taskRepository.findById(id)
-            .map(task -> {
-                task.setTitle(dto.getTitle());
-                task.setDescription(dto.getDescription());
-                task.setDueDate(dto.getDueDate());
-                taskRepository.save(task);
-                TaskDTO response = TaskDTO.builder()
-                    .id(task.getId())
-                    .title(task.getTitle())
-                    .description(task.getDescription())
-                    .dueDate(task.getDueDate())
-                    .classroomId(task.getClassroom().getId())
-                    .classroomName(task.getClassroom().getName())
-                    .createdById(task.getCreatedBy().getId())
-                    .createdByName(task.getCreatedBy().getEmail())
-                    .createdAt(task.getCreatedAt())
-                    .build();
-                return ResponseEntity.ok(response);
-            })
-            .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task task, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Task existingTask = taskRepository.findById(id).orElse(null);
+        if (existingTask == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verifica se o professor tem acesso à tarefa
+        if (user.getRole() == Role.TEACHER) {
+            boolean hasAccess = user.getClassroomsAsTeacher().stream()
+                .anyMatch(classroom -> classroom.getTasks().contains(existingTask));
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+        }
+
+        task.setId(id);
+        Task updatedTask = taskRepository.save(task);
+        return ResponseEntity.ok(updatedTask);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<?> deleteTask(@PathVariable Long id) {
-        if (!taskRepository.existsById(id)) {
+    public ResponseEntity<?> deleteTask(@PathVariable Long id, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Task task = taskRepository.findById(id).orElse(null);
+        if (task == null) {
             return ResponseEntity.notFound().build();
         }
-        taskRepository.deleteById(id);
+
+        // Verifica se o professor tem acesso à tarefa
+        if (user.getRole() == Role.TEACHER) {
+            boolean hasAccess = user.getClassroomsAsTeacher().stream()
+                .anyMatch(classroom -> classroom.getTasks().contains(task));
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+        }
+
+        taskRepository.delete(task);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/classroom/{classroomId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<TaskSimpleDTO>> getTasksByClassroom(@PathVariable Long classroomId, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        Classroom classroom = classroomRepository.findById(classroomId).orElse(null);
+        if (classroom == null) {
+            return ResponseEntity.notFound().build();
+        }
+        boolean hasAccess = user.getRole() == Role.ADMIN
+            || (user.getRole() == Role.TEACHER && user.getClassroomsAsTeacher().contains(classroom))
+            || (user.getRole() == Role.STUDENT && user.getClassrooms().contains(classroom));
+        if (!hasAccess) {
+            return ResponseEntity.status(403).build();
+        }
+        List<TaskSimpleDTO> dtos = classroom.getTasks().stream()
+            .map(task -> new TaskSimpleDTO(
+                task.getId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getDueDate(),
+                task.getType(),
+                classroom.getId(),
+                classroom.getName()
+            ))
+            .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/tasks-by-classroom")
+    public ResponseEntity<Map<String, Object>> getTasksByClassroom(Authentication authentication) {
+        // ...
+        return null; // Placeholder return, actual implementation needed
     }
 }

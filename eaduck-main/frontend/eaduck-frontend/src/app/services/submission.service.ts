@@ -35,4 +35,8 @@ export class SubmissionService {
   evaluateSubmission(id: number, grade: number, feedback: string): Observable<Submission> {
     return this.http.put<Submission>(`${this.apiUrl}/${id}/evaluate`, { grade, feedback });
   }
+
+  submitTask(taskId: number, formData: FormData): Observable<Submission> {
+    return this.http.post<Submission>(`${this.apiUrl}/task/${taskId}/upload`, formData);
+  }
 } 

@@ -10,6 +10,8 @@ export interface Classroom {
   teachers?: any[];
   createdAt: string;
   students?: any[];
+  teacherNames?: string[];
+  studentCount?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +27,10 @@ export class ClassroomService {
         teachers: c.teacherIds && c.teacherNames ? c.teacherIds.map((id: number, idx: number) => ({
           id,
           email: c.teacherNames[idx]
+        })) : [],
+        students: c.studentIds && c.studentNames ? c.studentIds.map((id: number, idx: number) => ({
+          id,
+          email: c.studentNames[idx]
         })) : []
       })))
     );
@@ -51,11 +57,19 @@ export class ClassroomService {
   }
 
   addTeacher(classroomId: number, teacherId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${classroomId}/add-teacher/${teacherId}`, {});
+    return this.http.post(`${this.apiUrl}/${classroomId}/assign-teacher/${teacherId}`, {});
   }
 
   removeTeacher(classroomId: number, teacherId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${classroomId}/remove-teacher/${teacherId}`);
+  }
+
+  addStudent(classroomId: number, studentId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${classroomId}/students/${studentId}`, {});
+  }
+
+  removeStudent(classroomId: number, studentId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${classroomId}/remove-student/${studentId}`);
   }
 
   // Métodos para adicionar/remover alunos e atribuir professor podem ser adicionados aqui

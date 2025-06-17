@@ -43,7 +43,7 @@ public class AuthController {
                 throw new DuplicateEmailException("E-mail já cadastrado.");
             }
             if (request.getRole() == null) {
-                request.setRole(Role.ADMIN); // Definindo ADMIN como padrão
+                request.setRole(Role.STUDENT); // Definindo STUDENT (ALUNO) como padrão
             }
             User user = User.builder()
                     .email(request.getEmail())
@@ -53,7 +53,7 @@ public class AuthController {
                     .build();
             user = userRepository.save(user);
             String token = jwtService.generateToken(user);
-            return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId())));
+            return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId()), user.getRole().name()));
         } catch (DuplicateEmailException e) {
             System.out.println("Erro ao registrar: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage(e.getMessage()));
@@ -94,7 +94,7 @@ public class AuthController {
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + request.getEmail()));
             String token = jwtService.generateToken(user);
-            return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId())));
+            return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId()), user.getRole().name()));
         } catch (BadCredentialsException e) {
             System.out.println("Credenciais inválidas para: " + request.getEmail());
             return ResponseEntity.status(401).body(new ResponseMessage("Credenciais inválidas."));
@@ -193,7 +193,7 @@ public class AuthController {
             }
 
             String newToken = jwtService.generateToken(user);
-            return ResponseEntity.ok(new AuthResponse(newToken, String.valueOf(user.getId())));
+            return ResponseEntity.ok(new AuthResponse(newToken, String.valueOf(user.getId()), user.getRole().name()));
         } catch (Exception e) {
             return ResponseEntity.status(401).body(new ResponseMessage("Erro ao renovar token: " + e.getMessage()));
         }

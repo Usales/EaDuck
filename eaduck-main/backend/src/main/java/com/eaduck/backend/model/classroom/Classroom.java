@@ -1,6 +1,7 @@
 package com.eaduck.backend.model.classroom;
 
 import com.eaduck.backend.model.user.User;
+import com.eaduck.backend.model.task.Task;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,7 +41,7 @@ public class Classroom {
             inverseJoinColumns = @JoinColumn(name = "student_id")
     )
     @com.fasterxml.jackson.annotation.JsonManagedReference("student-classroom")
-    private Set<User> students;
+    private Set<User> students = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -52,6 +53,10 @@ public class Classroom {
 
     @ManyToMany(mappedBy = "teachers")
     private Set<Classroom> classroomsAsTeacher;
+
+    @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL)
+    @JsonManagedReference("classroom-tasks")
+    private Set<Task> tasks = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {

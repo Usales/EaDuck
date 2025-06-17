@@ -12,8 +12,6 @@ CREATE TABLE classroom_students (
                                     PRIMARY KEY (classroom_id, student_id)
 );
 
-
-
 ALTER TABLE classrooms
     ADD CONSTRAINT fk_classrooms_teacher FOREIGN KEY (teacher_id) REFERENCES users(id);
 

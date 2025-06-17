@@ -34,6 +34,12 @@ export class ClassroomsComponent implements OnInit {
   filteredTeachers: User[] = [];
   assignClassroomId: number | null = null;
 
+  students: User[] = [];
+  selectedStudentIds: number[] = [];
+  searchStudent = '';
+  filteredStudents: User[] = [];
+  assignMode: 'teacher' | 'student' | null = null;
+
   constructor(private classroomService: ClassroomService, private authService: AuthService, private userService: UserService) {
     this.currentUser$ = this.authService.currentUser$;
   }
@@ -76,6 +82,7 @@ export class ClassroomsComponent implements OnInit {
     }
     if (user?.role === 'ADMIN') {
       this.loadTeachers();
+      this.loadStudents();
     }
   }
 
@@ -139,16 +146,36 @@ export class ClassroomsComponent implements OnInit {
     });
   }
 
+  loadStudents() {
+    this.userService.getUsersByRole('STUDENT').subscribe(students => {
+      this.students = students;
+    });
+  }
+
   openAssignTeacher(classroom: Classroom) {
     this.assignClassroomId = classroom.id;
+    this.assignMode = 'teacher';
     this.selectedTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
     this.searchTeacher = '';
     this.filteredTeachers = this.teachers;
   }
 
+  openAssignStudent(classroom: Classroom) {
+    this.assignClassroomId = classroom.id;
+    this.assignMode = 'student';
+    this.selectedStudentIds = classroom.students ? classroom.students.map((s: any) => s.id) : [];
+    this.searchStudent = '';
+    this.filteredStudents = this.students;
+  }
+
   filterTeachers() {
     const search = this.searchTeacher.toLowerCase();
     this.filteredTeachers = this.teachers.filter(t => t.email.toLowerCase().includes(search) && !this.selectedTeacherIds.includes(t.id));
+  }
+
+  filterStudents() {
+    const search = this.searchStudent.toLowerCase();
+    this.filteredStudents = this.students.filter(s => s.email.toLowerCase().includes(search) && !this.selectedStudentIds.includes(s.id));
   }
 
   addTeacherToSelection(teacher: User) {
@@ -162,6 +189,19 @@ export class ClassroomsComponent implements OnInit {
   removeTeacherFromSelection(teacherId: number) {
     this.selectedTeacherIds = this.selectedTeacherIds.filter(id => id !== teacherId);
     this.filterTeachers();
+  }
+
+  addStudentToSelection(student: User) {
+    if (!this.selectedStudentIds.includes(student.id)) {
+      this.selectedStudentIds.push(student.id);
+      this.filterStudents();
+    }
+    this.searchStudent = '';
+  }
+
+  removeStudentFromSelection(studentId: number) {
+    this.selectedStudentIds = this.selectedStudentIds.filter(id => id !== studentId);
+    this.filterStudents();
   }
 
   saveTeachers() {
@@ -178,14 +218,40 @@ export class ClassroomsComponent implements OnInit {
     this.selectedTeacherIds = [];
   }
 
+  saveStudents() {
+    if (!this.assignClassroomId) return;
+    const classroom = this.classrooms.find(c => c.id === this.assignClassroomId);
+    if (!classroom) return;
+    // Adiciona alunos que não estão na sala
+    const toAdd = this.selectedStudentIds.filter(id => !classroom.students?.some((s: any) => s.id === id));
+    // Remove alunos que foram desmarcados
+    const toRemove = (classroom.students || []).filter((s: any) => !this.selectedStudentIds.includes(s.id)).map((s: any) => s.id);
+    toAdd.forEach(id => this.classroomService.addStudent(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
+    toRemove.forEach(id => this.classroomService.removeStudent(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
+    this.assignClassroomId = null;
+    this.selectedStudentIds = [];
+    this.assignMode = null;
+  }
+
   cancelAssignTeacher() {
     this.assignClassroomId = null;
     this.selectedTeacherIds = [];
   }
 
+  cancelAssignStudent() {
+    this.assignClassroomId = null;
+    this.selectedStudentIds = [];
+    this.assignMode = null;
+  }
+
   getTeacherEmailById(id: number): string {
     const teacher = this.teachers.find(t => t.id === id);
     return teacher ? teacher.email : '';
+  }
+
+  getStudentEmailById(id: number): string {
+    const student = this.students.find(s => s.id === id);
+    return student ? student.email : '';
   }
 
   getTeacherColor(index: number): string {

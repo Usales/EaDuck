@@ -1,29 +1,37 @@
-<header class="fixed top-0 left-0 right-0 h-16 bg-[#1a2233] flex items-center justify-end px-8 z-50 shadow">
-  <div class="relative">
-    <button (click)="toggleDropdown()" class="relative focus:outline-none">
-      <span class="material-icons text-white text-3xl">notifications</span>
-      <span *ngIf="getUnreadCount() > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ getUnreadCount() }}</span>
-    </button>
-    <div *ngIf="showDropdown" class="absolute right-0 mt-2 w-80 bg-[#232b3e] rounded-lg shadow-lg overflow-hidden border border-[#2d3650]">
-      <div class="p-4 border-b border-[#2d3650] flex items-center justify-between">
-        <span class="text-white font-semibold">Notificações</span>
-        <a routerLink="/notifications" class="text-indigo-400 text-sm hover:underline">Ver todas</a>
-      </div>
-      <div *ngIf="loading" class="p-4 text-gray-400">Carregando...</div>
-      <div *ngIf="!loading && notifications.length === 0" class="p-4 text-gray-400">Nenhuma notificação.</div>
-      <div *ngIf="!loading && notifications.length > 0" class="max-h-80 overflow-y-auto divide-y divide-[#2d3650]">
-        <div *ngFor="let n of notifications | slice:0:8" class="p-4 hover:bg-[#1a2233] transition-all cursor-pointer" [class.opacity-60]="n.isRead" (click)="markAsRead(n)">
-          <div class="flex items-start gap-3">
-            <span class="material-icons text-indigo-400">announcement</span>
-            <div class="flex-1">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-white font-semibold text-sm">{{ n.title || 'Notificação' }}</span>
-                <span class="text-gray-400 text-xs">{{ n.createdAt | date:'dd/MM HH:mm' }}</span>
-              </div>
-              <span class="text-gray-400 text-xs">{{ n.message }}</span>
-              <div class="mt-1">
-                <span *ngIf="!n.isRead" class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">Nova</span>
-                <span *ngIf="n.isRead" class="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Lida</span>
+<header class="fixed top-0 left-0 right-0 h-16 bg-[#1a2233] flex items-center justify-between px-8 z-50 shadow">
+  <div class="flex items-center gap-4">
+    <span class="text-2xl font-bold tracking-tight text-white">EaDuck</span>
+  </div>
+  <div class="flex items-center gap-6">
+    <span class="text-gray-300 text-sm" *ngIf="authService.getCurrentUser()">
+      {{ authService.getCurrentUser()?.email }} <span class="text-indigo-400 font-semibold">({{ authService.getCurrentUser()?.role }})</span>
+    </span>
+    <div class="relative">
+      <button (click)="toggleDropdown()" class="relative focus:outline-none">
+        <span class="material-icons text-white text-3xl">notifications</span>
+        <span *ngIf="getUnreadCount() > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ getUnreadCount() }}</span>
+      </button>
+      <div *ngIf="showDropdown" class="absolute right-0 mt-2 w-80 bg-[#232b3e] rounded-lg shadow-lg overflow-hidden border border-[#2d3650]">
+        <div class="p-4 border-b border-[#2d3650] flex items-center justify-between">
+          <span class="text-white font-semibold">Notificações</span>
+          <a routerLink="/notifications" class="text-indigo-400 text-sm hover:underline">Ver todas</a>
+        </div>
+        <div *ngIf="loading" class="p-4 text-gray-400">Carregando...</div>
+        <div *ngIf="!loading && notifications.length === 0" class="p-4 text-gray-400">Nenhuma notificação.</div>
+        <div *ngIf="!loading && notifications.length > 0" class="max-h-80 overflow-y-auto divide-y divide-[#2d3650]">
+          <div *ngFor="let n of notifications | slice:0:8" class="p-4 hover:bg-[#1a2233] transition-all cursor-pointer" [class.opacity-60]="n.isRead" (click)="markAsRead(n)">
+            <div class="flex items-start gap-3">
+              <span class="material-icons text-indigo-400">announcement</span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-white font-semibold text-sm">{{ n.title || 'Notificação' }}</span>
+                  <span class="text-gray-400 text-xs">{{ n.createdAt | date:'dd/MM HH:mm' }}</span>
+                </div>
+                <span class="text-gray-400 text-xs">{{ n.message }}</span>
+                <div class="mt-1">
+                  <span *ngIf="!n.isRead" class="bg-blue-500 text-white text-xs px-2 py-0.5 rounded">Nova</span>
+                  <span *ngIf="n.isRead" class="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Lida</span>
+                </div>
               </div>
             </div>
           </div>

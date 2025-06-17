@@ -1,112 +1,110 @@
 <app-sidebar></app-sidebar>
-<div class="ml-64 p-8">
+<div class="ml-64 p-8 pt-28">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-white">Notificações</h1>
-    <button class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all flex items-center gap-2">
+    <h1 class="text-2xl font-bold text-white">Notificações
+      <span *ngIf="getUnreadCount() > 0" class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ getUnreadCount() }}</span>
+    </h1>
+    <button *ngIf="isAdminOrTeacher" (click)="openModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all flex items-center gap-2">
       <span class="material-icons">add</span>
       Nova Notificação
     </button>
   </div>
-  <div class="bg-[#232b3e] rounded-xl shadow-lg overflow-hidden">
-    <div class="p-4 border-b border-[#2d3650]">
-      <div class="flex items-center gap-4">
-        <div class="relative flex-1">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <span class="material-icons">search</span>
-          </span>
-          <input type="text" placeholder="Buscar notificações..." class="w-full pl-10 pr-4 py-2 bg-[#1a2233] border border-[#2d3650] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <button class="p-2 text-gray-400 hover:text-white">
-          <span class="material-icons">filter_list</span>
-        </button>
-      </div>
-    </div>
+  <div class="flex gap-4 mb-4">
+    <input type="text" [(ngModel)]="searchText" placeholder="Buscar notificações..." class="w-1/3 px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none" />
+    <select [(ngModel)]="filterType" class="px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+      <option value="ALL">Todos os tipos</option>
+      <option value="AVISO">Aviso</option>
+      <option value="TAREFA">Tarefa</option>
+      <option value="SISTEMA">Sistema</option>
+      <option value="FORUM">Fórum</option>
+    </select>
+    <select [(ngModel)]="filterRead" class="px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+      <option value="ALL">Todas</option>
+      <option value="UNREAD">Não lidas</option>
+      <option value="READ">Lidas</option>
+    </select>
+  </div>
+  <div *ngIf="loading" class="text-white">Carregando...</div>
+  <div *ngIf="!loading && notifications.length === 0" class="text-gray-400">Nenhuma notificação encontrada.</div>
+  <div *ngIf="!loading && notifications.length > 0" class="bg-[#232b3e] rounded-xl shadow-lg overflow-hidden">
     <div class="divide-y divide-[#2d3650]">
-      <div class="p-4 hover:bg-[#1a2233] transition-all">
+      <div *ngFor="let n of notifications" class="p-4 hover:bg-[#1a2233] transition-all cursor-pointer" [class.opacity-60]="n.isRead" (click)="markAsRead(n)">
         <div class="flex items-start gap-4">
-          <div class="bg-indigo-500 bg-opacity-20 p-2 rounded-lg">
-            <span class="material-icons text-indigo-400">announcement</span>
+          <div [ngClass]="getNotifTypeColor(n.notificationType)" class="p-2 rounded-lg">
+            <span class="material-icons text-white">{{ getNotifTypeIcon(n.notificationType) }}</span>
           </div>
           <div class="flex-1">
             <div class="flex items-center justify-between mb-1">
-              <h3 class="text-white font-semibold">Nova Aula Disponível</h3>
-              <span class="text-gray-400 text-sm">Há 5 minutos</span>
+              <h3 class="text-white font-semibold">{{ n.title || 'Notificação' }}</h3>
+              <span class="text-gray-400 text-sm">{{ n.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
-            <p class="text-gray-400 text-sm mb-2">A aula de Matemática Básica está disponível para visualização.</p>
+            <p class="text-gray-400 text-sm mb-2">{{ n.message }}</p>
             <div class="flex items-center gap-2">
-              <button class="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
-                <span class="material-icons text-sm">visibility</span>
-                Visualizar
-              </button>
-              <button class="text-gray-400 hover:text-white text-sm flex items-center gap-1">
-                <span class="material-icons text-sm">delete</span>
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="p-4 hover:bg-[#1a2233] transition-all">
-        <div class="flex items-start gap-4">
-          <div class="bg-green-500 bg-opacity-20 p-2 rounded-lg">
-            <span class="material-icons text-green-400">event</span>
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-1">
-              <h3 class="text-white font-semibold">Prova Agendada</h3>
-              <span class="text-gray-400 text-sm">Há 1 hora</span>
-            </div>
-            <p class="text-gray-400 text-sm mb-2">A prova de Física Quântica foi agendada para próxima segunda-feira.</p>
-            <div class="flex items-center gap-2">
-              <button class="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
-                <span class="material-icons text-sm">visibility</span>
-                Visualizar
-              </button>
-              <button class="text-gray-400 hover:text-white text-sm flex items-center gap-1">
-                <span class="material-icons text-sm">delete</span>
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="p-4 hover:bg-[#1a2233] transition-all">
-        <div class="flex items-start gap-4">
-          <div class="bg-yellow-500 bg-opacity-20 p-2 rounded-lg">
-            <span class="material-icons text-yellow-400">warning</span>
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-1">
-              <h3 class="text-white font-semibold">Tarefa Pendente</h3>
-              <span class="text-gray-400 text-sm">Há 2 horas</span>
-            </div>
-            <p class="text-gray-400 text-sm mb-2">Você tem uma tarefa pendente na sala de Programação Web.</p>
-            <div class="flex items-center gap-2">
-              <button class="text-indigo-400 hover:text-indigo-300 text-sm flex items-center gap-1">
-                <span class="material-icons text-sm">visibility</span>
-                Visualizar
-              </button>
-              <button class="text-gray-400 hover:text-white text-sm flex items-center gap-1">
-                <span class="material-icons text-sm">delete</span>
-                Excluir
-              </button>
+              <span [ngClass]="getNotifTypeColor(n.notificationType)" class="px-2 py-1 rounded-full text-xs font-bold text-white">
+                {{ getNotifTypeLabel(n.notificationType) }}
+              </span>
+              <span *ngIf="!n.isRead" class="bg-blue-500 text-white text-xs px-2 py-1 rounded">Nova</span>
+              <span *ngIf="n.isRead" class="bg-gray-500 text-white text-xs px-2 py-1 rounded">Lida</span>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="p-4 border-t border-[#2d3650] flex items-center justify-between">
-      <div class="text-gray-400 text-sm">
-        Mostrando 1-3 de 15 notificações
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="p-2 text-gray-400 hover:text-white disabled:opacity-50" disabled>
-          <span class="material-icons">chevron_left</span>
-        </button>
-        <button class="p-2 text-gray-400 hover:text-white">
-          <span class="material-icons">chevron_right</span>
-        </button>
-      </div>
+  </div>
+
+  <!-- Modal Nova Notificação -->
+  <div *ngIf="showModal && isAdminOrTeacher" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-[#232b3e] p-8 rounded-xl w-full max-w-md relative">
+      <button (click)="closeModal()" class="absolute top-2 right-2 text-gray-400 hover:text-white">
+        <span class="material-icons">close</span>
+      </button>
+      <h2 class="text-xl font-bold text-white mb-4">Nova Notificação</h2>
+      <form (ngSubmit)="sendNotification()" autocomplete="off">
+        <div class="mb-4">
+          <label class="block text-gray-300 mb-1">Destinatário</label>
+          <div class="flex gap-4 mb-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="recipientType" [(ngModel)]="recipientType" value="USER" />
+              <span class="font-semibold text-blue-400">Usuário</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="recipientType" [(ngModel)]="recipientType" value="CLASSROOM" />
+              <span class="font-semibold text-green-400">Turma</span>
+            </label>
+          </div>
+          <div *ngIf="recipientType === 'USER'">
+            <select [(ngModel)]="selectedUserId" name="selectedUserId" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+              <option [ngValue]="null">Selecione o usuário</option>
+              <option *ngFor="let u of users" [ngValue]="u.id">{{ u.email }}</option>
+            </select>
+          </div>
+          <div *ngIf="recipientType === 'CLASSROOM'">
+            <select [(ngModel)]="selectedClassroomId" name="selectedClassroomId" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+              <option [ngValue]="null">Selecione a turma</option>
+              <option *ngFor="let c of classrooms" [ngValue]="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-300 mb-1">Título</label>
+          <input [(ngModel)]="newNotification.title" name="title" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none" />
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-300 mb-1">Mensagem</label>
+          <textarea [(ngModel)]="newNotification.message" name="message" required rows="3" class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-300 mb-1">Tipo</label>
+          <select [(ngModel)]="newNotification.notificationType" name="notificationType" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+            <option value="AVISO">Aviso</option>
+            <option value="TAREFA">Tarefa</option>
+            <option value="FORUM">Fórum</option>
+            <option value="SISTEMA">Sistema</option>
+          </select>
+        </div>
+        <div *ngIf="sendError" class="mb-2 text-red-400 text-sm">{{ sendError }}</div>
+        <button type="submit" class="w-full py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold">Enviar</button>
+      </form>
     </div>
   </div>
 </div>

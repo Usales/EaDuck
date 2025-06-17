@@ -8,6 +8,7 @@ import com.eaduck.backend.service.NotificationService;
 import com.eaduck.backend.model.classroom.dto.ClassroomDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomCreateDTO;
 import com.eaduck.backend.model.user.dto.UserDTO;
+import com.eaduck.backend.model.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +21,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.ArrayList;
+import com.eaduck.backend.model.classroom.dto.ClassroomSimpleDTO;
+import com.eaduck.backend.model.classroom.dto.ClassroomDashboardDTO;
 
 @RestController
 @RequestMapping("/api/classrooms")
@@ -35,69 +39,104 @@ public class ClassroomController {
     private NotificationService notificationService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ClassroomDTO>> getAllClassrooms(Authentication authentication) {
-        List<Classroom> classrooms;
-        Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
-        if (userOpt.isPresent() && userOpt.get().getRole().name().equals("TEACHER")) {
-            classrooms = userOpt.get().getClassroomsAsTeacher().stream().toList();
-        } else {
-            classrooms = classroomRepository.findAll();
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
         }
-        List<ClassroomDTO> dtos = classrooms.stream().map(classroom -> {
-            List<Long> teacherIds = classroom.getTeachers().stream().map(User::getId).toList();
-            List<String> teacherNames = classroom.getTeachers().stream().map(User::getEmail).toList();
-            return ClassroomDTO.builder()
-                .id(classroom.getId())
-                .name(classroom.getName())
-                .academicYear(classroom.getAcademicYear())
-                .teacherIds(teacherIds)
-                .teacherNames(teacherNames)
-                .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
-                .build();
-        }).toList();
+
+        List<Classroom> classrooms;
+        if (user.getRole() == Role.ADMIN) {
+            classrooms = classroomRepository.findAll();
+        } else if (user.getRole() == Role.TEACHER) {
+            classrooms = new ArrayList<>(user.getClassroomsAsTeacher());
+        } else {
+            classrooms = new ArrayList<>(user.getClassrooms());
+        }
+        // Retorna DTO completo para cada sala, garantindo nomes nunca nulos
+        List<ClassroomDTO> dtos = classrooms.stream().map(classroom -> ClassroomDTO.builder()
+            .id(classroom.getId())
+            .name(classroom.getName())
+            .academicYear(classroom.getAcademicYear())
+            .teacherIds(classroom.getTeachers().stream().map(User::getId).toList())
+            .teacherNames(classroom.getTeachers().stream().map(u -> u.getEmail() != null ? u.getEmail() : "").toList())
+            .studentIds(classroom.getStudents().stream().map(User::getId).toList())
+            .studentNames(classroom.getStudents().stream().map(u -> u.getEmail() != null ? u.getEmail() : "").toList())
+            .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
+            .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
+            .build()).toList();
         return ResponseEntity.ok(dtos);
     }
 
-    @PostMapping("/{classroomId}/assign-teacher/{teacherId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> assignTeacher(@PathVariable Long classroomId, @PathVariable Long teacherId) {
-        Optional<Classroom> classroomOpt = classroomRepository.findById(classroomId);
-        Optional<User> teacherOpt = userRepository.findById(teacherId);
-
-        if (!classroomOpt.isPresent()) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Turma não encontrada."));
-        }
-        if (!teacherOpt.isPresent() || !teacherOpt.get().getRole().name().equals("TEACHER")) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Professor não encontrado ou inválido."));
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ClassroomDTO> getClassroomById(@PathVariable Long id, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
         }
 
-        Classroom classroom = classroomOpt.get();
-        classroom.getTeachers().add(teacherOpt.get());
-        classroomRepository.save(classroom);
+        Classroom classroom = classroomRepository.findById(id).orElse(null);
+        if (classroom == null) {
+            return ResponseEntity.notFound().build();
+        }
 
-        // Notificar alunos da turma
-        String message = "Novo professor atribuído à turma: " + classroom.getName();
-        notificationService.notifyClassroom(classroomId, null, message, "TEACHER_ASSIGNED");
+        // Verifica se o usuário tem acesso à sala
+        boolean hasAccess = false;
+        if (user.getRole() == Role.ADMIN) {
+            hasAccess = true;
+        } else if (user.getRole() == Role.TEACHER) {
+            hasAccess = user.getClassroomsAsTeacher().contains(classroom);
+        } else {
+            hasAccess = user.getClassrooms().contains(classroom);
+        }
 
-        return ResponseEntity.ok(Collections.singletonMap("message", "Professor atribuído com sucesso."));
+        if (!hasAccess) {
+            return ResponseEntity.status(403).build();
+        }
+
+        ClassroomDTO dto = ClassroomDTO.builder()
+            .id(classroom.getId())
+            .name(classroom.getName())
+            .academicYear(classroom.getAcademicYear())
+            .teacherIds(classroom.getTeachers().stream().map(User::getId).toList())
+            .teacherNames(classroom.getTeachers().stream().map(User::getEmail).toList())
+            .studentIds(classroom.getStudents().stream().map(User::getId).toList())
+            .studentNames(classroom.getStudents().stream().map(User::getEmail).toList())
+            .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
+            .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
+            .build();
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ClassroomDTO> createClassroom(@RequestBody ClassroomCreateDTO dto) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<ClassroomDTO> createClassroom(@RequestBody ClassroomCreateDTO dto, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         Classroom classroom = new Classroom();
         classroom.setName(dto.getName());
         classroom.setAcademicYear(dto.getAcademicYear());
         classroom.setCreatedAt(java.time.LocalDateTime.now());
+
+        // Se for professor, adiciona ele mesmo como professor da sala
+        if (user.getRole() == Role.TEACHER) {
+            classroom.getTeachers().add(user);
+        }
+
         // Associar professores se teacherIds vierem preenchidos
         if (dto.getTeacherIds() != null && !dto.getTeacherIds().isEmpty()) {
             Set<User> teachers = new HashSet<>();
             for (Long teacherId : dto.getTeacherIds()) {
                 userRepository.findById(teacherId).ifPresent(teachers::add);
             }
-            classroom.setTeachers(teachers);
+            classroom.getTeachers().addAll(teachers);
         }
+
         Classroom saved = classroomRepository.save(classroom);
         ClassroomDTO response = ClassroomDTO.builder()
             .id(saved.getId())
@@ -105,21 +144,40 @@ public class ClassroomController {
             .academicYear(saved.getAcademicYear())
             .teacherIds(saved.getTeachers().stream().map(User::getId).toList())
             .teacherNames(saved.getTeachers().stream().map(User::getEmail).toList())
+            .studentIds(saved.getStudents().stream().map(User::getId).toList())
+            .studentNames(saved.getStudents().stream().map(User::getEmail).toList())
             .studentCount(saved.getStudents() != null ? saved.getStudents().size() : 0)
+            .active(saved.getStudents() != null && !saved.getStudents().isEmpty())
             .build();
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ClassroomDTO> updateClassroom(@PathVariable Long id, @RequestBody ClassroomCreateDTO dto) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<ClassroomDTO> updateClassroom(@PathVariable Long id, @RequestBody ClassroomCreateDTO dto, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         Optional<Classroom> classroomOpt = classroomRepository.findById(id);
         if (classroomOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+
         Classroom existing = classroomOpt.get();
+
+        // Verifica se o professor tem acesso à sala
+        if (user.getRole() == Role.TEACHER) {
+            boolean hasAccess = user.getClassroomsAsTeacher().contains(existing);
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+        }
+
         existing.setName(dto.getName());
         existing.setAcademicYear(dto.getAcademicYear());
+
         // Atualizar professores se teacherIds vierem preenchidos
         if (dto.getTeacherIds() != null) {
             Set<User> teachers = new HashSet<>();
@@ -128,6 +186,7 @@ public class ClassroomController {
             }
             existing.setTeachers(teachers);
         }
+
         Classroom updated = classroomRepository.save(existing);
         ClassroomDTO response = ClassroomDTO.builder()
             .id(updated.getId())
@@ -135,7 +194,10 @@ public class ClassroomController {
             .academicYear(updated.getAcademicYear())
             .teacherIds(updated.getTeachers().stream().map(User::getId).toList())
             .teacherNames(updated.getTeachers().stream().map(User::getEmail).toList())
+            .studentIds(updated.getStudents().stream().map(User::getId).toList())
+            .studentNames(updated.getStudents().stream().map(User::getEmail).toList())
             .studentCount(updated.getStudents() != null ? updated.getStudents().size() : 0)
+            .active(updated.getStudents() != null && !updated.getStudents().isEmpty())
             .build();
         return ResponseEntity.ok(response);
     }
@@ -150,37 +212,66 @@ public class ClassroomController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{classroomId}/add-student/{studentId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addStudentToClassroom(@PathVariable Long classroomId, @PathVariable Long studentId) {
-        Optional<Classroom> classroomOpt = classroomRepository.findById(classroomId);
-        Optional<User> studentOpt = userRepository.findById(studentId);
-        if (classroomOpt.isEmpty() || studentOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Turma ou aluno não encontrado.");
+    @PostMapping("/{id}/students/{studentId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<?> addStudentToClassroom(@PathVariable Long id, @PathVariable Long studentId, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
         }
-        User student = studentOpt.get();
-        if (!student.getRole().name().equals("STUDENT")) {
-            return ResponseEntity.badRequest().body("Usuário não é aluno.");
+
+        Classroom classroom = classroomRepository.findById(id).orElse(null);
+        if (classroom == null) {
+            return ResponseEntity.notFound().build();
         }
-        Classroom classroom = classroomOpt.get();
+
+        // Verifica se o professor tem acesso à sala
+        if (user.getRole() == Role.TEACHER) {
+            boolean hasAccess = user.getClassroomsAsTeacher().contains(classroom);
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+        }
+        }
+
+        User student = userRepository.findById(studentId).orElse(null);
+        if (student == null || student.getRole() != Role.STUDENT) {
+            return ResponseEntity.badRequest().build();
+        }
+
         classroom.getStudents().add(student);
         classroomRepository.save(classroom);
-        return ResponseEntity.ok("Aluno adicionado à turma.");
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{classroomId}/remove-student/{studentId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> removeStudentFromClassroom(@PathVariable Long classroomId, @PathVariable Long studentId) {
-        Optional<Classroom> classroomOpt = classroomRepository.findById(classroomId);
-        Optional<User> studentOpt = userRepository.findById(studentId);
-        if (classroomOpt.isEmpty() || studentOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Turma ou aluno não encontrado.");
+    @DeleteMapping("/{id}/students/{studentId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
+    public ResponseEntity<?> removeStudentFromClassroom(@PathVariable Long id, @PathVariable Long studentId, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
         }
-        Classroom classroom = classroomOpt.get();
-        User student = studentOpt.get();
+
+        Classroom classroom = classroomRepository.findById(id).orElse(null);
+        if (classroom == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Verifica se o professor tem acesso à sala
+        if (user.getRole() == Role.TEACHER) {
+            boolean hasAccess = user.getClassroomsAsTeacher().contains(classroom);
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+        }
+
+        User student = userRepository.findById(studentId).orElse(null);
+        if (student == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
         classroom.getStudents().remove(student);
         classroomRepository.save(classroom);
-        return ResponseEntity.ok("Aluno removido da turma.");
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}/members")
@@ -213,56 +304,39 @@ public class ClassroomController {
         }});
     }
 
-    @PostMapping("/{classroomId}/add-teacher/{teacherId}")
+    @PostMapping("/{id}/assign-teacher/{teacherId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addTeacherToClassroom(@PathVariable Long classroomId, @PathVariable Long teacherId) {
-        Optional<Classroom> classroomOpt = classroomRepository.findById(classroomId);
-        Optional<User> teacherOpt = userRepository.findById(teacherId);
-
-        if (classroomOpt.isEmpty() || teacherOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Turma ou professor não encontrado."));
-        }
-        User teacher = teacherOpt.get();
-        if (!teacher.getRole().name().equals("TEACHER")) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Usuário não é professor."));
-        }
-        Classroom classroom = classroomOpt.get();
-        classroom.getTeachers().add(teacher);
-        classroomRepository.save(classroom);
-        return ResponseEntity.ok(Collections.singletonMap("message", "Professor adicionado à turma."));
-    }
-
-    @DeleteMapping("/{classroomId}/remove-teacher/{teacherId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> removeTeacherFromClassroom(@PathVariable Long classroomId, @PathVariable Long teacherId) {
-        Optional<Classroom> classroomOpt = classroomRepository.findById(classroomId);
-        Optional<User> teacherOpt = userRepository.findById(teacherId);
-
-        if (classroomOpt.isEmpty() || teacherOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Turma ou professor não encontrado."));
-        }
-        Classroom classroom = classroomOpt.get();
-        User teacher = teacherOpt.get();
-        classroom.getTeachers().remove(teacher);
-        classroomRepository.save(classroom);
-        return ResponseEntity.ok(Collections.singletonMap("message", "Professor removido da turma."));
-    }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<?> getClassroom(@PathVariable Long id) {
-        Optional<Classroom> classroomOpt = classroomRepository.findById(id);
-        if (classroomOpt.isEmpty()) {
+    public ResponseEntity<?> addTeacherToClassroom(@PathVariable Long id, @PathVariable Long teacherId) {
+        Classroom classroom = classroomRepository.findById(id).orElse(null);
+        if (classroom == null) {
             return ResponseEntity.notFound().build();
         }
-        Classroom classroom = classroomOpt.get();
-        HashMap<String, Object> response = new HashMap<>();
-        response.put("id", classroom.getId());
-        response.put("name", classroom.getName());
-        response.put("academicYear", classroom.getAcademicYear());
-        response.put("teachers", classroom.getTeachers());
-        response.put("students", classroom.getStudents());
-        response.put("createdAt", classroom.getCreatedAt());
-        return ResponseEntity.ok(response);
+
+        User teacher = userRepository.findById(teacherId).orElse(null);
+        if (teacher == null || teacher.getRole() != Role.TEACHER) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        classroom.getTeachers().add(teacher);
+        classroomRepository.save(classroom);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/remove-teacher/{teacherId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> removeTeacherFromClassroom(@PathVariable Long id, @PathVariable Long teacherId) {
+        Classroom classroom = classroomRepository.findById(id).orElse(null);
+        if (classroom == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User teacher = userRepository.findById(teacherId).orElse(null);
+        if (teacher == null || teacher.getRole() != Role.TEACHER) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        classroom.getTeachers().remove(teacher);
+        classroomRepository.save(classroom);
+        return ResponseEntity.ok().build();
     }
 }

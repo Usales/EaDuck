@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, timer } from 'rxjs';
 import { User } from './user.service';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, map, tap, switchMap, takeUntil } from 'rxjs/operators';
 
 @Injectable({
@@ -161,6 +161,11 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
+  getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  }
+
   getProfile(): Observable<User> {
     const token = this.getToken();
     if (!token) {
@@ -170,7 +175,9 @@ export class AuthService {
       });
     }
 
-    return this.http.get<User>('http://localhost:8080/api/users/me').pipe(
+    return this.http.get<User>('http://localhost:8080/api/users/me', {
+      headers: this.getAuthHeaders()
+    }).pipe(
       tap({
         error: (error) => console.error('Erro ao carregar perfil:', error)
       })

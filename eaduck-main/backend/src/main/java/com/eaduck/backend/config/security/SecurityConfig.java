@@ -36,7 +36,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors().configurationSource(corsConfigurationSource()) // Habilita CORS com configuração personalizada
+                .cors().configurationSource(corsConfigurationSource())
                 .and()
                 .csrf().disable()
                 .authorizeRequests()
@@ -51,8 +51,12 @@ public class SecurityConfig {
                         "/h2-console/**"
                 ).permitAll()
                 .antMatchers("/api/users/me").authenticated()
+                .antMatchers("/api/users/me/classrooms").authenticated()
                 .antMatchers("/api/users/**").hasRole("ADMIN")
                 .antMatchers("/api/notifications/**").authenticated()
+                .antMatchers("/api/tasks/**").authenticated()
+                .antMatchers("/api/classrooms/**").authenticated()
+                .antMatchers("/api/submissions/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()

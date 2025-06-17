@@ -1,0 +1,53 @@
+<app-sidebar></app-sidebar>
+<div class="ml-64 p-8 pt-28">
+  <div class="flex justify-end items-center mb-4">
+    <span class="text-gray-400 text-sm">Usuário logado: <span class="text-white font-semibold">{{ currentUser?.email }}</span> ({{ currentUser?.role }})</span>
+  </div>
+  <h1 class="text-2xl font-bold text-white mb-6">Dashboard</h1>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div *ngIf="currentUser?.role === 'ADMIN'" class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
+      <span class="material-icons text-indigo-400 text-3xl mb-2">people</span>
+      <p class="text-gray-400 text-sm">Total de Usuários</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalUsers }}</h2>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
+      <span class="material-icons text-green-400 text-3xl mb-2">school</span>
+      <p class="text-gray-400 text-sm">Total de Salas</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalClassrooms }}</h2>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
+      <span class="material-icons text-yellow-400 text-3xl mb-2">notifications</span>
+      <p class="text-gray-400 text-sm">Notificações</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalNotifications }}</h2>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
+      <span class="material-icons text-red-400 text-3xl mb-2">assignment</span>
+      <p class="text-gray-400 text-sm">Tarefas Pendentes</p>
+      <h2 class="text-2xl font-bold text-white mt-1">{{ totalTasks }}</h2>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <h3 class="text-lg font-semibold text-white mb-4">Tarefas - Feitas x Para Fazer</h3>
+      <div class="w-full h-56 flex items-center justify-center">
+        <apx-chart [series]="tasksChart.series" [chart]="tasksChart.chart" [labels]="tasksChart.labels" [colors]="tasksChart.colors" [legend]="tasksChart.legend" [dataLabels]="tasksChart.dataLabels" class="w-full max-w-xs"></apx-chart>
+      </div>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <h3 class="text-lg font-semibold text-white mb-4">Tipos de Notificações</h3>
+      <div class="w-full h-56 flex items-center justify-center">
+        <apx-chart [series]="notificationsChart.series" [chart]="notificationsChart.chart" [labels]="notificationsChart.labels" [colors]="notificationsChart.colors" [legend]="notificationsChart.legend" [dataLabels]="notificationsChart.dataLabels" class="w-full max-w-xs"></apx-chart>
+      </div>
+    </div>
+    <div class="bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center">
+      <h3 class="text-lg font-semibold text-white mb-4">Salas com Mais Tarefas</h3>
+      <div class="w-full h-56 flex items-center justify-center">
+        <apx-chart [series]="classroomsChart.series" [chart]="classroomsChart.chart" [labels]="classroomsChart.labels" [colors]="classroomsChart.colors" [legend]="classroomsChart.legend" [dataLabels]="classroomsChart.dataLabels" class="w-full max-w-xs"></apx-chart>
+      </div>
+    </div>
+  </div>
+  <div class="mt-8 bg-[#232b3e] rounded-xl p-6 shadow-lg flex flex-col items-center justify-center">
+    <h3 class="text-lg font-semibold text-white mb-4">Bem-vindo ao EaDuck!</h3>
+    <p class="text-gray-400 text-center">Gerencie usuários, salas, notificações e tarefas de forma centralizada e moderna.<br>Os dados e gráficos são atualizados automaticamente.</p>
+  </div>
+</div> 

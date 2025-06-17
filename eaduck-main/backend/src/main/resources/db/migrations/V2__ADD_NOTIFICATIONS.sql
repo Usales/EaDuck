@@ -3,6 +3,12 @@ CREATE TABLE notifications (
                                user_id int8,
                                message TEXT NOT NULL,
                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               is_read BOOLEAN NOT NULL DEFAULT FALSE,
+                               title VARCHAR(255),
+                               task_id BIGINT,
+                               notification_type VARCHAR(50),
                                CONSTRAINT notifications_pkey PRIMARY KEY (id),
                                CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- A constraint de task será criada após a tabela tasks existir

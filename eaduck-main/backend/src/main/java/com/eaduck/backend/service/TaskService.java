@@ -51,6 +51,7 @@ public class TaskService {
                 .classroom(classroomOpt.get())
                 .createdBy(creatorOpt.get())
                 .createdAt(LocalDateTime.now())
+                .type(dto.getType())
                 .build();
 
         task = taskRepository.save(task);

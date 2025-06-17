@@ -1,36 +1,116 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { NotificationService, Notification } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
+import { interval, Subscription, of } from 'rxjs';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter, catchError, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-header',
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   notifications: Notification[] = [];
   showDropdown = false;
   loading = false;
+  private updateSubscription: Subscription | null = null;
+  private isLoginPage = false;
+  private routeSubscription: Subscription | null = null;
+  private userSubscription: Subscription | null = null;
 
   constructor(
     private notificationService: NotificationService,
-    private authService: AuthService
-  ) {}
+    public authService: AuthService,
+    private router: Router
+  ) {
+    // Monitora mudanças na rota
+    this.routeSubscription = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.isLoginPage = event.url === '/login';
+      this.handleNotifications();
+    });
+  }
 
   ngOnInit() {
-    this.loadNotifications();
+    // Inscreve-se nas mudanças do usuário atual
+    this.userSubscription = this.authService.currentUser$.subscribe(() => {
+      this.handleNotifications();
+    });
+  }
+
+  private handleNotifications() {
+    const isAuthenticated = this.authService.isAuthenticated();
+    const currentUser = this.authService.getCurrentUser();
+
+    if (isAuthenticated && currentUser && !this.isLoginPage) {
+      this.loadNotifications();
+      this.setupUpdateInterval();
+    } else {
+      this.clearNotifications();
+    }
+  }
+
+  private setupUpdateInterval() {
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
+    this.updateSubscription = interval(30000).subscribe(() => {
+      if (!this.isLoginPage && this.authService.isAuthenticated()) {
+        this.loadNotifications();
+      }
+    });
+  }
+
+  private clearNotifications() {
+    this.notifications = [];
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+      this.updateSubscription = null;
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
+    }
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
   }
 
   loadNotifications() {
     const user = this.authService.getCurrentUser();
-    if (!user) return;
+    if (!user || !this.authService.isAuthenticated() || this.isLoginPage) {
+      this.clearNotifications();
+      return;
+    }
+    
     this.loading = true;
-    this.notificationService.getUserNotifications(user.id).subscribe({
+    this.notificationService.getUserNotifications(user.id).pipe(
+      catchError(error => {
+        console.error('Erro ao carregar notificações:', error);
+        this.loading = false;
+        this.clearNotifications();
+        return of([]);
+      })
+    ).subscribe({
       next: (notifs) => {
         this.notifications = notifs.sort((a, b) => b.id - a.id);
         this.loading = false;
       },
-      error: () => { this.loading = false; }
+      error: (error) => {
+        console.error('Erro ao carregar notificações:', error);
+        this.loading = false;
+        this.clearNotifications();
+      }
     });
   }
 
@@ -44,8 +124,17 @@ export class HeaderComponent implements OnInit {
 
   markAsRead(notification: Notification) {
     if (notification.isRead) return;
-    this.notificationService.markAsRead(notification.id).subscribe(() => {
-      notification.isRead = true;
+    this.notificationService.markAsRead(notification.id).pipe(
+      catchError(error => {
+        console.error('Erro ao marcar notificação como lida:', error);
+        return of(null);
+      })
+    ).subscribe({
+      next: () => {
+        notification.isRead = true;
+        // Força atualização do contador
+        this.loadNotifications();
+      }
     });
   }
 } 

@@ -46,17 +46,26 @@ export class UsersComponent implements OnInit {
   ngOnInit() {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      if (this.isAdmin) {
+        this.loadUsers();
+      }
     });
-    this.loadUsers();
   }
 
   loadUsers() {
-    this.userService.getAllUsers().subscribe(users => {
-      this.users = users.map(u => ({
-        ...u,
-        isActive: u.isActive !== undefined ? u.isActive : ((u as any).active !== undefined ? (u as any).active : false)
-      }));
-      this.applyFilter();
+    this.userService.getAllUsers().subscribe({
+      next: users => {
+        this.users = users.map(u => ({
+          ...u,
+          isActive: u.isActive !== undefined ? u.isActive : ((u as any).active !== undefined ? (u as any).active : false)
+        }));
+        this.applyFilter();
+      },
+      error: (err) => {
+        if (err.status === 403) {
+          // Não faz nada, apenas ignora para não quebrar a tela
+        }
+      }
     });
   }
 

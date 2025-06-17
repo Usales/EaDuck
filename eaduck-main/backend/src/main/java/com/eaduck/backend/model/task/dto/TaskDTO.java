@@ -20,4 +20,5 @@ public class TaskDTO {
     private Long createdById;
     private String createdByName;
     private LocalDateTime createdAt;
+    private String type;
 }

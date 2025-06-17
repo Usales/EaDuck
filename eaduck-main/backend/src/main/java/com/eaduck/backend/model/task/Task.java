@@ -29,7 +29,7 @@ public class Task {
     @Column(name = "due_date")
     private LocalDateTime dueDate;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "classroom_id", nullable = false)
     private Classroom classroom;
 
@@ -39,4 +39,7 @@ public class Task {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "type", nullable = false)
+    private String type;
 }

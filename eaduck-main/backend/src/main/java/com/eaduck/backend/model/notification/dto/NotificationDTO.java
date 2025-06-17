@@ -16,4 +16,7 @@ public class NotificationDTO {
     private String message;
     private String notificationType;
     private LocalDateTime createdAt;
+    private String title;
+    private boolean isRead;
+    private Long classroomId;
 }

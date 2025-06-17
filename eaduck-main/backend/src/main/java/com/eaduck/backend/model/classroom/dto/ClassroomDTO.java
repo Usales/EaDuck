@@ -17,4 +17,7 @@ public class ClassroomDTO {
     private List<Long> teacherIds;
     private List<String> teacherNames;
     private int studentCount;
+    private List<Long> studentIds;
+    private List<String> studentNames;
+    private boolean active;
 } 
