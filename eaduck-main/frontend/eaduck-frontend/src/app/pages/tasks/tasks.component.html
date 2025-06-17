@@ -53,8 +53,8 @@
                     <div class="flex gap-2">
                       <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="startEdit(task)" class="text-blue-400 hover:text-blue-600"><span class="material-icons">edit</span></button>
                       <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="deleteTask(task)" class="text-red-400 hover:text-red-600"><span class="material-icons">delete</span></button>
-                      <button *ngIf="editTaskId !== task.id" (click)="openSubmissionsModal(task)" class="text-green-400 hover:text-green-600"><span class="material-icons">assignment_turned_in</span></button>
-                      <button *ngIf="!isAdminOrTeacher && editTaskId !== task.id" (click)="openSubmitModal(task)" class="text-indigo-400 hover:text-indigo-600"><span class="material-icons">upload_file</span></button>
+                      <button *ngIf="isAdminOrTeacher && editTaskId !== task.id" (click)="openSubmissionsModal(task)" class="text-green-400 hover:text-green-600"><span class="material-icons">assignment_turned_in</span></button>
+                      <button *ngIf="!isAdminOrTeacher && editTaskId !== task.id && getTaskStatus(task) !== 'concluida'" (click)="openSubmitModal(task)" class="text-indigo-400 hover:text-indigo-600"><span class="material-icons">upload_file</span></button>
                     </div>
                   </div>
                 </div>
@@ -75,6 +75,15 @@
                     <ng-template #viewDue>
                       <span>{{ task.dueDate | date:'dd/MM/yyyy' }}</span>
                     </ng-template>
+                  </div>
+                  <div *ngIf="currentUser?.role !== 'STUDENT'" class="flex items-center gap-2">
+                    <button (click)="openStudentsModal(task)" 
+                            class="inline-flex items-center px-2.5 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-md hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      Ver Alunos ({{ getSubmissionsForTask(task.id).length }})
+                    </button>
                   </div>
                 </div>
                 <div *ngIf="editTaskId === task.id" class="flex gap-2 mt-2">
@@ -193,8 +202,8 @@
   <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-2xl relative">
     <button (click)="closeSubmissionsModal()" class="absolute top-2 right-2 text-gray-400 hover:text-white"><span class="material-icons">close</span></button>
     <h2 class="text-xl font-bold text-white mb-4">Submissões - {{ selectedTask?.title }}</h2>
-    <div *ngIf="submissions.length === 0" class="text-gray-400">Nenhuma submissão encontrada.</div>
-    <table *ngIf="submissions.length > 0" class="w-full text-white">
+    <div *ngIf="filteredSubmissions.length === 0" class="text-gray-400">Nenhuma submissão encontrada.</div>
+    <table *ngIf="filteredSubmissions.length > 0" class="w-full text-white">
       <thead>
         <tr>
           <th class="text-left py-2">Aluno</th>
@@ -206,7 +215,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let sub of submissions">
+        <tr *ngFor="let sub of filteredSubmissions">
           <td>{{ sub.studentId }}</td>
           <td>{{ sub.content }}</td>
           <td>
@@ -259,7 +268,7 @@
   <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-md relative">
     <button (click)="closeSubmitModal()" class="absolute top-2 right-2 text-gray-400 hover:text-white"><span class="material-icons">close</span></button>
     <h2 class="text-xl font-bold text-white mb-4">Enviar Tarefa</h2>
-    <form (ngSubmit)="submitTask()" class="space-y-4">
+    <form *ngIf="!submitSuccess" (ngSubmit)="submitTask()" class="space-y-4">
       <div>
         <label class="block text-gray-400 mb-1">Comentário (opcional)</label>
         <textarea [(ngModel)]="submitContent" name="content" class="w-full px-3 py-2 rounded-lg bg-[#1a2233] text-white border border-[#2d3650]"></textarea>
@@ -267,17 +276,98 @@
       <div>
         <label class="block text-gray-400 mb-1">Arquivo</label>
         <input type="file" (change)="onFileSelected($event)" class="w-full px-3 py-2 rounded-lg bg-[#1a2233] text-white border border-[#2d3650]">
+        <div class="mt-2 text-gray-400 text-xs">
+          Tipos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, ZIP, RAR.<br>
+          Tamanho máximo: 8MB.
+        </div>
         <div *ngIf="fileError" class="mt-2 text-red-400 text-sm">{{ fileError }}</div>
       </div>
       <button type="submit" class="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all">
         Enviar
       </button>
     </form>
+    <div *ngIf="submitSuccess" class="flex flex-col items-center justify-center py-8">
+      <span class="material-icons text-green-400 text-5xl mb-2">check_circle</span>
+      <div class="text-green-400 text-lg font-semibold mb-2">Tarefa enviada com sucesso!</div>
+      <div class="text-gray-300 text-sm text-center mb-4">Você receberá um e-mail de confirmação.<br>O professor será avisado e irá avaliar sua atividade em breve.</div>
+      <button (click)="closeSubmitModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all mt-2">Fechar</button>
+    </div>
   </div>
 </div>
 <!-- Fim Modal de Submissão -->
+
+<!-- Modal de Erro -->
+<div *ngIf="showErrorModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-md relative">
+    <button (click)="closeErrorModal()" class="absolute top-2 right-2 text-gray-400 hover:text-white"><span class="material-icons">close</span></button>
+    <div class="flex flex-col items-center justify-center py-4">
+      <span class="material-icons text-red-400 text-5xl mb-2">error</span>
+      <div class="text-red-400 text-lg font-semibold mb-2">Erro ao excluir tarefa</div>
+      <div class="text-gray-300 text-sm text-center mb-4">{{ errorModalMessage }}</div>
+      <button (click)="closeErrorModal()" class="px-4 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg hover:from-red-700 hover:to-pink-700 transition-all mt-2">Fechar</button>
+    </div>
+  </div>
+</div>
+<!-- Fim Modal de Erro -->
+
+<!-- Modal de Sucesso Avaliação -->
+<div *ngIf="showEvalSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-md relative">
+    <button (click)="closeEvalSuccessModal()" class="absolute top-2 right-2 text-gray-400 hover:text-white"><span class="material-icons">close</span></button>
+    <div class="flex flex-col items-center justify-center py-4">
+      <span class="material-icons text-green-400 text-5xl mb-2">check_circle</span>
+      <div class="text-green-400 text-lg font-semibold mb-2">Avaliação enviada com sucesso!</div>
+      <div class="text-gray-300 text-sm text-center mb-4">O aluno será notificado por e-mail com a nota e o feedback.</div>
+      <button (click)="closeEvalSuccessModal()" class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all mt-2">Fechar</button>
+    </div>
+  </div>
+</div>
+<!-- Fim Modal de Sucesso Avaliação -->
 
 <app-loading-modal
   [show]="showLoadingModal"
   [status]="loadingStatus">
 </app-loading-modal>
+
+<!-- Adicionar o modal de alunos no final do arquivo -->
+<div *ngIf="showStudentsModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-medium text-gray-900">
+        Alunos - {{ selectedTask?.title }}
+      </h3>
+      <button (click)="closeStudentsModal()" class="text-gray-400 hover:text-gray-500">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              E-mail do Aluno
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr *ngFor="let student of selectedTaskStudents">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ student.email }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + getSubmissionStatusClass(student.submission)">
+                {{ getSubmissionStatus(student.submission) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

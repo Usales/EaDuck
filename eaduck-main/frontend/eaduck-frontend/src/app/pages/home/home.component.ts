@@ -44,9 +44,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   };
   classroomsChart = {
     chart: { type: 'bar' as const, background: 'transparent' },
-    labels: [],
-    series: [{ name: 'Tarefas', data: [] }],
-    colors: ['#6366f1'],
+    labels: [] as string[],
+    series: [
+      { name: 'Concluídas', data: [] as number[] },
+      { name: 'Pendentes', data: [] as number[] },
+      { name: 'Atrasadas', data: [] as number[] }
+    ],
+    colors: ['#22d3ee', '#6366f1', '#f43f5e'],
     legend: { labels: { colors: '#fff' } },
     dataLabels: { style: { colors: ['#fff'] } }
   };
@@ -68,15 +72,22 @@ export class HomeComponent implements OnInit, OnDestroy {
         return acc;
       }, {} as { [role: string]: number });
     });
-    this.http.get<{ [key: string]: number }>('http://localhost:8080/api/dashboard/tasks-by-classroom', {
+    this.http.get<any>('http://localhost:8080/api/dashboard/tasks-by-classroom', {
       headers: this.authService.getAuthHeaders()
     }).subscribe((data) => {
-      const labels = Object.keys(data);
-      const values = Object.values(data);
+      const arr = Array.isArray(data) ? data : Object.values(data);
+      const labels = arr.map((d: any) => d.classroom);
+      const concluidas = arr.map((d: any) => d.concluidas ?? 0);
+      const pendentes = arr.map((d: any) => d.pendentes ?? 0);
+      const atrasadas = arr.map((d: any) => d.atrasadas ?? 0);
       this.classroomsChart = {
         ...this.classroomsChart,
-        labels: labels as any,
-        series: [{ name: 'Tarefas', data: values }] as any
+        labels: labels,
+        series: [
+          { name: 'Concluídas', data: concluidas },
+          { name: 'Pendentes', data: pendentes },
+          { name: 'Atrasadas', data: atrasadas }
+        ]
       };
       this.totalClassrooms = labels.length;
     });

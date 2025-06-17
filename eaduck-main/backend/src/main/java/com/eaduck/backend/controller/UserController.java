@@ -55,6 +55,7 @@ public class UserController {
                     .password(passwordEncoder.encode(request.getPassword()))
                     .role(request.getRole() != null ? request.getRole() : Role.STUDENT)
                     .isActive(true)
+                    .name(request.getEmail().split("@")[0].replaceAll("\\d", ""))
                     .build();
 
             user = userRepository.save(user);

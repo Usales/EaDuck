@@ -14,6 +14,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,6 +51,7 @@ public class AuthController {
                     .password(passwordEncoder.encode(request.getPassword()))
                     .role(request.getRole())
                     .isActive(true) // Usuário começa ativo
+                    .name(request.getEmail().split("@")[0].replaceAll("\\d", ""))
                     .build();
             user = userRepository.save(user);
             String token = jwtService.generateToken(user);
@@ -95,6 +97,8 @@ public class AuthController {
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + request.getEmail()));
             String token = jwtService.generateToken(user);
             return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId()), user.getRole().name()));
+        } catch (DisabledException e) {
+            return ResponseEntity.status(403).body(new ResponseMessage("Usuário inativo. Entre em contato com o administrador pelo e-mail compeaduck@gmail.com"));
         } catch (BadCredentialsException e) {
             System.out.println("Credenciais inválidas para: " + request.getEmail());
             return ResponseEntity.status(401).body(new ResponseMessage("Credenciais inválidas."));

@@ -44,7 +44,19 @@ export class LoginComponent {
         });
       },
       error: (err) => {
-        this.showModal('error', 'Erro de autenticação', 'E-mail ou senha incorretos.');
+        let msg = '';
+        if (err?.error) {
+          if (typeof err.error === 'string') {
+            msg = err.error.toLowerCase();
+          } else if (err.error.message) {
+            msg = err.error.message.toLowerCase();
+          }
+        }
+        if (msg.includes('inativo') || msg.includes('inativa')) {
+          this.showModal('error', 'Usuário inativo', 'Sua conta está inativa. Entre em contato com o administrador do sistema pelo e-mail compeaduck@gmail.com para ativação.');
+        } else {
+          this.showModal('error', 'Erro de autenticação', 'E-mail ou senha incorretos.');
+        }
       }
     });
   }

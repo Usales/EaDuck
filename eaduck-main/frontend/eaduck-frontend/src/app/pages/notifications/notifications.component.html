@@ -28,7 +28,7 @@
   <div *ngIf="!loading && notifications.length === 0" class="text-gray-400">Nenhuma notificação encontrada.</div>
   <div *ngIf="!loading && notifications.length > 0" class="bg-[#232b3e] rounded-xl shadow-lg overflow-hidden">
     <div class="divide-y divide-[#2d3650]">
-      <div *ngFor="let n of notifications" class="p-4 hover:bg-[#1a2233] transition-all cursor-pointer" [class.opacity-60]="n.isRead" (click)="markAsRead(n)">
+      <div *ngFor="let n of filteredNotifications" class="p-4 hover:bg-[#1a2233] transition-all cursor-pointer" [class.opacity-60]="n.isRead" (click)="markAsRead(n)">
         <div class="flex items-start gap-4">
           <div [ngClass]="getNotifTypeColor(n.notificationType)" class="p-2 rounded-lg">
             <span class="material-icons text-white">{{ getNotifTypeIcon(n.notificationType) }}</span>

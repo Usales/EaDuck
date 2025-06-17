@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { CommonModule } from '@angular/common';
 import { TaskService, Task } from '../../services/task.service';
@@ -9,6 +9,7 @@ import { AuthService } from '../../services/auth.service';
 import { Observable } from 'rxjs';
 import { User } from '../../services/user.service';
 import { LoadingModalComponent } from '../../components/loading-modal/loading-modal.component';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-tasks',
@@ -17,7 +18,7 @@ import { LoadingModalComponent } from '../../components/loading-modal/loading-mo
   templateUrl: './tasks.component.html',
   styleUrl: './tasks.component.scss'
 })
-export class TasksComponent implements OnInit {
+export class TasksComponent implements OnInit, OnDestroy {
   tasks: Task[] = [];
   editTaskId: number | null = null;
   editTitle = '';
@@ -32,12 +33,15 @@ export class TasksComponent implements OnInit {
   selectedTask: Task | null = null;
   submissions: Submission[] = [];
   showSubmissionsModal = false;
+  filteredSubmissions: Submission[] = [];
   evalSubmission: Submission | null = null;
   evalGrade: number | null = null;
   evalFeedback = '';
   showEvalModal = false;
+  showEvalSuccessModal = false;
 
   currentUser$: Observable<User | null>;
+  currentUser: User | null = null;
 
   // Filtros
   filterStatus: 'all' | 'pendente' | 'concluida' | 'atrasada' = 'all';
@@ -62,6 +66,7 @@ export class TasksComponent implements OnInit {
   selectedFile: File | null = null;
   selectedTaskForSubmit: Task | null = null;
   fileError = '';
+  submitSuccess = false;
 
   // Tipos de arquivo permitidos
   private readonly allowedFileTypes = [
@@ -78,49 +83,84 @@ export class TasksComponent implements OnInit {
     'application/zip', // ZIP
     'application/x-rar-compressed' // RAR
   ];
+  private readonly maxFileSize = 8 * 1024 * 1024; // 8MB
+
+  showErrorModal = false;
+  errorModalMessage = '';
+
+  showStudentsModal = false;
+  selectedTaskStudents: { email: string; submitted: boolean; submission?: Submission }[] = [];
+  allStudents: User[] = [];
+
+  private updateInterval: any;
+  private readonly UPDATE_INTERVAL_MS = 1000; // 1 segundo
 
   constructor(
     private taskService: TaskService,
     private classroomService: ClassroomService,
     private submissionService: SubmissionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private userService: UserService
   ) {
     this.currentUser$ = this.authService.currentUser$;
   }
 
-  ngOnInit() {
-    const user = this.authService.getCurrentUser();
-    if (user?.role === 'STUDENT') {
-      this.classroomService.getMyClassrooms().subscribe(classrooms => {
-        const classroomIds = classrooms.map(c => c.id);
-        const tasksArr: Task[] = [];
-        let loaded = 0;
-        if (classroomIds.length === 0) {
-          this.tasks = [];
-          this.applyFilters();
-        }
-        classroomIds.forEach(id => {
-          this.taskService.getTasksByClassroom(id).subscribe(ts => {
-            tasksArr.push(...ts);
-            loaded++;
-            if (loaded === classroomIds.length) {
-              this.tasks = tasksArr;
-              this.applyFilters();
-            }
-          });
-        });
-      });
-    } else {
-      this.loadTasks();
+  ngOnInit(): void {
+    this.currentUser$?.subscribe(user => {
+      this.currentUser = user;
+      if (user && user.role === 'STUDENT') {
+        this.loadMySubmissions();
+      }
+    });
+    this.loadTasks();
+    this.loadClassrooms();
+    this.loadAllStudents();
+  }
+
+  ngOnDestroy(): void {
+    this.stopAutoUpdate();
+  }
+
+  private startAutoUpdate(): void {
+    this.updateInterval = setInterval(() => {
+      if (this.currentUser?.role !== 'STUDENT') {
+        this.loadAllSubmissionsForTasks(this.tasks);
+      } else {
+        this.loadMySubmissions();
+      }
+    }, this.UPDATE_INTERVAL_MS);
+  }
+
+  private stopAutoUpdate(): void {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
     }
-    this.classroomService.getAllClassrooms().subscribe(cs => this.classrooms = cs);
   }
 
   loadTasks() {
     this.taskService.getAllTasks().subscribe(tasks => {
       this.tasks = tasks;
       this.applyFilters();
+      if (this.currentUser && this.currentUser.role !== 'STUDENT') {
+        this.loadAllSubmissionsForTasks(tasks);
+      }
     });
+  }
+
+  loadAllSubmissionsForTasks(tasks: Task[]) {
+    const taskIds = tasks.map(t => t.id).filter(id => !!id) as number[];
+    if (taskIds.length === 0) return;
+
+    this.submissionService.getAllSubmissions().subscribe((allSubmissions: Submission[]) => {
+      this.submissions = allSubmissions.filter((sub: Submission) => 
+        taskIds.includes(sub.taskId)
+      );
+      this.applyFilters();
+    });
+  }
+
+  loadClassrooms() {
+    this.classroomService.getAllClassrooms().subscribe(cs => this.classrooms = cs);
   }
 
   applyFilters() {
@@ -191,9 +231,21 @@ export class TasksComponent implements OnInit {
         this.applyFilters();
       },
       error: (error) => {
+        if (error && error.status === 409 && error.error) {
+          this.errorModalMessage = error.error;
+          this.showErrorModal = true;
+        } else {
+          this.errorModalMessage = 'Erro ao excluir tarefa.';
+          this.showErrorModal = true;
+        }
         console.error('Erro ao excluir tarefa:', error);
       }
     });
+  }
+
+  closeErrorModal() {
+    this.showErrorModal = false;
+    this.errorModalMessage = '';
   }
 
   openCreateModal() {
@@ -241,18 +293,15 @@ export class TasksComponent implements OnInit {
   }
 
   openSubmissionsModal(task: Task) {
-    if (!task.id) return;
     this.selectedTask = task;
-    this.submissionService.getSubmissionsByTask(task.id).subscribe(subs => {
-      this.submissions = subs;
-      this.showSubmissionsModal = true;
-    });
+    this.filteredSubmissions = this.submissions.filter(s => s.taskId === task.id);
+    this.showSubmissionsModal = true;
   }
 
   closeSubmissionsModal() {
     this.showSubmissionsModal = false;
     this.selectedTask = null;
-    this.submissions = [];
+    this.filteredSubmissions = [];
   }
 
   openEvalModal(sub: Submission) {
@@ -272,11 +321,20 @@ export class TasksComponent implements OnInit {
   saveEvaluation() {
     if (!this.evalSubmission) return;
     this.submissionService.evaluateSubmission(this.evalSubmission.id, this.evalGrade ?? 0, this.evalFeedback).subscribe(updated => {
-      // Atualiza na lista
-      const idx = this.submissions.findIndex(s => s.id === updated.id);
-      if (idx !== -1) this.submissions[idx] = updated;
+      if (updated && updated.id) {
+        const idx = this.submissions.findIndex(s => s && s.id === updated.id);
+        if (idx !== -1) this.submissions[idx] = updated;
+      }
       this.closeEvalModal();
+      if (this.selectedTask) {
+        this.filteredSubmissions = this.submissions.filter(s => s.taskId === this.selectedTask!.id);
+      }
+      this.showEvalSuccessModal = true;
     });
+  }
+
+  closeEvalSuccessModal() {
+    this.showEvalSuccessModal = false;
   }
 
   get isAdminOrTeacher(): boolean {
@@ -288,10 +346,15 @@ export class TasksComponent implements OnInit {
   getTaskStatus(task: Task): 'concluida' | 'atrasada' | 'pendente' {
     const today = new Date();
     const due = new Date(task.dueDate);
-    // Zerar hora/minuto/segundo para comparar apenas a data
     today.setHours(0,0,0,0);
     due.setHours(0,0,0,0);
-    const hasSubmission = this.submissions.some(s => s.taskId === task.id);
+    const taskSubmissions = this.submissions.filter(s => s.taskId === task.id);
+    let hasSubmission = false;
+    if (this.currentUser?.role === 'STUDENT') {
+      hasSubmission = taskSubmissions.length > 0;
+    } else {
+      hasSubmission = taskSubmissions.length > 0;
+    }
     if (hasSubmission) return 'concluida';
     if (today > due) return 'atrasada';
     return 'pendente';
@@ -338,29 +401,27 @@ export class TasksComponent implements OnInit {
     this.submitContent = '';
     this.selectedFile = null;
     this.fileError = '';
+    this.submitSuccess = false;
   }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      
       // Verifica o tipo do arquivo
       if (!this.allowedFileTypes.includes(file.type)) {
         this.fileError = 'Tipo de arquivo não permitido. Tipos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, ZIP, RAR';
         this.selectedFile = null;
-        input.value = ''; // Limpa o input
+        input.value = '';
         return;
       }
-
-      // Verifica o tamanho do arquivo (máximo 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        this.fileError = 'O arquivo é muito grande. Tamanho máximo permitido: 10MB';
+      // Verifica o tamanho do arquivo (máximo 8MB)
+      if (file.size > this.maxFileSize) {
+        this.fileError = 'O arquivo é muito grande. Tamanho máximo permitido: 8MB';
         this.selectedFile = null;
-        input.value = ''; // Limpa o input
+        input.value = '';
         return;
       }
-
       this.fileError = '';
       this.selectedFile = file;
     }
@@ -368,31 +429,91 @@ export class TasksComponent implements OnInit {
 
   submitTask() {
     if (!this.selectedTaskForSubmit?.id) return;
-
     if (this.fileError) {
-      return; // Não permite submissão se houver erro no arquivo
+      return;
     }
-
     this.showLoadingModal = true;
     this.loadingStatus = 'loading';
-
     const formData = new FormData();
     formData.append('content', this.submitContent);
     if (this.selectedFile) {
       formData.append('file', this.selectedFile);
     }
-
     this.submissionService.submitTask(this.selectedTaskForSubmit.id, formData).subscribe({
       next: () => {
         this.loadingStatus = 'success';
-        this.closeSubmitModal();
-        setTimeout(() => this.showLoadingModal = false, 2000);
+        this.submitSuccess = true;
+        // Atualiza submissões do aluno para refletir status concluído
+        this.loadMySubmissions();
+        setTimeout(() => this.showLoadingModal = false, 1000);
       },
-      error: (error: Error) => {
+      error: (error: any) => {
         this.loadingStatus = 'error';
+        if (error && error.error) {
+          this.fileError = typeof error.error === 'string' ? error.error : 'Erro ao enviar tarefa.';
+        }
         setTimeout(() => this.showLoadingModal = false, 2500);
         console.error('Erro ao enviar tarefa:', error);
       }
     });
+  }
+
+  loadMySubmissions() {
+    this.submissionService.getMySubmissions().subscribe(subs => {
+      this.submissions = subs;
+    });
+  }
+
+  getSubmissionsCount(taskId: number | undefined): number {
+    if (!taskId) return 0;
+    return this.submissions.filter(s => s.taskId === taskId).length;
+  }
+
+  getSubmittersEmails(taskId: number | undefined): string[] {
+    if (!taskId) return [];
+    return this.submissions
+      .filter(s => s.taskId === taskId)
+      .map(s => s.studentId?.toString() ?? '');
+  }
+
+  loadAllStudents() {
+    this.userService.getAllUsers().subscribe(users => {
+      this.allStudents = users.filter(user => user.role === 'STUDENT');
+    });
+  }
+
+  openStudentsModal(task: Task) {
+    this.selectedTask = task;
+    this.selectedTaskStudents = this.allStudents.map(student => {
+      const submission = this.submissions.find(s => s.studentId === student.id && s.taskId === task.id);
+      return {
+        email: student.email,
+        submitted: !!submission,
+        submission: submission
+      };
+    });
+    this.showStudentsModal = true;
+  }
+
+  closeStudentsModal() {
+    this.showStudentsModal = false;
+    this.selectedTaskStudents = [];
+  }
+
+  getSubmissionStatus(submission?: Submission): string {
+    if (!submission) return 'Pendente';
+    if (submission.grade !== null) return `Avaliado (${submission.grade})`;
+    return 'Enviado';
+  }
+
+  getSubmissionStatusClass(submission?: Submission): string {
+    if (!submission) return 'bg-yellow-100 text-yellow-800';
+    if (submission.grade !== null) return 'bg-green-100 text-green-800';
+    return 'bg-blue-100 text-blue-800';
+  }
+
+  getSubmissionsForTask(taskId: number | undefined): Submission[] {
+    if (!taskId) return [];
+    return this.submissions.filter(s => s.taskId === taskId);
   }
 }

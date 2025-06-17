@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.ArrayList;
 import com.eaduck.backend.model.task.dto.TaskSimpleDTO;
 import java.util.Map;
+import com.eaduck.backend.repository.SubmissionRepository;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -42,6 +43,9 @@ public class TaskController {
 
     @Autowired
     private ClassroomRepository classroomRepository;
+
+    @Autowired
+    private SubmissionRepository submissionRepository;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -217,6 +221,11 @@ public class TaskController {
         Task task = taskRepository.findById(id).orElse(null);
         if (task == null) {
             return ResponseEntity.notFound().build();
+        }
+
+        // Verifica se a tarefa possui submissões
+        if (!submissionRepository.findByTaskId(id).isEmpty()) {
+            return ResponseEntity.status(409).body("Não é possível excluir a tarefa pois já existem respostas/submissões de alunos.");
         }
 
         // Verifica se o professor tem acesso à tarefa

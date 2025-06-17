@@ -39,4 +39,16 @@ export class SubmissionService {
   submitTask(taskId: number, formData: FormData): Observable<Submission> {
     return this.http.post<Submission>(`${this.apiUrl}/task/${taskId}/upload`, formData);
   }
+
+  getSubmissionsByStudent(studentId: number) {
+    return this.http.get<Submission[]>(`${this.apiUrl}/student/${studentId}`);
+  }
+
+  getMySubmissions() {
+    return this.http.get<Submission[]>(`${this.apiUrl}/me`);
+  }
+
+  getAllSubmissions(): Observable<Submission[]> {
+    return this.http.get<Submission[]>(`${this.apiUrl}/all`);
+  }
 } 
