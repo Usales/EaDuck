@@ -22,12 +22,31 @@ public class BackendApplication {
 		return args -> {
 			String adminEmail = "compeaduck@gmail.com";
 			if (userRepository.findByEmail(adminEmail).isEmpty()) {
-				User admin = User.builder()
-					.email(adminEmail)
-					.password(passwordEncoder.encode("admin123"))
-					.role(Role.ADMIN)
-					.isActive(true)
-					.build();
+				User admin = new User();
+				// Usando reflexão para definir os campos já que o Lombok não está funcionando
+				try {
+					java.lang.reflect.Field emailField = User.class.getDeclaredField("email");
+					emailField.setAccessible(true);
+					emailField.set(admin, adminEmail);
+					
+					java.lang.reflect.Field nameField = User.class.getDeclaredField("name");
+					nameField.setAccessible(true);
+					nameField.set(admin, "Administrador EaDuck");
+					
+					java.lang.reflect.Field passwordField = User.class.getDeclaredField("password");
+					passwordField.setAccessible(true);
+					passwordField.set(admin, passwordEncoder.encode("admin123"));
+					
+					java.lang.reflect.Field roleField = User.class.getDeclaredField("role");
+					roleField.setAccessible(true);
+					roleField.set(admin, Role.ADMIN);
+					
+					java.lang.reflect.Field isActiveField = User.class.getDeclaredField("isActive");
+					isActiveField.setAccessible(true);
+					isActiveField.set(admin, true);
+				} catch (Exception e) {
+					throw new RuntimeException("Erro ao criar usuário admin", e);
+				}
 				userRepository.save(admin);
 				System.out.println("Usuário administrador padrão criado: " + adminEmail);
 			} else {

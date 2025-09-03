@@ -64,6 +64,12 @@ public class User implements UserDetails {
 
     @Override
     @JsonIgnore
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    @JsonIgnore
     public String getUsername() {
         return email;
     }

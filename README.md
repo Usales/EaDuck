@@ -1,16 +1,16 @@
 # EaDuck: Plataforma de Gestão e Comunicação Escolar 🦆📚
 
-Bem-vindo ao **EaDuck**, uma solução digital inovadora para revolucionar a gestão escolar! Desenvolvida como projeto de conclusão do curso de Engenharia de Software na **FATESG SENAI**, a EaDuck conecta alunos, pais, professores e gestores em um ambiente integrado, promovendo comunicação eficiente, acompanhamento acadêmico e acesso fácil a recursos educacionais. 🚀
+Bem-vindo ao **EaDuck**, uma solução digital inovadora para revolucionar a gestão escolar! Desenvolvida como projeto de conclusão do curso de Engenharia de Software na **FATESG SENAI**, a EaDuck conecta alunos, professores e gestores em um ambiente integrado, promovendo comunicação eficiente, acompanhamento acadêmico e acesso fácil a recursos educacionais. 🚀
 
 ## Sobre o Projeto 🌟
 
-O EaDuck nasceu para resolver desafios reais na educação, como a comunicação ineficiente e a complexidade na gestão de desempenho e materiais didáticos. Nosso objetivo? Criar uma plataforma acessível, segura e intuitiva que fortaleça a comunidade escolar e melhore a qualidade do ensino. 📊
+O EaDuck nasceu para resolver desafios reais na educação, como a comunicação ineficiente e a complexidade na gestão de desempenho e materiais didáticos. Nosso objetivo? Criar uma plataforma acessível, segura e intuitiva que fortaleça a comunidade escolar e melhore a qualidade do ensino, focando na relação entre alunos e professores. 📊
 
 ### Objetivos 🎯
 
 | **Objetivo** | **Descrição** |
 |--------------|---------------|
-| Comunicação 📩 | Facilitar o fluxo de informações entre alunos, pais, professores e gestores. |
+| Comunicação 📩 | Facilitar o fluxo de informações entre alunos, professores e gestores. |
 | Desempenho 📈 | Simplificar o registro e acompanhamento do progresso acadêmico. |
 | Recursos 📚 | Centralizar materiais didáticos em um único ambiente digital. |
 | Gestão 🗂️ | Otimizar processos administrativos, como tarefas e eventos. |
@@ -31,7 +31,7 @@ A EaDuck oferece um conjunto robusto de recursos para atender às necessidades e
 
 | **Funcionalidade** | **Descrição** | **Prioridade** |
 |--------------------|---------------|----------------|
-| Cadastro de Usuários | Gerenciamento de contas para alunos, pais, professores e admins. | Alta |
+| Cadastro de Usuários | Gerenciamento de contas para alunos, professores e admins. | Alta |
 | Comunicação Interna | Envio de mensagens, notificações e fóruns. | Alta |
 | Registro de Notas | Professores registram notas, frequência e observações. | Alta |
 | Materiais Didáticos | Publicação e acesso a arquivos, links e vídeos. | Alta |
