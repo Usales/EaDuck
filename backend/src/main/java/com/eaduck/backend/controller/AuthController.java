@@ -1,7 +1,6 @@
 package com.eaduck.backend.controller;
 
 import com.eaduck.backend.model.auth.dto.*;
-import com.eaduck.backend.model.auth.dto.AuthResponse;
 import com.eaduck.backend.model.enums.Role;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.UserRepository;
@@ -85,7 +84,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
             if (request.getEmail() == null || request.getPassword() == null || request.getEmail().isEmpty() || request.getPassword().isEmpty()) {
                 return ResponseEntity.badRequest().body(new ResponseMessage("E-mail e senha são obrigatórios."));
@@ -127,6 +126,28 @@ public class AuthController {
         } catch (Exception e) {
             System.out.println("Erro ao redefinir senha: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao redefinir senha: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ResetPasswordRequest request) {
+        System.out.println("Requisição de esquecimento de senha para: " + request.getEmail());
+        try {
+            if (request.getEmail() == null || request.getEmail().isEmpty()) {
+                return ResponseEntity.badRequest().body(new ResponseMessage("E-mail é obrigatório."));
+            }
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + request.getEmail()));
+            String resetToken = jwtService.generateToken(user);
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("Esqueceu sua senha? EaDuck");
+            message.setText("Clique no link para redefinir sua senha: http://localhost:4200/confirm-reset-password?token=" + resetToken);
+            mailSender.send(message);
+            return ResponseEntity.ok(new ResponseMessage("Link de redefinição enviado para: " + user.getEmail()));
+        } catch (Exception e) {
+            System.out.println("Erro ao processar esquecimento de senha: " + e.getMessage());
+            return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao processar esquecimento de senha: " + e.getMessage()));
         }
     }
 
@@ -202,19 +223,4 @@ public class AuthController {
             return ResponseEntity.status(401).body(new ResponseMessage("Erro ao renovar token: " + e.getMessage()));
         }
     }
-}
-
-class LoginRequest {
-    private String email;
-    private String password;
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-}
-
-class ResetPasswordRequest {
-    private String email;
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
 }

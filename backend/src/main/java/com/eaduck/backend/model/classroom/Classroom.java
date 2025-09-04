@@ -51,9 +51,6 @@ public class Classroom {
     )
     private Set<User> teachers = new HashSet<>();
 
-    @ManyToMany(mappedBy = "teachers")
-    private Set<Classroom> classroomsAsTeacher;
-
     @OneToMany(mappedBy = "classroom", cascade = CascadeType.ALL)
     @JsonManagedReference("classroom-tasks")
     private Set<Task> tasks = new HashSet<>();
