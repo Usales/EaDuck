@@ -1,0 +1,564 @@
+.duck-scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  // Size variations
+  &.size-small {
+    width: 120px;
+    height: 120px;
+    
+    .duck-svg {
+      width: 80px;
+      height: 80px;
+    }
+  }
+
+  &.size-medium {
+    width: 200px;
+    height: 200px;
+    
+    .duck-svg {
+      width: 120px;
+      height: 120px;
+    }
+  }
+
+  &.size-large {
+    width: 300px;
+    height: 300px;
+    
+    .duck-svg {
+      width: 180px;
+      height: 180px;
+    }
+  }
+}
+
+// Water Container
+.water-container {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(180deg, 
+    rgba(135, 206, 235, 0.8) 0%, 
+    rgba(70, 130, 180, 0.9) 100%
+  );
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.water-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.water-wave {
+  position: absolute;
+  top: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    transparent 100%
+  );
+  border-radius: 50%;
+  
+  &.wave-1 {
+    animation: wave-float 3s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+  
+  &.wave-2 {
+    animation: wave-float 3s ease-in-out infinite;
+    animation-delay: 1s;
+    opacity: 0.7;
+  }
+  
+  &.wave-3 {
+    animation: wave-float 3s ease-in-out infinite;
+    animation-delay: 2s;
+    opacity: 0.5;
+  }
+}
+
+.water-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  
+  &.ripple-active {
+    animation: ripple-expand 2s ease-out;
+  }
+}
+
+// Duck Container
+.duck-container {
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  
+  // Animation speeds
+  &.animation-slow {
+    .duck-svg {
+      animation: duck-float 4s ease-in-out infinite;
+    }
+  }
+  
+  &.animation-normal {
+    .duck-svg {
+      animation: duck-float 3s ease-in-out infinite;
+    }
+  }
+  
+  &.animation-fast {
+    .duck-svg {
+      animation: duck-float 2s ease-in-out infinite;
+    }
+  }
+  
+  // Expressions
+  &.expression-happy {
+    .duck-eye {
+      animation: blink 4s ease-in-out infinite;
+    }
+  }
+  
+  &.expression-excited {
+    .duck-svg {
+      animation: duck-float 1.5s ease-in-out infinite, duck-wiggle 0.5s ease-in-out infinite;
+    }
+    
+    .duck-wing {
+      animation: wing-flap 0.8s ease-in-out infinite;
+    }
+  }
+  
+  &.expression-thinking {
+    .duck-head {
+      animation: head-tilt 2s ease-in-out infinite alternate;
+    }
+  }
+  
+  &.expression-sleeping {
+    .duck-eye {
+      transform: scaleY(0.1);
+    }
+    
+    .duck-svg {
+      animation: duck-sleep 4s ease-in-out infinite;
+    }
+  }
+  
+  // Click animation
+  &.duck-clicked {
+    animation: duck-jump 1s ease-out;
+    
+    .quack-indicator {
+      opacity: 1;
+      animation: quack-show 1s ease-out;
+    }
+  }
+  
+  &:hover {
+    transform: scale(1.05);
+    
+    .duck-svg {
+      animation: duck-float 1s ease-in-out infinite, duck-wiggle 0.3s ease-in-out infinite;
+    }
+  }
+}
+
+.duck-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  transition: all 0.3s ease;
+}
+
+// Duck parts animations
+.duck-body {
+  transform-origin: center;
+}
+
+.duck-head {
+  transform-origin: center;
+}
+
+.duck-wing {
+  transform-origin: center;
+}
+
+.duck-tail {
+  transform-origin: center;
+  animation: tail-wag 2s ease-in-out infinite;
+}
+
+.duck-beak {
+  transform-origin: center;
+}
+
+.duck-eye {
+  transform-origin: center;
+}
+
+.eye-highlight {
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+// Reflection
+.duck-reflection {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleY(-1);
+  opacity: 0.4;
+  filter: blur(1px);
+  
+  .duck-reflection-svg {
+    width: 100%;
+    height: 100%;
+    animation: reflection-wave 3s ease-in-out infinite;
+  }
+}
+
+// Floating particles
+.floating-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  
+  &.particle-1 {
+    top: 20%;
+    left: 20%;
+    animation: float-up 4s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+  
+  &.particle-2 {
+    top: 30%;
+    right: 20%;
+    animation: float-up 5s ease-in-out infinite;
+    animation-delay: 1.5s;
+  }
+  
+  &.particle-3 {
+    top: 40%;
+    left: 50%;
+    animation: float-up 3.5s ease-in-out infinite;
+    animation-delay: 3s;
+  }
+}
+
+// Quack indicator
+.quack-indicator {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  
+  .quack-text {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid rgba(255, 255, 255, 0.9);
+    }
+  }
+}
+
+// Animations
+@keyframes duck-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-8px) rotate(-1deg);
+  }
+}
+
+@keyframes duck-wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(2deg);
+  }
+  75% {
+    transform: rotate(-2deg);
+  }
+}
+
+@keyframes duck-jump {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-20px) scale(1.1);
+  }
+  60% {
+    transform: translateY(-10px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes duck-sleep {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes head-tilt {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes wing-flap {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-15deg);
+  }
+}
+
+@keyframes tail-wag {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(5deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes wave-float {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+@keyframes ripple-expand {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 100px;
+    height: 100px;
+    opacity: 0;
+  }
+}
+
+@keyframes reflection-wave {
+  0%, 100% {
+    transform: scaleY(-1) skewX(0deg);
+  }
+  50% {
+    transform: scaleY(-1) skewX(2deg);
+  }
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+}
+
+@keyframes quack-show {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.8);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .duck-scene {
+    &.size-large {
+      width: 200px;
+      height: 200px;
+      
+      .duck-svg {
+        width: 120px;
+        height: 120px;
+      }
+    }
+    
+    &.size-medium {
+      width: 150px;
+      height: 150px;
+      
+      .duck-svg {
+        width: 100px;
+        height: 100px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .duck-scene {
+    &.size-large,
+    &.size-medium {
+      width: 120px;
+      height: 120px;
+      
+      .duck-svg {
+        width: 80px;
+        height: 80px;
+      }
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .water-container {
+    background: linear-gradient(180deg, 
+      rgba(25, 25, 112, 0.8) 0%, 
+      rgba(0, 0, 139, 0.9) 100%
+    );
+  }
+  
+  .quack-indicator .quack-text {
+    background: rgba(50, 50, 50, 0.9);
+    color: #fff;
+    
+    &::after {
+      border-top-color: rgba(50, 50, 50, 0.9);
+    }
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .duck-svg,
+  .duck-wing,
+  .duck-tail,
+  .eye-highlight,
+  .water-wave,
+  .particle,
+  .duck-reflection-svg {
+    animation: none !important;
+  }
+  
+  .duck-container:hover {
+    transform: none;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .duck-svg {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8)) contrast(1.2);
+  }
+  
+  .water-container {
+    border: 2px solid #000;
+  }
+}

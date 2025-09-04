@@ -1,0 +1,81 @@
+<div class="duck-scene" [ngClass]="'size-' + size">
+  <!-- Water Container -->
+  <div class="water-container" *ngIf="showWater">
+    <div class="water-surface">
+      <div class="water-wave wave-1"></div>
+      <div class="water-wave wave-2"></div>
+      <div class="water-wave wave-3"></div>
+    </div>
+    <div class="water-ripple"></div>
+  </div>
+
+  <!-- Duck Container -->
+  <div 
+    class="duck-container" 
+    [ngClass]="[
+      'animation-' + animationSpeed,
+      'expression-' + expression
+    ]"
+    (click)="onDuckClick()"
+    (mouseenter)="onDuckHover()"
+  >
+    <!-- Duck SVG -->
+    <svg class="duck-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Duck Body -->
+      <ellipse cx="100" cy="120" rx="45" ry="35" fill="#FFD700" class="duck-body"/>
+      
+      <!-- Duck Head -->
+      <circle cx="100" cy="80" r="25" fill="#FFD700" class="duck-head"/>
+      
+      <!-- Duck Beak -->
+      <ellipse cx="115" cy="85" rx="8" ry="4" fill="#FF8C00" class="duck-beak"/>
+      
+      <!-- Duck Eyes -->
+      <circle cx="95" cy="75" r="3" fill="#000" class="duck-eye left-eye"/>
+      <circle cx="105" cy="75" r="3" fill="#000" class="duck-eye right-eye"/>
+      
+      <!-- Eye highlights -->
+      <circle cx="96" cy="74" r="1" fill="#FFF" class="eye-highlight"/>
+      <circle cx="106" cy="74" r="1" fill="#FFF" class="eye-highlight"/>
+      
+      <!-- Duck Wing -->
+      <ellipse cx="85" cy="110" rx="15" ry="20" fill="#FFA500" class="duck-wing"/>
+      
+      <!-- Duck Tail -->
+      <ellipse cx="65" cy="115" rx="8" ry="12" fill="#FFA500" class="duck-tail"/>
+      
+      <!-- Duck Feet (when visible) -->
+      <ellipse cx="90" cy="150" rx="6" ry="3" fill="#FF8C00" class="duck-foot left-foot"/>
+      <ellipse cx="110" cy="150" rx="6" ry="3" fill="#FF8C00" class="duck-foot right-foot"/>
+    </svg>
+
+    <!-- Reflection -->
+    <div class="duck-reflection" *ngIf="showReflection && showWater">
+      <svg class="duck-reflection-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Reflected Duck Body -->
+        <ellipse cx="100" cy="80" rx="45" ry="35" fill="#FFD700" opacity="0.3" class="reflection-body"/>
+        
+        <!-- Reflected Duck Head -->
+        <circle cx="100" cy="120" r="25" fill="#FFD700" opacity="0.3" class="reflection-head"/>
+        
+        <!-- Reflected Duck Beak -->
+        <ellipse cx="115" cy="115" rx="8" ry="4" fill="#FF8C00" opacity="0.3" class="reflection-beak"/>
+        
+        <!-- Reflected Duck Wing -->
+        <ellipse cx="85" cy="90" rx="15" ry="20" fill="#FFA500" opacity="0.3" class="reflection-wing"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Floating particles/bubbles -->
+  <div class="floating-particles">
+    <div class="particle particle-1"></div>
+    <div class="particle particle-2"></div>
+    <div class="particle particle-3"></div>
+  </div>
+
+  <!-- Quack sound indicator -->
+  <div class="quack-indicator">
+    <span class="quack-text">Quack!</span>
+  </div>
+</div>

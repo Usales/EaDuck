@@ -3,6 +3,9 @@
     <span class="text-2xl font-bold tracking-tight text-white">EaDuck</span>
   </div>
   <div class="flex items-center gap-6">
+    <!-- Theme Toggle -->
+    <app-theme-toggle></app-theme-toggle>
+    
     <span class="text-gray-300 text-sm" *ngIf="authService.getCurrentUser()">
       {{ authService.getCurrentUser()?.email }} <span class="text-indigo-400 font-semibold">({{ authService.getCurrentUser()?.role }})</span>
     </span>

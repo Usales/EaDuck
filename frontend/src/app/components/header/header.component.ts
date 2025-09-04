@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService, Notification } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
+import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
 import { interval, Subscription, of } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, catchError, switchMap } from 'rxjs/operators';
@@ -9,7 +11,7 @@ import { filter, catchError, switchMap } from 'rxjs/operators';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ThemeToggleComponent],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })

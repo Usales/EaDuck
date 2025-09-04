@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ModalComponent } from '../../components/modal/modal.component';
+import { AnimatedDuckComponent } from '../../components/animated-duck/animated-duck.component';
+import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
 import { AuthService } from '../../services/auth.service';
 import { HttpClientModule } from '@angular/common/http';
 import { take } from 'rxjs/operators';
@@ -10,7 +12,7 @@ import { take } from 'rxjs/operators';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, RouterModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, ModalComponent, AnimatedDuckComponent, ThemeToggleComponent, RouterModule, HttpClientModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })

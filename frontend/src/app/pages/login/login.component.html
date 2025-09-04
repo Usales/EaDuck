@@ -6,13 +6,17 @@
   (close)="closeModal()">
 </app-modal>
 
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#232b3e] to-[#1a2233]">
-  <div class="bg-[#232b3e] rounded-2xl shadow-2xl p-8 w-full max-w-md flex flex-col items-center">
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#232b3e] to-[#1a2233] dark:from-dark-800 dark:to-dark-900 relative">
+  <!-- Theme Toggle - Fixed Position -->
+  <div class="absolute top-4 right-4 z-10">
+    <app-theme-toggle></app-theme-toggle>
+  </div>
+  
+  <div class="bg-[#232b3e] dark:bg-dark-800 rounded-2xl shadow-2xl p-8 w-full max-w-md flex flex-col items-center transition-colors duration-300">
     <div class="mb-6 flex flex-col items-center">
-      <div class="bg-white rounded-full p-3 mb-2 duck-container">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-8 w-8 text-indigo-700 duck-icon">
-          <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4L19 9M12 14C13.66 14 15 15.34 15 17C15 18.66 13.66 20 12 20C10.34 20 9 18.66 9 17C9 15.34 10.34 14 12 14Z"></path>
-        </svg>
+      <!-- Animated Favicon -->
+      <div class="mb-4">
+        <img src="favicon.png" alt="EaDuck Logo" class="w-16 h-16 animate-bounce">
       </div>
       <h1 class="text-2xl font-bold text-white">Login EaDuck</h1>
       <p class="text-gray-400 text-sm mt-1">Conecte-se à sua conta para acessar o painel</p>
