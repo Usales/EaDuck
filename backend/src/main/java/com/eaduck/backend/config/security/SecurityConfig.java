@@ -39,8 +39,8 @@ public class SecurityConfig {
                 .cors().configurationSource(corsConfigurationSource())
                 .and()
                 .csrf().disable()
-                .authorizeRequests()
-                .antMatchers(
+                .authorizeHttpRequests()
+                .requestMatchers(
                         "/api/auth/**",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
@@ -50,14 +50,14 @@ public class SecurityConfig {
                         "/webjars/**",
                         "/h2-console/**"
                 ).permitAll()
-                .antMatchers("/files/**").permitAll()
-                .antMatchers("/api/users/me").authenticated()
-                .antMatchers("/api/users/me/classrooms").authenticated()
-                .antMatchers("/api/users/**").hasRole("ADMIN")
-                .antMatchers("/api/notifications/**").authenticated()
-                .antMatchers("/api/tasks/**").authenticated()
-                .antMatchers("/api/classrooms/**").authenticated()
-                .antMatchers("/api/submissions/**").authenticated()
+                .requestMatchers("/files/**").permitAll()
+                .requestMatchers("/api/users/me").authenticated()
+                .requestMatchers("/api/users/me/classrooms").authenticated()
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                .requestMatchers("/api/notifications/**").authenticated()
+                .requestMatchers("/api/tasks/**").authenticated()
+                .requestMatchers("/api/classrooms/**").authenticated()
+                .requestMatchers("/api/submissions/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
