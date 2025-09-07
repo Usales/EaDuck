@@ -6,6 +6,35 @@
   animation: wiggle 2s ease-in-out infinite;
 }
 
+// Icon positioning improvements
+.input-icon {
+  position: absolute;
+  left: 0.75rem; // 12px
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-field {
+  padding-left: 2.5rem; // 40px to make room for icon
+  padding-right: 2.5rem; // 40px for password toggle
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem; // 12px
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);

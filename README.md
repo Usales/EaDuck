@@ -24,6 +24,8 @@ O EaDuck nasceu para resolver desafios reais na educação, como a comunicação
 - **Segurança**: autenticação JWT, criptografia de senhas e conformidade com LGPD.
 - **Acesso facilitado a documentos**: upload e download de arquivos didáticos e tarefas.
 - **Relatórios e dashboards**: visão clara do desempenho acadêmico e engajamento.
+- **Bate-papo integrado**: comunicação instantânea entre usuários da plataforma.
+- **Login simplificado**: autenticação via Google para acesso rápido e seguro.
 
 ## Funcionalidades Principais ✨
 
@@ -33,6 +35,8 @@ A EaDuck oferece um conjunto robusto de recursos para atender às necessidades e
 |--------------------|---------------|----------------|
 | Cadastro de Usuários | Gerenciamento de contas para alunos, professores e admins. | Alta |
 | Comunicação Interna | Envio de mensagens, notificações e fóruns. | Alta |
+| Bate-papo Responsivo | Chat integrado para comunicação em tempo real entre usuários. | Alta |
+| Login com Google | Autenticação simplificada via conta Google. | Alta |
 | Registro de Notas | Professores registram notas, frequência e observações. | Alta |
 | Materiais Didáticos | Publicação e acesso a arquivos, links e vídeos. | Alta |
 | Relatórios | Geração de relatórios acadêmicos e financeiros. | Média |

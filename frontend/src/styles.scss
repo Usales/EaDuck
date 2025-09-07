@@ -68,12 +68,15 @@ html:not(.dark):not(.light) {
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-primary);
-  placeholder-color: var(--text-secondary);
   border-radius: 0.5rem;
   padding: 0.5rem 0.75rem;
   width: 100%;
   outline: none;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.input-field::placeholder {
+  color: var(--text-secondary);
 }
 
 .input-field:focus {

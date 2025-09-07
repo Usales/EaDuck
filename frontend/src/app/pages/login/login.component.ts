@@ -77,4 +77,9 @@ export class LoginComponent {
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
+
+  loginWithGoogle() {
+    // Redirecionar para o endpoint OAuth2 do backend
+    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+  }
 }

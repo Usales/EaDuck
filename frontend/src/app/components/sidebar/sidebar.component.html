@@ -18,6 +18,12 @@
     <a [routerLink]="['/tasks']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
       <span class="material-icons">assignment</span> Tarefas
     </a>
+    <a [routerLink]="['/chat']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+      <span class="material-icons">chat</span> Chat
+    </a>
+    <a [routerLink]="['/settings']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+      <span class="material-icons">settings</span> Configurações
+    </a>
   </nav>
   <div class="px-4 pb-6">
     <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-400 text-white font-semibold shadow hover:from-red-700 hover:to-red-500 transition-all">

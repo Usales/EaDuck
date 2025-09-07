@@ -185,6 +185,7 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao ativar usuários: " + e.getMessage()));
         }
+    }
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
