@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
+import { AnimatedDuckComponent } from '../../components/animated-duck/animated-duck.component';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../services/user.service';
 import { HttpClient } from '@angular/common/http';
@@ -11,7 +12,7 @@ import { interval, Subscription } from 'rxjs';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, SidebarComponent, NgApexchartsModule],
+  imports: [CommonModule, SidebarComponent, NgApexchartsModule, AnimatedDuckComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })

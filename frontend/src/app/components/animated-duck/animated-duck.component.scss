@@ -557,8 +557,217 @@
   .duck-svg {
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8)) contrast(1.2);
   }
-  
+
   .water-container {
     border: 2px solid #000;
   }
+}
+
+// Duck Color Variations
+.duck-color-yellow .duck-body,
+.duck-color-yellow .duck-head {
+  fill: #FFD700;
+}
+
+.duck-color-white .duck-body,
+.duck-color-white .duck-head {
+  fill: #FFFFFF;
+  stroke: #E0E0E0;
+  stroke-width: 1px;
+}
+
+.duck-color-orange .duck-body,
+.duck-color-orange .duck-head {
+  fill: #FF8C00;
+}
+
+.duck-color-pink .duck-body,
+.duck-color-pink .duck-head {
+  fill: #FF69B4;
+}
+
+// New Animations
+@keyframes duck-double-click {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  50% {
+    transform: scale(0.9) rotate(-5deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes duck-triple-click {
+  0% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(1.3) rotate(10deg);
+  }
+  40% {
+    transform: scale(0.8) rotate(-10deg);
+  }
+  60% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  80% {
+    transform: scale(0.9) rotate(-5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes duck-drag {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(3deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes duck-easter-egg {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  10% {
+    transform: scale(1.1) rotate(36deg);
+  }
+  20% {
+    transform: scale(1.2) rotate(72deg);
+  }
+  30% {
+    transform: scale(1.3) rotate(108deg);
+  }
+  40% {
+    transform: scale(1.2) rotate(144deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(180deg);
+  }
+  60% {
+    transform: scale(1.2) rotate(216deg);
+  }
+  70% {
+    transform: scale(1.3) rotate(252deg);
+  }
+  80% {
+    transform: scale(1.2) rotate(288deg);
+  }
+  90% {
+    transform: scale(1.1) rotate(324deg);
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+  }
+}
+
+// Hover Effects
+.duck-hover-sparkle:hover {
+  .duck-svg {
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+  }
+
+  .eye-highlight {
+    animation: sparkle 0.5s ease-in-out infinite;
+  }
+}
+
+.duck-hover-bounce:hover {
+  .duck-svg {
+    animation: duck-bounce 0.6s ease-in-out infinite;
+  }
+}
+
+.duck-hover-twist:hover {
+  .duck-svg {
+    animation: duck-twist 0.8s ease-in-out infinite;
+  }
+}
+
+@keyframes duck-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes duck-twist {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+}
+
+// Sound Indicator
+.sound-indicator {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+
+  &.sound-active {
+    opacity: 1;
+  }
+
+  .sound-icon {
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    &::before {
+      content: '🔊';
+      font-size: 12px;
+    }
+  }
+}
+
+// Animation Classes
+.duck-double-clicked {
+  animation: duck-double-click 1s ease-out;
+}
+
+.duck-triple-clicked {
+  animation: duck-triple-click 1.5s ease-out;
+}
+
+.duck-dragged {
+  animation: duck-drag 0.5s ease-in-out;
+}
+
+.duck-easter-egg {
+  animation: duck-easter-egg 2s ease-in-out;
 }

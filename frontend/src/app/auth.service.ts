@@ -33,21 +33,43 @@ export class AuthService {
   }
 
   resetPassword(email: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/reset-password`, { email });
+    return this.http.post(`${this.apiUrl}/forgot-password`, { email });
   }
 
   confirmResetPassword(token: string, newPassword: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/confirm-reset-password`, { token, newPassword });
   }
 
+  refreshToken(): Observable<{ token: string, userId: string }> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return of({ token: '', userId: '' });
+    }
+    return this.http.post<{ token: string, userId: string }>(`${this.apiUrl}/refresh`, { token }).pipe(
+      tap(response => {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('token_last_used', Date.now().toString());
+        this.userId = parseInt(response.userId, 10);
+      }),
+      catchError(error => {
+        console.error('Erro ao renovar token:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('token_last_used');
+        this.userId = null;
+        return of({ token: '', userId: '' });
+      })
+    );
+  }
+
   validateToken(token: string): Observable<boolean> {
     // Checa expiração por inatividade
     const lastUsed = localStorage.getItem('token_last_used');
     if (lastUsed && Date.now() - parseInt(lastUsed, 10) > this.TOKEN_EXPIRATION_MS) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('token_last_used');
-      this.userId = null;
-      return of(false);
+      // Tenta renovar o token
+      return this.refreshToken().pipe(
+        map(response => !!response.token),
+        catchError(() => of(false))
+      );
     }
     // Atualiza timestamp de uso
     localStorage.setItem('token_last_used', Date.now().toString());
@@ -55,10 +77,11 @@ export class AuthService {
       map(response => response === true),
       catchError(error => {
         console.error('Erro ao validar token:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('token_last_used');
-        this.userId = null;
-        return of(false);
+        // Tenta renovar o token em caso de erro
+        return this.refreshToken().pipe(
+          map(response => !!response.token),
+          catchError(() => of(false))
+        );
       })
     );
   }

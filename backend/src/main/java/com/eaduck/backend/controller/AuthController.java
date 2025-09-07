@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,6 +34,8 @@ public class AuthController {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRegisterDTO request) {
@@ -56,10 +60,10 @@ public class AuthController {
             String token = jwtService.generateToken(user);
             return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId()), user.getRole().name()));
         } catch (DuplicateEmailException e) {
-            System.out.println("Erro ao registrar: " + e.getMessage());
+            logger.error("Erro ao registrar: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage(e.getMessage()));
         } catch (Exception e) {
-            System.out.println("Erro ao registrar: " + e.getMessage());
+            logger.error("Erro ao registrar: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao registrar: " + e.getMessage()));
         }
     }
@@ -78,7 +82,7 @@ public class AuthController {
             userRepository.save(user);
             return ResponseEntity.ok(new ResponseMessage("Usuário atualizado com sucesso."));
         } catch (RuntimeException e) {
-            System.out.println("Erro ao ativar usuário: " + e.getMessage());
+            logger.error("Erro ao ativar usuário: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage(e.getMessage()));
         }
     }
@@ -92,46 +96,23 @@ public class AuthController {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + request.getEmail()));
+            User user = (User) authentication.getPrincipal();
             String token = jwtService.generateToken(user);
             return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId()), user.getRole().name()));
         } catch (DisabledException e) {
             return ResponseEntity.status(403).body(new ResponseMessage("Usuário inativo. Entre em contato com o administrador pelo e-mail compeaduck@gmail.com"));
         } catch (BadCredentialsException e) {
-            System.out.println("Credenciais inválidas para: " + request.getEmail());
+            logger.warn("Credenciais inválidas para: " + request.getEmail());
             return ResponseEntity.status(401).body(new ResponseMessage("Credenciais inválidas."));
         } catch (Exception e) {
-            System.out.println("Erro ao autenticar: " + e.getMessage());
+            logger.error("Erro ao autenticar: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao autenticar: " + e.getMessage()));
-        }
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-        System.out.println("Requisição de redefinição para: " + request.getEmail());
-        try {
-            if (request.getEmail() == null || request.getEmail().isEmpty()) {
-                return ResponseEntity.badRequest().body(new ResponseMessage("E-mail é obrigatório."));
-            }
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + request.getEmail()));
-            String resetToken = jwtService.generateToken(user);
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(user.getEmail());
-            message.setSubject("Redefinição de Senha EaDuck");
-            message.setText("Clique no link para redefinir sua senha: http://localhost:4200/confirm-reset-password?token=" + resetToken);
-            mailSender.send(message);
-            return ResponseEntity.ok(new ResponseMessage("Link de redefinição enviado para: " + user.getEmail()));
-        } catch (Exception e) {
-            System.out.println("Erro ao redefinir senha: " + e.getMessage());
-            return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao redefinir senha: " + e.getMessage()));
         }
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ResetPasswordRequest request) {
-        System.out.println("Requisição de esquecimento de senha para: " + request.getEmail());
+        logger.info("Requisição de esquecimento de senha para: " + request.getEmail());
         try {
             if (request.getEmail() == null || request.getEmail().isEmpty()) {
                 return ResponseEntity.badRequest().body(new ResponseMessage("E-mail é obrigatório."));
@@ -146,14 +127,14 @@ public class AuthController {
             mailSender.send(message);
             return ResponseEntity.ok(new ResponseMessage("Link de redefinição enviado para: " + user.getEmail()));
         } catch (Exception e) {
-            System.out.println("Erro ao processar esquecimento de senha: " + e.getMessage());
+            logger.error("Erro ao processar esquecimento de senha: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao processar esquecimento de senha: " + e.getMessage()));
         }
     }
 
     @PostMapping("/confirm-reset-password")
     public ResponseEntity<?> confirmResetPassword(@RequestBody ConfirmResetPasswordRequest request) {
-        System.out.println("Requisição de confirmação de redefinição de senha");
+        logger.info("Requisição de confirmação de redefinição de senha");
         try {
             if (request.getToken() == null || request.getToken().isEmpty() || request.getNewPassword() == null || request.getNewPassword().isEmpty()) {
                 return ResponseEntity.badRequest().body(new ResponseMessage("Token e nova senha são obrigatórios."));
@@ -168,20 +149,26 @@ public class AuthController {
             userRepository.save(user);
             return ResponseEntity.ok(new ResponseMessage("Senha redefinida com sucesso."));
         } catch (Exception e) {
-            System.out.println("Erro ao redefinir senha: " + e.getMessage());
+            logger.error("Erro ao redefinir senha: " + e.getMessage());
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao redefinir senha: " + e.getMessage()));
         }
     }
 
     @PostMapping("/validate-token")
     public ResponseEntity<?> validateToken(@RequestBody ValidateTokenRequest request) {
+        logger.info("Validating token");
         try {
+            String email = jwtService.extractUsername(request.getToken());
+            if (email == null || userRepository.findByEmail(email).isEmpty()) {
+                return ResponseEntity.status(401).body(new ResponseMessage("Token inválido."));
+            }
             boolean isValid = jwtService.validateToken(request.getToken());
             if (!isValid) {
                 return ResponseEntity.status(401).body(new ResponseMessage("Token inválido."));
             }
             return ResponseEntity.ok(true);
         } catch (Exception e) {
+            logger.error("Error validating token: " + e.getMessage());
             return ResponseEntity.status(401).body(new ResponseMessage("Token inválido: " + e.getMessage()));
         }
     }
@@ -192,14 +179,12 @@ public class AuthController {
             List<User> users = userRepository.findAll();
             for (User user : users) {
                 user.setActive(true);
-                user.setRole(Role.ADMIN);
                 userRepository.save(user);
             }
-            return ResponseEntity.ok(new ResponseMessage("Todos os usuários foram ativados e definidos como ADMIN."));
+            return ResponseEntity.ok(new ResponseMessage("Todos os usuários foram ativados."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao ativar usuários: " + e.getMessage()));
         }
-    }
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {

@@ -3,6 +3,6 @@ package com.eaduck.backend.model.auth.dto;
 import lombok.Data;
 
 @Data
-public class ValidateTokenRequest {
-    private String token;
+public class ForgotPasswordDTO {
+    private String email;
 }

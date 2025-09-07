@@ -3,8 +3,99 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+// Light theme
+html.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --accent-color: #3b82f6;
+}
+
+html.light body {
+  font-family: 'Inter', Arial, sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+// Dark theme
+html.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --accent-color: #60a5fa;
+}
+
+html.dark body {
   font-family: 'Inter', Arial, sans-serif;
   background: linear-gradient(135deg, #232b3e 0%, #1a2233 100%);
+  color: var(--text-primary);
   min-height: 100vh;
-} 
+}
+
+// Auto theme (fallback to light)
+html:not(.dark):not(.light) {
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --accent-color: #3b82f6;
+}
+
+// Theme utility classes
+.page-bg {
+  background: var(--bg-primary);
+}
+
+.form-container {
+  background: var(--bg-secondary);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.input-field {
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  placeholder-color: var(--text-secondary);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.input-field:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.submit-btn {
+  background: linear-gradient(to right, var(--accent-color), #2563eb);
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  font-weight: 600;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease-in-out;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(to right, #2563eb, var(--accent-color));
+}
+
+.text-accent {
+  color: var(--accent-color);
+}

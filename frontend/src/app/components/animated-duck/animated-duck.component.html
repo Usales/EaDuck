@@ -1,4 +1,43 @@
 <div class="duck-scene" [ngClass]="'size-' + size">
+  <!-- Customization Controls -->
+  <div class="customization-panel">
+    <div class="control-group">
+      <label>Size:</label>
+      <button (click)="changeSize('small')" [class.active]="size === 'small'">Small</button>
+      <button (click)="changeSize('medium')" [class.active]="size === 'medium'">Medium</button>
+      <button (click)="changeSize('large')" [class.active]="size === 'large'">Large</button>
+    </div>
+    <div class="control-group">
+      <label>Color:</label>
+      <button (click)="changeColor('yellow')" [class.active]="duckColor === 'yellow'">Yellow</button>
+      <button (click)="changeColor('white')" [class.active]="duckColor === 'white'">White</button>
+      <button (click)="changeColor('orange')" [class.active]="duckColor === 'orange'">Orange</button>
+      <button (click)="changeColor('pink')" [class.active]="duckColor === 'pink'">Pink</button>
+    </div>
+    <div class="control-group">
+      <label>Expression:</label>
+      <button (click)="changeExpression('happy')" [class.active]="expression === 'happy'">Happy</button>
+      <button (click)="changeExpression('excited')" [class.active]="expression === 'excited'">Excited</button>
+      <button (click)="changeExpression('thinking')" [class.active]="expression === 'thinking'">Thinking</button>
+      <button (click)="changeExpression('sleeping')" [class.active]="expression === 'sleeping'">Sleeping</button>
+      <button (click)="changeExpression('surprised')" [class.active]="expression === 'surprised'">Surprised</button>
+      <button (click)="changeExpression('angry')" [class.active]="expression === 'angry'">Angry</button>
+      <button (click)="changeExpression('love')" [class.active]="expression === 'love'">Love</button>
+    </div>
+    <div class="control-group">
+      <label>Animation Speed:</label>
+      <button (click)="changeAnimationSpeed('slow')" [class.active]="animationSpeed === 'slow'">Slow</button>
+      <button (click)="changeAnimationSpeed('normal')" [class.active]="animationSpeed === 'normal'">Normal</button>
+      <button (click)="changeAnimationSpeed('fast')" [class.active]="animationSpeed === 'fast'">Fast</button>
+    </div>
+    <div class="control-group">
+      <label>Options:</label>
+      <button (click)="toggleWater()" [class.active]="showWater">Water</button>
+      <button (click)="toggleReflection()" [class.active]="showReflection">Reflection</button>
+      <button (click)="toggleSound()" [class.active]="enableSoundEffects">Sound</button>
+    </div>
+  </div>
+
   <!-- Water Container -->
   <div class="water-container" *ngIf="showWater">
     <div class="water-surface">
@@ -10,13 +49,16 @@
   </div>
 
   <!-- Duck Container -->
-  <div 
-    class="duck-container" 
+  <div
+    class="duck-container"
     [ngClass]="[
       'animation-' + animationSpeed,
-      'expression-' + expression
+      'expression-' + expression,
+      getDuckColorClass()
     ]"
     (click)="onDuckClick()"
+    (dblclick)="onDuckDoubleClick()"
+    (mousedown)="onDuckMouseDown($event)"
     (mouseenter)="onDuckHover()"
   >
     <!-- Duck SVG -->

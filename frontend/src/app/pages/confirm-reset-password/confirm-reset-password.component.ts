@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ModalComponent } from '../../components/modal/modal.component';
 import { AuthService } from '../../auth.service';
 import { HttpClientModule } from '@angular/common/http';
@@ -13,13 +13,10 @@ import { HttpClientModule } from '@angular/common/http';
   templateUrl: './confirm-reset-password.component.html',
   styleUrls: ['./confirm-reset-password.component.scss']
 })
-export class ConfirmResetPasswordComponent {
+export class ConfirmResetPasswordComponent implements OnInit {
   token = '';
   newPassword = '';
   confirmPassword = '';
-  showPassword = false;
-  showConfirmPassword = false;
-  passwordStrength: 'fraca' | 'media' | 'forte' = 'fraca';
 
   // Modal state
   modalVisible = false;
@@ -27,21 +24,15 @@ export class ConfirmResetPasswordComponent {
   modalTitle = '';
   modalMessage = '';
 
-  constructor(private route: ActivatedRoute, private router: Router, private authService: AuthService) {
+  constructor(private route: ActivatedRoute, private router: Router, private authService: AuthService) {}
+
+  ngOnInit() {
     this.route.queryParams.subscribe(params => {
       this.token = params['token'] || '';
+      if (!this.token) {
+        this.showModal('error', 'Erro', 'Token inválido ou ausente.');
+      }
     });
-  }
-
-  onPasswordInput() {
-    this.passwordStrength = this.getPasswordStrength(this.newPassword);
-  }
-
-  getPasswordStrength(password: string): 'fraca' | 'media' | 'forte' {
-    if (password.length < 6) return 'fraca';
-    if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':\"\\|,.<>/?]).{8,}$/.test(password)) return 'forte';
-    if (password.length >= 6 && /[A-Z]/.test(password) && /\d/.test(password)) return 'media';
-    return 'fraca';
   }
 
   onSubmit() {
@@ -53,18 +44,14 @@ export class ConfirmResetPasswordComponent {
       this.showModal('error', 'Erro', 'As senhas não coincidem.');
       return;
     }
-    if (this.passwordStrength === 'fraca') {
-      this.showModal('error', 'Senha fraca', 'Escolha uma senha mais forte.');
-      return;
-    }
     this.showModal('loading', '', 'Redefinindo senha...');
     this.authService.confirmResetPassword(this.token, this.newPassword).subscribe({
       next: () => {
-        this.showModal('success', 'Senha redefinida', 'Sua senha foi redefinida com sucesso!');
+        this.showModal('success', 'Sucesso', 'Senha redefinida com sucesso.');
         setTimeout(() => {
           this.closeModal();
           this.router.navigate(['/login']);
-        }, 1500);
+        }, 3000);
       },
       error: (err) => {
         let msg = 'Erro ao redefinir senha.';
@@ -87,10 +74,7 @@ export class ConfirmResetPasswordComponent {
     this.modalVisible = false;
   }
 
-  togglePassword() {
-    this.showPassword = !this.showPassword;
+  goToLogin() {
+    this.router.navigate(['/login']);
   }
-  toggleConfirmPassword() {
-    this.showConfirmPassword = !this.showConfirmPassword;
-  }
-} 
+}
