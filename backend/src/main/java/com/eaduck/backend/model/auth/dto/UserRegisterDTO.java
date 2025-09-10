@@ -9,7 +9,4 @@ public class UserRegisterDTO {
     private String password;
     private Role role; // STUDENT, TEACHER, ADMIN
 
-    public Object getEmail() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }

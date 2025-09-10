@@ -12,6 +12,9 @@ interface ChatMessage {
   type: 'CHAT' | 'JOIN' | 'LEAVE';
   content: string;
   sender: string;
+  senderName: string;
+  message: string;
+  isMine: boolean;
   timestamp: Date;
 }
 
@@ -106,6 +109,19 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   private showMessage(message: ChatMessage): void {
+    // Set additional properties for display
+    message.senderName = message.senderName || message.sender;
+    message.message = message.message || message.content;
+    
+    // Determine if message is from current user
+    this.subscription.add(
+      this.currentUser$.subscribe(user => {
+        if (user) {
+          message.isMine = message.sender === user.email;
+        }
+      })
+    );
+    
     this.messages.push(message);
     // Auto scroll to bottom
     setTimeout(() => {

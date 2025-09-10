@@ -1,4 +1,4 @@
-Deve usar o SOCKET.IO e o SOCKETJSler;
+package com.eaduck.backend.controller;
 
 import com.eaduck.backend.model.ChatMessage;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -18,9 +18,6 @@ public class ChatController {
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
         chatMessage.setSenderName(chatMessage.getSender());
-        // For now, assume all messages are not from the current user
-        // This would need to be determined based on the authenticated user
-        chatMessage.setIsMine(false);
         return chatMessage;
     }
 
@@ -33,7 +30,6 @@ public class ChatController {
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
         chatMessage.setSenderName(chatMessage.getSender());
-        chatMessage.setIsMine(false);
         return chatMessage;
     }
 }
