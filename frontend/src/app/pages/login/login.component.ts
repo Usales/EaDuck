@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -16,7 +16,9 @@ import { take } from 'rxjs/operators';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, AfterViewInit {
+  @ViewChild('duckLogo', { static: false }) duckLogo!: ElementRef;
+  
   email = '';
   password = '';
   showPassword = false;
@@ -28,6 +30,19 @@ export class LoginComponent {
   modalMessage = '';
 
   constructor(private router: Router, private authService: AuthService) {}
+
+  ngOnInit() {
+    // Inicia a animação quando o componente é carregado
+  }
+
+  ngAfterViewInit() {
+    // Aguarda 1.5 segundos após a animação de queda terminar, então inicia o bounce contínuo
+    setTimeout(() => {
+      if (this.duckLogo) {
+        this.duckLogo.nativeElement.classList.add('continuous-bounce');
+      }
+    }, 1500);
+  }
 
   onSubmit() {
     if (!this.email || !this.password) {

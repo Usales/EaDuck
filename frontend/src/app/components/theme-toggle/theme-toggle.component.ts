@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { ThemeService, Theme } from '../../services/theme.service';
@@ -27,11 +27,8 @@ export class ThemeToggleComponent implements OnInit, OnDestroy {
   }
 
   toggleTheme(): void {
+    console.log('Toggling theme from:', this.currentTheme);
     this.themeService.toggleTheme();
-  }
-
-  setTheme(theme: Theme): void {
-    this.themeService.setTheme(theme);
   }
 
   getThemeIcon(): string {

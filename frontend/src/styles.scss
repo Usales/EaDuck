@@ -6,45 +6,96 @@
 // Light theme
 html.light {
   --bg-primary: #ffffff;
-  --bg-secondary: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
+  --bg-secondary: #f8fafc;
+  --text-primary: #1E293B;
+  --text-secondary: #1E293B;
   --border-color: #e2e8f0;
   --accent-color: #3b82f6;
+  --panel-bg: #ffffff;
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --input-text: #1E293B;
+  --button-bg: #3b82f6;
+  --button-text: #ffffff;
+  --link-color: #3b82f6;
 }
 
 html.light body {
   font-family: 'Inter', Arial, sans-serif;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: #f8fafc;
   color: var(--text-primary);
   min-height: 100vh;
 }
 
 // Dark theme
 html.dark {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --border-color: #334155;
   --accent-color: #60a5fa;
+  --panel-bg: #1E293B;
+  --input-bg: #1E293B;
+  --input-border: #334155;
+  --input-text: #f1f5f9;
+  --button-bg: #3b82f6;
+  --button-text: #ffffff;
+  --link-color: #60a5fa;
 }
 
 html.dark body {
   font-family: 'Inter', Arial, sans-serif;
-  background: linear-gradient(135deg, #232b3e 0%, #1a2233 100%);
+  background: #0F172A;
   color: var(--text-primary);
   min-height: 100vh;
 }
 
-// Auto theme (fallback to light)
-html:not(.dark):not(.light) {
-  --bg-primary: #ffffff;
-  --bg-secondary: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
-  --accent-color: #3b82f6;
+// Auto theme - follows system preference
+@media (prefers-color-scheme: light) {
+  html:not(.dark):not(.light) {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --text-primary: #1E293B;
+    --text-secondary: #1E293B;
+    --border-color: #e2e8f0;
+    --accent-color: #3b82f6;
+    --panel-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #d1d5db;
+    --input-text: #1E293B;
+    --button-bg: #3b82f6;
+    --button-text: #ffffff;
+    --link-color: #3b82f6;
+  }
+  
+  html:not(.dark):not(.light) body {
+    background: #f8fafc;
+    color: var(--text-primary);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.dark):not(.light) {
+    --bg-primary: #0F172A;
+    --bg-secondary: #1E293B;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+    --accent-color: #60a5fa;
+    --panel-bg: #1E293B;
+    --input-bg: #1E293B;
+    --input-border: #334155;
+    --input-text: #f1f5f9;
+    --button-bg: #3b82f6;
+    --button-text: #ffffff;
+    --link-color: #60a5fa;
+  }
+  
+  html:not(.dark):not(.light) body {
+    background: #0F172A;
+    color: var(--text-primary);
+  }
 }
 
 // Theme utility classes
@@ -53,7 +104,7 @@ html:not(.dark):not(.light) {
 }
 
 .form-container {
-  background: var(--bg-secondary);
+  background: var(--panel-bg);
 }
 
 .text-primary {
@@ -65,9 +116,9 @@ html:not(.dark):not(.light) {
 }
 
 .input-field {
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
   border-radius: 0.5rem;
   padding: 0.5rem 0.75rem;
   width: 100%;
@@ -81,24 +132,395 @@ html:not(.dark):not(.light) {
 
 .input-field:focus {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
 }
 
 .submit-btn {
-  background: linear-gradient(to right, var(--accent-color), #2563eb);
-  color: white;
+  background: var(--button-bg);
+  color: var(--button-text);
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
   width: 100%;
   font-weight: 600;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   transition: all 0.15s ease-in-out;
 }
 
 .submit-btn:hover {
-  background: linear-gradient(to right, #2563eb, var(--accent-color));
+  background: var(--accent-color);
+  transform: translateY(-1px);
 }
 
 .text-accent {
   color: var(--accent-color);
 }
+
+// Sidebar active state
+.sidebar a.active {
+  background: var(--bg-secondary) !important;
+  color: var(--accent-color) !important;
+}
+
+// Duck Animation - Fall from top then bounce
+@keyframes duckFallAndBounce {
+  0% {
+    transform: translateY(-200px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(0);
+  }
+  33% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes duckContinuousBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+
+.duck-animation {
+  animation: duckFallAndBounce 1.5s ease-out forwards;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.duck-animation.continuous-bounce {
+  animation: duckContinuousBounce 2s infinite;
+}
+
+// Garantir que o patinho sempre apareça, mesmo com delay das telas
+.duck-container {
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: none !important;
+}
+
+// Patinho deve aparecer imediatamente, sem delay
+.duck-container img {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+// Screen entrance animations - definidas abaixo
+
+.screen-entrance {
+  animation: screenSlideIn 0.6s ease-out forwards;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.screen-fade {
+  animation: screenFadeIn 0.8s ease-out forwards;
+  opacity: 0;
+  visibility: hidden;
+}
+
+// Garantir que as telas apareçam após o delay
+@keyframes screenSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    visibility: hidden;
+  }
+  1% {
+    visibility: visible;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    visibility: visible;
+  }
+}
+
+@keyframes screenFadeIn {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  1% {
+    visibility: visible;
+  }
+  100% {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// Garantir que o patinho não seja afetado pelo delay das telas
+.duck-container {
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation: none !important;
+}
+
+.duck-container img {
+  opacity: 1 !important;
+  visibility: visible !important;
+  animation-delay: 0s !important;
+}
+
+// Mobile First Responsive Design
+@media (max-width: 640px) {
+  .screen-entrance {
+    margin: 0.5rem;
+    padding: 1rem;
+    max-width: calc(100vw - 1rem);
+    min-height: auto;
+  }
+  
+  .duck-container img {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  h1, h2 {
+    font-size: 1.25rem !important;
+    line-height: 1.4;
+  }
+  
+  p {
+    font-size: 0.875rem !important;
+    line-height: 1.4;
+  }
+  
+  .input-field {
+    padding: 0.75rem;
+    font-size: 1rem;
+    min-height: 2.75rem;
+  }
+  
+  button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    min-height: 2.75rem;
+  }
+  
+  .mb-6 {
+    margin-bottom: 1rem;
+  }
+  
+  .mb-4 {
+    margin-bottom: 0.75rem;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-2 > * + * {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .screen-entrance {
+    margin: 1rem;
+    padding: 1.5rem;
+    max-width: 28rem;
+  }
+  
+  .duck-container img {
+    width: 4rem;
+    height: 4rem;
+  }
+  
+  h1, h2 {
+    font-size: 1.5rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .screen-entrance {
+    margin: 2rem;
+    padding: 2rem;
+    max-width: 32rem;
+  }
+  
+  .duck-container img {
+    width: 4rem;
+    height: 4rem;
+  }
+  
+  h1, h2 {
+    font-size: 1.875rem !important;
+  }
+}
+
+// Extra small devices (portrait phones)
+@media (max-width: 375px) {
+  .screen-entrance {
+    margin: 0.25rem;
+    padding: 0.75rem;
+    max-width: calc(100vw - 0.5rem);
+  }
+  
+  .duck-container img {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  h1, h2 {
+    font-size: 1.125rem !important;
+  }
+  
+  .input-field {
+    padding: 0.625rem;
+    font-size: 0.9rem;
+  }
+  
+  button {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+}
+
+// Theme Toggle Styles
+.theme-toggle-container {
+  position: relative;
+  z-index: 10000;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent-color);
+}
+
+.theme-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.theme-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+// Home Dashboard Responsive Styles
+@media (max-width: 640px) {
+  .dashboard-container {
+    margin-left: 0 !important;
+    padding: 1rem !important;
+    padding-top: 5rem !important;
+  }
+  
+  .dashboard-cards {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .dashboard-card {
+    padding: 1rem !important;
+  }
+  
+  .dashboard-card-icon {
+    font-size: 1.5rem !important;
+  }
+  
+  .dashboard-card-title {
+    font-size: 0.75rem !important;
+  }
+  
+  .dashboard-card-value {
+    font-size: 1.25rem !important;
+  }
+  
+  .dashboard-charts {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .dashboard-chart {
+    padding: 1rem !important;
+  }
+  
+  .dashboard-chart-title {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .dashboard-chart-container {
+    height: 12rem !important;
+  }
+  
+  .dashboard-welcome {
+    padding: 1rem !important;
+    margin-top: 1.5rem !important;
+  }
+  
+  .dashboard-welcome-title {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .dashboard-welcome-text {
+    font-size: 0.75rem !important;
+    line-height: 1.4 !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .dashboard-container {
+    margin-left: 0 !important;
+    padding: 1.5rem !important;
+    padding-top: 6rem !important;
+  }
+  
+  .dashboard-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+  
+  .dashboard-charts {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .dashboard-container {
+    margin-left: 16rem !important;
+    padding: 2rem !important;
+    padding-top: 7rem !important;
+  }
+  
+  .dashboard-cards {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+  
+  .dashboard-charts {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+}
+
+

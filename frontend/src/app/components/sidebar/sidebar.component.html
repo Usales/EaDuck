@@ -1,32 +1,32 @@
-<aside class="h-screen w-64 bg-[#232b3e] text-white flex flex-col shadow-xl fixed top-0 left-0 z-40">
-  <div class="flex items-center justify-center py-8 border-b border-[#2d3650]">
-    <span class="text-2xl font-bold tracking-tight">EaDuck</span>
+<aside class="h-screen w-64 flex flex-col shadow-xl fixed top-0 left-0 z-40" style="background: var(--panel-bg); color: var(--text-primary);">
+  <div class="flex items-center justify-center py-8 border-b" style="border-color: var(--border-color);">
+    <span class="text-2xl font-bold tracking-tight" style="color: var(--text-primary);">EaDuck</span>
   </div>
   <nav class="flex-1 px-4 py-6 space-y-2">
-    <a [routerLink]="['/home']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a [routerLink]="['/home']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <span class="material-icons">dashboard</span> Home
     </a>
-    <a *ngIf="(currentUser$ | async)?.role === 'ADMIN'" [routerLink]="['/users']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a *ngIf="(currentUser$ | async)?.role === 'ADMIN'" [routerLink]="['/users']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <span class="material-icons">people</span> Usuários
     </a>
-    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/classrooms']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/classrooms']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <span class="material-icons">school</span> Salas
     </a>
-    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/notifications']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/notifications']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <span class="material-icons">notifications</span> Notificações
     </a>
-    <a [routerLink]="['/tasks']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a [routerLink]="['/tasks']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <span class="material-icons">assignment</span> Tarefas
     </a>
-    <a [routerLink]="['/chat']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a [routerLink]="['/chat']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <span class="material-icons">chat</span> Chat
     </a>
-    <a [routerLink]="['/settings']" routerLinkActive="bg-[#1a2233] text-indigo-400" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#1a2233] transition-all">
+    <a [routerLink]="['/settings']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <span class="material-icons">settings</span> Configurações
     </a>
   </nav>
   <div class="px-4 pb-6">
-    <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-red-400 text-white font-semibold shadow hover:from-red-700 hover:to-red-500 transition-all">
+    <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg font-semibold shadow transition-all" style="background: linear-gradient(to right, #dc2626, #ef4444); color: white;" onmouseover="this.style.background='linear-gradient(to right, #b91c1c, #dc2626)'" onmouseout="this.style.background='linear-gradient(to right, #dc2626, #ef4444)'">
       <span class="material-icons">logout</span> Sair
     </button>
   </div>
