@@ -3,13 +3,14 @@ package com.eaduck.backend.service;
 import com.eaduck.backend.model.classroom.Classroom;
 import com.eaduck.backend.model.notification.Notification;
 import com.eaduck.backend.model.task.Task;
+import com.eaduck.backend.model.task.TaskAttachment;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.ClassroomRepository;
 import com.eaduck.backend.repository.NotificationRepository;
 import com.eaduck.backend.repository.TaskRepository;
+import com.eaduck.backend.repository.TaskAttachmentRepository;
 import com.eaduck.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 public class NotificationService {
@@ -39,6 +39,9 @@ public class NotificationService {
 
     @Autowired
     private ClassroomRepository classroomRepository;
+
+    @Autowired
+    private TaskAttachmentRepository taskAttachmentRepository;
 
     @Autowired
     private JavaMailSender mailSender;
@@ -186,6 +189,7 @@ public class NotificationService {
                         (classroomName != null && !classroomName.isEmpty() ? "<div style='color:#888;font-size:15px;margin-bottom:8px;'>Turma: <b>" + classroomName + "</b></div>" : "") +
                         (description != null ? "<div style='color:#444;font-size:16px;margin-bottom:16px;'>" + description + "</div>" : "") +
                         (dueDate != null && !dueDate.isEmpty() ? "<div style='color:#232b3e;font-size:15px;margin-bottom:16px;'><b>Prazo:</b> " + dueDate + "</div>" : "") +
+                        getAttachmentsHtml(task) +
                         "    <a href='https://eaduck.com' style='display:inline-block;margin:16px 0 0 0;padding:12px 32px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold;letter-spacing:1px;'>Acessar EaDuck</a>" +
                         "    <div style='margin-top:32px;color:#aaa;font-size:13px;'>Esta é uma notificação automática do sistema EaDuck.<br/>Por favor, não responda este e-mail.</div>" +
                         "  </div>" +
@@ -199,5 +203,59 @@ public class NotificationService {
                 }
             }
         }
+    }
+
+    private String getAttachmentsHtml(Task task) {
+        if (task == null || task.getId() == null) {
+            return "";
+        }
+
+        List<TaskAttachment> attachments = taskAttachmentRepository.findByTaskId(task.getId());
+        if (attachments == null || attachments.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder html = new StringBuilder();
+        html.append("<div style='margin:16px 0;padding:16px;background:#f8fafc;border-radius:8px;border-left:4px solid #6366f1;'>");
+        html.append("<div style='color:#232b3e;font-size:14px;font-weight:bold;margin-bottom:8px;'>📎 Anexos (").append(attachments.size()).append("):</div>");
+        
+        for (TaskAttachment attachment : attachments) {
+            String icon = getFileIcon(attachment.getFileType());
+            String fileSize = formatFileSize(attachment.getFileSize());
+            
+            html.append("<div style='display:flex;align-items:center;margin:8px 0;padding:8px;background:#fff;border-radius:6px;border:1px solid #e2e8f0;'>");
+            html.append("<span style='font-size:16px;margin-right:8px;'>").append(icon).append("</span>");
+            html.append("<div style='flex:1;'>");
+            html.append("<div style='color:#232b3e;font-size:13px;font-weight:500;'>").append(attachment.getFileName()).append("</div>");
+            html.append("<div style='color:#64748b;font-size:11px;'>").append(fileSize).append("</div>");
+            html.append("</div>");
+            html.append("</div>");
+        }
+        
+        html.append("</div>");
+        return html.toString();
+    }
+
+    private String getFileIcon(String fileType) {
+        if (fileType == null) return "📎";
+        
+        if (fileType.contains("pdf")) return "📄";
+        if (fileType.contains("image")) return "🖼️";
+        if (fileType.contains("video")) return "🎥";
+        if (fileType.contains("word")) return "📝";
+        if (fileType.contains("excel")) return "📊";
+        if (fileType.contains("powerpoint")) return "📈";
+        if (fileType.contains("zip") || fileType.contains("rar")) return "📦";
+        return "📎";
+    }
+
+    private String formatFileSize(Long bytes) {
+        if (bytes == null || bytes == 0) return "0 Bytes";
+        
+        String[] units = {"Bytes", "KB", "MB", "GB"};
+        int unitIndex = (int) (Math.log(bytes) / Math.log(1024));
+        double size = bytes / Math.pow(1024, unitIndex);
+        
+        return String.format("%.1f %s", size, units[unitIndex]);
     }
 }

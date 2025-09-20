@@ -14,6 +14,16 @@ export interface Task {
   createdByName?: string;
   createdAt?: string;
   type: string;
+  attachments?: TaskAttachment[];
+}
+
+export interface TaskAttachment {
+  id?: number;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  fileUrl?: string;
+  uploadedAt?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -51,6 +61,27 @@ export class TaskService {
 
   deleteTask(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`, {
+      headers: this.authService.getAuthHeaders()
+    });
+  }
+
+  uploadTaskAttachment(taskId: number, file: File): Observable<TaskAttachment> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return this.http.post<TaskAttachment>(`${this.apiUrl}/${taskId}/attachments`, formData, {
+      headers: this.authService.getAuthHeaders()
+    });
+  }
+
+  deleteTaskAttachment(taskId: number, attachmentId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${taskId}/attachments/${attachmentId}`, {
+      headers: this.authService.getAuthHeaders()
+    });
+  }
+
+  getTaskAttachments(taskId: number): Observable<TaskAttachment[]> {
+    return this.http.get<TaskAttachment[]>(`${this.apiUrl}/${taskId}/attachments`, {
       headers: this.authService.getAuthHeaders()
     });
   }

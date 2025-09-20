@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { CommonModule } from '@angular/common';
-import { TaskService, Task } from '../../services/task.service';
+import { TaskService, Task, TaskAttachment } from '../../services/task.service';
 import { FormsModule } from '@angular/forms';
 import { ClassroomService, Classroom } from '../../services/classroom.service';
 import { SubmissionService, Submission } from '../../services/submission.service';
@@ -27,6 +27,12 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   showCreateModal = false;
   taskForm: Partial<Task> = { title: '', description: '', dueDate: '', classroomId: undefined, type: 'TAREFA' };
+  
+  // Upload de arquivos
+  selectedFiles: File[] = [];
+  dragActive = false;
+  uploadProgress: { [key: string]: number } = {};
+  fileErrors: string[] = [];
 
   classrooms: Classroom[] = [];
 
@@ -146,9 +152,21 @@ export class TasksComponent implements OnInit, OnDestroy {
   loadTasks() {
     this.taskService.getAllTasks().subscribe(tasks => {
       this.tasks = tasks;
+      // Carregar anexos para cada tarefa
+      this.loadAttachmentsForTasks(tasks);
       this.applyFilters();
       if (this.currentUser && this.currentUser.role !== 'STUDENT') {
         this.loadAllSubmissionsForTasks(tasks);
+      }
+    });
+  }
+
+  loadAttachmentsForTasks(tasks: Task[]) {
+    tasks.forEach(task => {
+      if (task.id) {
+        this.taskService.getTaskAttachments(task.id).subscribe(attachments => {
+          task.attachments = attachments;
+        });
       }
     });
   }
@@ -266,6 +284,7 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   closeCreateModal() {
     this.showCreateModal = false;
+    this.resetForm();
   }
 
   createTask() {
@@ -289,11 +308,16 @@ export class TasksComponent implements OnInit, OnDestroy {
       classroomId: this.taskForm.classroomId!,
       type: this.taskForm.type!
     }).subscribe({
-      next: () => {
-        this.loadingStatus = 'success';
-        this.taskForm = { title: '', description: '', dueDate: '', classroomId: undefined, type: 'TAREFA' };
-        this.loadTasks();
-        setTimeout(() => this.showLoadingModal = false, 2000);
+      next: (createdTask) => {
+        // Upload dos arquivos se houver
+        if (this.selectedFiles.length > 0 && createdTask.id) {
+          this.uploadTaskFiles(createdTask.id);
+        } else {
+          this.loadingStatus = 'success';
+          this.resetForm();
+          this.loadTasks();
+          setTimeout(() => this.showLoadingModal = false, 2000);
+        }
       },
       error: (error) => {
         this.loadingStatus = 'error';
@@ -301,6 +325,130 @@ export class TasksComponent implements OnInit, OnDestroy {
         console.error('Erro ao criar tarefa:', error);
       }
     });
+  }
+
+  // Métodos para upload de arquivos na criação de tarefas
+  onTaskFileSelected(event: any) {
+    const files = Array.from(event.target.files) as File[];
+    this.validateAndAddFiles(files);
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    this.dragActive = true;
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.dragActive = false;
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    this.dragActive = false;
+    const files = Array.from(event.dataTransfer?.files || []) as File[];
+    this.validateAndAddFiles(files);
+  }
+
+  validateAndAddFiles(files: File[]) {
+    this.fileErrors = [];
+    const validFiles: File[] = [];
+
+    files.forEach(file => {
+      // Validar tipo de arquivo
+      if (!this.allowedFileTypes.includes(file.type)) {
+        this.fileErrors.push(`Tipo de arquivo não suportado: ${file.name}`);
+        return;
+      }
+
+      // Validar tamanho
+      if (file.size > this.maxFileSize) {
+        this.fileErrors.push(`Arquivo muito grande: ${file.name} (máx. 8MB)`);
+        return;
+      }
+
+      validFiles.push(file);
+    });
+
+    if (this.fileErrors.length > 0) {
+      console.warn('Erros de validação:', this.fileErrors);
+    }
+
+    this.selectedFiles = [...this.selectedFiles, ...validFiles];
+  }
+
+  removeFile(index: number) {
+    this.selectedFiles.splice(index, 1);
+  }
+
+  getFileIcon(fileType: string): string {
+    if (fileType.includes('pdf')) return '📄';
+    if (fileType.includes('image')) return '🖼️';
+    if (fileType.includes('video')) return '🎥';
+    if (fileType.includes('word')) return '📝';
+    if (fileType.includes('excel')) return '📊';
+    if (fileType.includes('powerpoint')) return '📈';
+    if (fileType.includes('zip') || fileType.includes('rar')) return '📦';
+    return '📎';
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  uploadTaskFiles(taskId: number) {
+    let completedUploads = 0;
+    const totalFiles = this.selectedFiles.length;
+
+    if (totalFiles === 0) {
+      this.loadingStatus = 'success';
+      this.resetForm();
+      this.loadTasks();
+      setTimeout(() => this.showLoadingModal = false, 2000);
+      return;
+    }
+
+    this.selectedFiles.forEach((file, index) => {
+      this.uploadProgress[file.name] = 0;
+      
+      // Upload real do arquivo
+      this.taskService.uploadTaskAttachment(taskId, file).subscribe({
+        next: (attachment) => {
+          this.uploadProgress[file.name] = 100;
+          completedUploads++;
+          
+          if (completedUploads === totalFiles) {
+            this.loadingStatus = 'success';
+            this.resetForm();
+            this.loadTasks();
+            setTimeout(() => this.showLoadingModal = false, 2000);
+          }
+        },
+        error: (error) => {
+          console.error('Erro ao fazer upload do arquivo:', file.name, error);
+          this.uploadProgress[file.name] = 100;
+          completedUploads++;
+          
+          if (completedUploads === totalFiles) {
+            this.loadingStatus = 'success';
+            this.resetForm();
+            this.loadTasks();
+            setTimeout(() => this.showLoadingModal = false, 2000);
+          }
+        }
+      });
+    });
+  }
+
+  resetForm() {
+    this.taskForm = { title: '', description: '', dueDate: '', classroomId: undefined, type: 'TAREFA' };
+    this.selectedFiles = [];
+    this.fileErrors = [];
+    this.uploadProgress = {};
   }
 
   openSubmissionsModal(task: Task) {

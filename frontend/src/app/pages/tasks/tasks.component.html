@@ -130,6 +130,23 @@
               </ng-template>
             </div>
             
+            <!-- Anexos da Tarefa -->
+            <div *ngIf="task.attachments && task.attachments.length > 0" class="task-card-attachments">
+              <div class="task-attachments-header">
+                <span class="material-icons">attach_file</span>
+                <span class="task-attachments-label">Anexos ({{ task.attachments.length }})</span>
+              </div>
+              <div class="task-attachments-list">
+                <div *ngFor="let attachment of task.attachments" class="task-attachment-item">
+                  <span class="task-attachment-icon">{{ getFileIcon(attachment.fileType) }}</span>
+                  <span class="task-attachment-name">{{ attachment.fileName }}</span>
+                  <a *ngIf="attachment.fileUrl" [href]="attachment.fileUrl" target="_blank" class="task-attachment-download">
+                    <span class="material-icons">download</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            
             <div *ngIf="currentUser?.role !== 'STUDENT'" class="task-card-students">
               <button (click)="openStudentsModal(task)" class="task-students-btn">
                 <span class="material-icons">people</span>
@@ -174,8 +191,8 @@
 </div>
 
 <!-- Modal de Nova Tarefa -->
-<div *ngIf="showCreateModal && isAdminOrTeacher" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-  <div class="bg-[#232b3e] rounded-xl shadow-lg p-8 w-full max-w-md relative">
+<div *ngIf="showCreateModal && isAdminOrTeacher" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+  <div class="bg-[#232b3e] rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
     <button (click)="closeCreateModal()" class="absolute top-2 right-2 text-gray-400 hover:text-white"><span class="material-icons">close</span></button>
     <h2 class="text-xl font-bold text-white mb-4">Nova Tarefa</h2>
     <form (ngSubmit)="createTask()" autocomplete="off">
@@ -208,9 +225,77 @@
           <option value="NOTIFICACAO">Notificação</option>
         </select>
       </div>
-      <div class="flex justify-end gap-2">
-        <button (click)="closeCreateModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">Cancelar</button>
-        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Criar</button>
+      
+      <!-- Seção de Upload de Arquivos -->
+      <div class="mb-4">
+        <label class="block text-gray-400 mb-2 text-sm">Anexar Documentos</label>
+        <div 
+          class="border-2 border-dashed border-gray-600 rounded-lg p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer"
+          [class.border-indigo-500]="dragActive"
+          [class.bg-indigo-900]="dragActive"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+        >
+          <input
+            type="file"
+            multiple
+            (change)="onTaskFileSelected($event)"
+            class="hidden"
+            #fileInput
+            accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.mp4,.avi,.mov,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+          />
+          <div (click)="fileInput.click()" class="cursor-pointer">
+            <div class="text-3xl sm:text-4xl mb-2" [class.text-indigo-400]="dragActive">
+              {{ dragActive ? '📤' : '📎' }}
+            </div>
+            <p class="text-gray-300 font-medium mb-1 text-sm sm:text-base">
+              {{ dragActive ? 'Solte os arquivos aqui' : 'Clique para selecionar arquivos' }}
+            </p>
+            <p class="text-xs sm:text-sm text-gray-500">
+              PDF, Imagens, Vídeos, Documentos (máx. 8MB)
+            </p>
+          </div>
+        </div>
+        
+        <!-- Lista de arquivos selecionados -->
+        <div *ngIf="selectedFiles.length > 0" class="mt-4 space-y-2">
+          <h4 class="text-gray-300 font-medium text-xs sm:text-sm">Arquivos Selecionados ({{ selectedFiles.length }})</h4>
+          <div class="space-y-2 max-h-24 sm:max-h-32 overflow-y-auto">
+            <div 
+              *ngFor="let file of selectedFiles; let i = index" 
+              class="flex items-center justify-between bg-gray-800 rounded-lg p-2 sm:p-3"
+            >
+              <div class="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                <span class="text-lg sm:text-xl flex-shrink-0">{{ getFileIcon(file.type) }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-white text-xs sm:text-sm font-medium truncate">{{ file.name }}</p>
+                  <p class="text-gray-400 text-xs">{{ formatFileSize(file.size) }}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="removeFile(i)"
+                class="text-red-400 hover:text-red-300 p-1 rounded-full hover:bg-red-900 transition-colors flex-shrink-0"
+                title="Remover arquivo"
+              >
+                <span class="material-icons text-sm">close</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Mensagens de erro -->
+        <div *ngIf="fileErrors.length > 0" class="mt-2 space-y-1">
+          <div *ngFor="let error of fileErrors" class="text-red-400 text-sm">
+            {{ error }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex flex-col sm:flex-row justify-end gap-2 mt-6">
+        <button (click)="closeCreateModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm sm:text-base order-2 sm:order-1">Cancelar</button>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm sm:text-base order-1 sm:order-2">Criar</button>
       </div>
     </form>
   </div>
