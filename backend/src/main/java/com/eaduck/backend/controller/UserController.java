@@ -194,4 +194,44 @@ public class UserController {
             return ResponseEntity.badRequest().body("Erro ao atualizar status do usuário: " + e.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id, Authentication authentication) {
+        try {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            User userToDelete = userOpt.get();
+
+            // Pega o usuário autenticado
+            User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (currentUser == null) {
+                return ResponseEntity.status(403).build();
+            }
+
+            // Regra: só o admin master (id=1) pode deletar outros admins (exceto ele mesmo)
+            if (userToDelete.getRole() == Role.ADMIN) {
+                if (!currentUser.getId().equals(1L)) {
+                    // Se não for o admin master, não pode deletar outro admin
+                    return ResponseEntity.status(403).body("Apenas o administrador master pode deletar outros administradores.");
+                }
+                if (userToDelete.getId().equals(1L)) {
+                    // Nem o admin master pode deletar ele mesmo
+                    return ResponseEntity.status(403).body("Você não pode deletar sua própria conta.");
+                }
+            }
+
+            // Verifica se o usuário tem salas de aula associadas
+            if (!userToDelete.getClassrooms().isEmpty() || !userToDelete.getClassroomsAsTeacher().isEmpty()) {
+                return ResponseEntity.status(409).body("Não é possível deletar o usuário pois ele está associado a salas de aula.");
+            }
+
+            userRepository.delete(userToDelete);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao deletar usuário: " + e.getMessage());
+        }
+    }
 }

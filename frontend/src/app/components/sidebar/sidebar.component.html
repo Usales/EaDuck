@@ -1,31 +1,54 @@
-<aside class="h-screen w-64 flex flex-col shadow-xl fixed top-0 left-0 z-40" style="background: var(--panel-bg); color: var(--text-primary);">
-  <div class="flex items-center justify-center py-8 border-b" style="border-color: var(--border-color);">
-    <span class="text-2xl font-bold tracking-tight" style="color: var(--text-primary);">EaDuck</span>
+<!-- Overlay para mobile -->
+<div 
+  *ngIf="isMobile && isOpen" 
+  class="fixed inset-0 bg-black bg-opacity-50 z-30"
+  (click)="closeSidebar()">
+</div>
+
+<!-- Sidebar -->
+<aside 
+  [class]="'sidebar-container' + (isOpen ? ' sidebar-open' : ' sidebar-closed')"
+  style="background: var(--panel-bg); color: var(--text-primary);">
+  
+  <!-- Header da Sidebar -->
+  <div class="flex items-center justify-between py-2 md:py-4 px-4 border-b flex-shrink-0" style="border-color: var(--border-color);">
+    <span class="text-xl md:text-2xl font-bold tracking-tight" style="color: var(--text-primary);">EaDuck</span>
+    <!-- Botão de fechar para mobile -->
+    <button 
+      *ngIf="isMobile" 
+      (click)="closeSidebar()" 
+      class="md:hidden p-2 rounded-lg hover:bg-gray-700 transition-colors">
+      <span class="material-icons text-white">close</span>
+    </button>
   </div>
-  <nav class="flex-1 px-4 py-6 space-y-2">
-    <a [routerLink]="['/home']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+
+  <!-- Navegação -->
+  <nav class="flex-1 px-4 py-4 md:py-6 space-y-1 md:space-y-2 overflow-y-auto">
+    <a [routerLink]="['/home']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">dashboard</span> Home
     </a>
-    <a *ngIf="(currentUser$ | async)?.role === 'ADMIN'" [routerLink]="['/users']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+    <a *ngIf="(currentUser$ | async)?.role === 'ADMIN'" [routerLink]="['/users']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">people</span> Usuários
     </a>
-    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/classrooms']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/classrooms']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">school</span> Salas
     </a>
-    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/notifications']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+    <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/notifications']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">notifications</span> Notificações
     </a>
-    <a [routerLink]="['/tasks']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+    <a [routerLink]="['/tasks']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">assignment</span> Tarefas
     </a>
-    <a [routerLink]="['/chat']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+    <a [routerLink]="['/chat']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">chat</span> Chat
     </a>
-    <a [routerLink]="['/settings']" routerLinkActive="active" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-all" style="color: var(--text-primary);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+    <a [routerLink]="['/settings']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">settings</span> Configurações
     </a>
   </nav>
-  <div class="px-4 pb-6">
+
+  <!-- Botão de Logout -->
+  <div class="px-4 pb-4 md:pb-6 pt-2 flex-shrink-0">
     <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg font-semibold shadow transition-all" style="background: linear-gradient(to right, #dc2626, #ef4444); color: white;" onmouseover="this.style.background='linear-gradient(to right, #b91c1c, #dc2626)'" onmouseout="this.style.background='linear-gradient(to right, #dc2626, #ef4444)'">
       <span class="material-icons">logout</span> Sair
     </button>

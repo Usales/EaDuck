@@ -1,0 +1,177 @@
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 16rem; /* w-64 */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  z-index: 40;
+  transition: transform 0.3s ease-in-out;
+  overflow-y: auto; /* Permite scroll se necessário */
+}
+
+.sidebar-open {
+  transform: translateX(0);
+}
+
+.sidebar-closed {
+  transform: translateX(-100%);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  text-decoration: none;
+  cursor: pointer;
+  min-height: 2.5rem; /* Altura mínima consistente */
+}
+
+.nav-link:hover {
+  background: var(--bg-secondary);
+}
+
+.nav-link.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+.nav-link.active:hover {
+  background: var(--accent-color);
+  opacity: 0.9;
+}
+
+/* Desktop: sempre visível */
+@media (min-width: 768px) {
+  .sidebar-container {
+    transform: translateX(0) !important;
+  }
+  
+  .sidebar-closed {
+    transform: translateX(0) !important;
+  }
+}
+
+/* Mobile: comportamento responsivo */
+@media (max-width: 767px) {
+  .sidebar-container {
+    width: 100vw;
+    max-width: 20rem;
+    height: 100vh;
+    max-height: 100vh;
+  }
+  
+  .sidebar-closed {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-open {
+    transform: translateX(0);
+  }
+  
+  /* Ajustes específicos para mobile */
+  .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Garantir que o botão de logout fique sempre visível */
+  .sidebar-container > div:last-child {
+    margin-top: auto;
+    padding-bottom: 1rem;
+  }
+}
+
+/* Animações suaves */
+.sidebar-container {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estilo para o botão de fechar no mobile */
+@media (max-width: 767px) {
+  .sidebar-container button[class*="md:hidden"] {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .sidebar-container button[class*="md:hidden"]:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Garantir que o overlay funcione corretamente */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 30;
+  transition: opacity 0.3s ease;
+}
+
+/* Ajustes para o conteúdo principal quando sidebar está aberta no desktop */
+@media (min-width: 768px) {
+  .main-content {
+    margin-left: 16rem; /* w-64 */
+  }
+}
+
+@media (max-width: 767px) {
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+/* Scrollbar personalizada para a sidebar */
+.sidebar-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.sidebar-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Garantir que a sidebar ocupe toda a altura disponível */
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Ajuste final para mobile - garantir que o botão de logout seja sempre visível */
+@media (max-width: 767px) {
+  .sidebar-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .sidebar-container nav {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  
+  .sidebar-container > div:last-child {
+    flex-shrink: 0;
+    margin-top: auto;
+  }
+}

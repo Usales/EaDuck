@@ -1,2 +1,5 @@
-<app-header *ngIf="showHeader"></app-header>
-<router-outlet></router-outlet>
+<app-header *ngIf="showHeader" (sidebarToggle)="toggleSidebar()"></app-header>
+<app-sidebar *ngIf="showHeader" #sidebar></app-sidebar>
+<main class="main-content" [class.sidebar-open]="showHeader">
+  <router-outlet></router-outlet>
+</main>

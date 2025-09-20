@@ -25,6 +25,7 @@ export class ClassroomsComponent implements OnInit {
 
   newName = '';
   newAcademicYear = '';
+  showNewClassroomForm = false;
 
   currentUser$: Observable<User | null>;
   currentUser: User | null = null;
@@ -66,7 +67,16 @@ export class ClassroomsComponent implements OnInit {
       this.newName = '';
       this.newAcademicYear = '';
       this.selectedTeacherIds = [];
+      this.showNewClassroomForm = false;
     });
+  }
+
+  toggleNewClassroomForm() {
+    this.showNewClassroomForm = !this.showNewClassroomForm;
+    if (!this.showNewClassroomForm) {
+      this.newName = '';
+      this.newAcademicYear = '';
+    }
   }
 
   ngOnInit() {

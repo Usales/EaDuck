@@ -40,4 +40,25 @@ body {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* Layout principal */
+.main-content {
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+  padding-top: 4rem; /* Altura do header */
+}
+
+/* Desktop: sidebar sempre visível */
+@media (min-width: 768px) {
+  .main-content.sidebar-open {
+    margin-left: 16rem; /* w-64 - largura da sidebar */
+  }
+}
+
+/* Mobile: sem margem */
+@media (max-width: 767px) {
+  .main-content {
+    margin-left: 0;
+  }
 } 

@@ -5,25 +5,25 @@
   </div>
   <h1 class="text-xl md:text-2xl font-bold text-primary mb-4 md:mb-6">Dashboard</h1>
   <div class="dashboard-cards grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-    <div class="dashboard-card form-container rounded-xl p-4 md:p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
-      <span class="dashboard-card-icon material-icons text-accent text-2xl md:text-3xl mb-2">people</span>
-      <p class="dashboard-card-title text-secondary text-xs md:text-sm text-center">Total de Usuários</p>
-      <h2 class="dashboard-card-value text-xl md:text-2xl font-bold text-primary mt-1">{{ totalUsers }}</h2>
+    <div class="dashboard-card form-container rounded-xl shadow-lg hover:scale-105 transition-transform">
+      <div class="dashboard-card-icon material-icons text-accent">people</div>
+      <p class="dashboard-card-title text-secondary">Total de Usuários</p>
+      <h2 class="dashboard-card-value text-primary font-bold">{{ totalUsers }}</h2>
     </div>
-    <div class="dashboard-card form-container rounded-xl p-4 md:p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
-      <span class="dashboard-card-icon material-icons text-green-400 text-2xl md:text-3xl mb-2">school</span>
-      <p class="dashboard-card-title text-secondary text-xs md:text-sm text-center">Total de Salas</p>
-      <h2 class="dashboard-card-value text-xl md:text-2xl font-bold text-primary mt-1">{{ totalClassrooms }}</h2>
+    <div class="dashboard-card form-container rounded-xl shadow-lg hover:scale-105 transition-transform">
+      <div class="dashboard-card-icon material-icons text-green-400">school</div>
+      <p class="dashboard-card-title text-secondary">Total de Salas</p>
+      <h2 class="dashboard-card-value text-primary font-bold">{{ totalClassrooms }}</h2>
     </div>
-    <div class="dashboard-card form-container rounded-xl p-4 md:p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
-      <span class="dashboard-card-icon material-icons text-yellow-400 text-2xl md:text-3xl mb-2">notifications</span>
-      <p class="dashboard-card-title text-secondary text-xs md:text-sm text-center">Notificações</p>
-      <h2 class="dashboard-card-value text-xl md:text-2xl font-bold text-primary mt-1">{{ totalNotifications }}</h2>
+    <div class="dashboard-card form-container rounded-xl shadow-lg hover:scale-105 transition-transform">
+      <div class="dashboard-card-icon material-icons text-yellow-400">notifications</div>
+      <p class="dashboard-card-title text-secondary">Notificações</p>
+      <h2 class="dashboard-card-value text-primary font-bold">{{ totalNotifications }}</h2>
     </div>
-    <div class="dashboard-card form-container rounded-xl p-4 md:p-6 shadow-lg flex flex-col items-center hover:scale-105 transition-transform">
-      <span class="dashboard-card-icon material-icons text-red-400 text-2xl md:text-3xl mb-2">assignment</span>
-      <p class="dashboard-card-title text-secondary text-xs md:text-sm text-center">Tarefas Pendentes</p>
-      <h2 class="dashboard-card-value text-xl md:text-2xl font-bold text-primary mt-1">{{ totalTasks }}</h2>
+    <div class="dashboard-card form-container rounded-xl shadow-lg hover:scale-105 transition-transform">
+      <div class="dashboard-card-icon material-icons text-red-400">assignment</div>
+      <p class="dashboard-card-title text-secondary">Tarefas Pendentes</p>
+      <h2 class="dashboard-card-value text-primary font-bold">{{ totalTasks }}</h2>
     </div>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">

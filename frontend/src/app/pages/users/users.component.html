@@ -1,77 +1,81 @@
 <app-sidebar></app-sidebar>
-<div class="ml-64 p-8 pt-28 page-bg">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-primary">Usuários</h1>
-    <button *ngIf="isAdmin" (click)="toggleNewUserForm()" class="px-4 py-2 rounded-lg transition-all flex items-center gap-2" style="background: var(--button-bg); color: var(--button-text);" onmouseover="this.style.background='var(--accent-color)'" onmouseout="this.style.background='var(--button-bg)'">
-      <span class="material-icons">{{ showNewUserForm ? 'close' : 'add' }}</span>
-      {{ showNewUserForm ? 'Cancelar' : 'Novo Usuário' }}
-    </button>
+<div class="users-container page-bg">
+  <!-- Header Mobile First -->
+  <div class="users-header">
+    <div class="users-header-content">
+      <h1 class="users-title">Usuários</h1>
+      <button *ngIf="isAdmin" (click)="toggleNewUserForm()" class="users-add-btn">
+        <span class="material-icons">{{ showNewUserForm ? 'close' : 'add' }}</span>
+        <span class="users-add-text">{{ showNewUserForm ? 'Cancelar' : 'Novo Usuário' }}</span>
+      </button>
+    </div>
   </div>
 
-  <!-- Formulário de Novo Usuário -->
-  <div *ngIf="isAdmin && showNewUserForm" class="mb-6 form-container rounded-xl shadow-lg p-6">
-    <h2 class="text-xl font-semibold text-primary mb-4">Criar Novo Usuário</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-secondary text-sm mb-2">E-mail <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary">
-            <span class="material-icons text-sm">email</span>
+  <!-- Formulário de Novo Usuário Mobile First -->
+  <div *ngIf="isAdmin && showNewUserForm" class="users-form">
+    <h2 class="users-form-title">Criar Novo Usuário</h2>
+    <div class="users-form-grid">
+      <div class="users-form-field">
+        <label class="users-form-label">E-mail <span class="text-red-500">*</span></label>
+        <div class="users-form-input-wrapper">
+          <span class="users-form-icon">
+            <span class="material-icons">email</span>
           </span>
           <input type="email" [(ngModel)]="newUser.email" 
-                 class="input-field pl-12 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 class="users-form-input"
                  placeholder="Digite o e-mail">
         </div>
       </div>
-      <div>
-        <label class="block text-secondary text-sm mb-2">Senha <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary">
-            <span class="material-icons text-sm">lock</span>
+      
+      <div class="users-form-field">
+        <label class="users-form-label">Senha <span class="text-red-500">*</span></label>
+        <div class="users-form-input-wrapper">
+          <span class="users-form-icon">
+            <span class="material-icons">lock</span>
           </span>
           <input type="password" [(ngModel)]="newUser.password" 
-                 class="input-field pl-12 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 class="users-form-input"
                  placeholder="Digite a senha">
         </div>
-        <div class="w-full mt-1">
-          <div class="h-2 rounded transition-all"
+        <div class="users-form-password-strength">
+          <div class="users-form-strength-bar"
                [ngClass]="{
-                 'bg-red-500': passwordStrength <= 1,
-                 'bg-yellow-500': passwordStrength === 2,
-                 'bg-green-500': passwordStrength === 3 || passwordStrength === 4,
-                 'bg-blue-600': passwordStrength === 5
+                 'strength-weak': passwordStrength <= 1,
+                 'strength-medium': passwordStrength === 2,
+                 'strength-strong': passwordStrength === 3 || passwordStrength === 4,
+                 'strength-very-strong': passwordStrength === 5
                }"
                [style.width]="(passwordStrength * 20) + '%'">
           </div>
-          <span class="text-xs mt-1 block" [ngClass]="{
+          <span class="users-form-strength-text" [ngClass]="{
             'text-red-400': passwordStrength <= 1,
             'text-yellow-400': passwordStrength === 2,
             'text-green-400': passwordStrength === 3 || passwordStrength === 4,
             'text-blue-400': passwordStrength === 5
           }">Força da senha: {{ passwordStrengthLabel }}</span>
         </div>
-        <p class="text-secondary text-xs mt-1">A senha deve ter pelo menos 6 caracteres</p>
+        <p class="users-form-help">A senha deve ter pelo menos 6 caracteres</p>
       </div>
-      <div>
-        <label class="block text-secondary text-sm mb-2">Tipo de Usuário <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary">
-            <span class="material-icons text-sm">person</span>
+      
+      <div class="users-form-field">
+        <label class="users-form-label">Tipo de Usuário <span class="text-red-500">*</span></label>
+        <div class="users-form-input-wrapper">
+          <span class="users-form-icon">
+            <span class="material-icons">person</span>
           </span>
-          <select [(ngModel)]="newUser.role" 
-                  class="input-field pl-12 pr-4 py-2 appearance-none">
+          <select [(ngModel)]="newUser.role" class="users-form-select">
             <option value="ADMIN">Admin</option>
             <option value="STUDENT">Aluno</option>
             <option value="TEACHER">Professor</option>
           </select>
-          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none">
-            <span class="material-icons text-sm">arrow_drop_down</span>
+          <span class="users-form-select-arrow">
+            <span class="material-icons">arrow_drop_down</span>
           </span>
         </div>
       </div>
-      <div class="flex items-end">
-        <button (click)="createUser()" 
-                class="px-4 py-2 rounded-lg transition-all flex items-center gap-2" style="background: #10b981; color: white;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+      
+      <div class="users-form-actions">
+        <button (click)="createUser()" class="users-form-submit">
           <span class="material-icons">save</span>
           Criar Usuário
         </button>
@@ -79,91 +83,188 @@
     </div>
   </div>
 
-  <div class="form-container rounded-xl shadow-lg overflow-hidden">
-    <div class="p-4 border-b" style="border-color: var(--border-color);">
-      <div class="flex items-center gap-4">
-        <div class="relative flex-1">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-secondary">
-            <span class="material-icons">search</span>
-          </span>
-          <input type="text" placeholder="Buscar usuários..." [(ngModel)]="filter" (input)="applyFilter()" class="input-field pl-12 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
+  <!-- Lista de Usuários Mobile First -->
+  <div class="users-list">
+    <!-- Barra de Busca -->
+    <div class="users-search">
+      <div class="users-search-wrapper">
+        <span class="users-search-icon">
+          <span class="material-icons">search</span>
+        </span>
+        <input type="text" placeholder="Buscar usuários..." [(ngModel)]="filter" (input)="applyFilter()" class="users-search-input">
       </div>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="text-secondary text-sm" style="background: var(--bg-secondary);">
-            <th class="px-6 py-3 text-left">ID</th>
-            <th class="px-6 py-3 text-left">E-mail</th>
-            <th class="px-6 py-3 text-left">Tipo</th>
-            <th class="px-6 py-3 text-left">Status</th>
-            <th class="px-6 py-3 text-right">Ações</th>
-          </tr>
-        </thead>
-        <tbody style="border-color: var(--border-color);">
-          <tr *ngFor="let user of filteredUsers" class="text-primary" style="border-color: var(--border-color);">
-            <td class="px-6 py-4">{{ user.id }}</td>
-            <td class="px-6 py-4">{{ user.email }}</td>
-            <td class="px-6 py-4">
+
+    <!-- Cards Mobile / Tabela Desktop -->
+    <div class="users-content">
+      <!-- Cards para Mobile -->
+      <div class="users-cards-mobile">
+        <div *ngFor="let user of filteredUsers" class="users-card">
+          <div class="users-card-header">
+            <div class="users-card-info">
+              <h3 class="users-card-email">{{ user.email }}</h3>
+              <span class="users-card-id">ID: {{ user.id }}</span>
+            </div>
+            <div class="users-card-status">
+              <span [ngClass]="user.isActive ? 'users-status-active' : 'users-status-inactive'">
+                {{ user.isActive ? 'Ativo' : 'Inativo' }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="users-card-body">
+            <div class="users-card-field">
+              <span class="users-card-label">Tipo:</span>
               <ng-container *ngIf="editUserId === user.id; else viewRole">
                 <select [(ngModel)]="editRole" 
                         [disabled]="!canEditUser(user)"
                         [class.opacity-50]="!canEditUser(user)"
                         [class.cursor-not-allowed]="!canEditUser(user)"
-                        class="input-field px-2 py-1">
+                        class="users-card-select">
                   <option value="ADMIN">Admin</option>
                   <option value="STUDENT">Aluno</option>
                   <option value="TEACHER">Professor</option>
                 </select>
               </ng-container>
-              <ng-template #viewRole>{{ user.role }}</ng-template>
-            </td>
-            <td class="px-6 py-4">
+              <ng-template #viewRole>
+                <span class="users-card-value">{{ user.role }}</span>
+              </ng-template>
+            </div>
+            
+            <div class="users-card-field">
+              <span class="users-card-label">Status:</span>
               <ng-container *ngIf="editUserId === user.id; else viewStatus">
                 <select [(ngModel)]="editIsActive" 
                         [disabled]="!canEditUser(user)"
                         [class.opacity-50]="!canEditUser(user)"
                         [class.cursor-not-allowed]="!canEditUser(user)"
-                        class="input-field px-2 py-1">
+                        class="users-card-select">
                   <option [ngValue]="true">Ativo</option>
                   <option [ngValue]="false">Inativo</option>
                 </select>
               </ng-container>
               <ng-template #viewStatus>
-                <span [ngClass]="user.isActive ? 'px-2 py-1 bg-green-500 bg-opacity-20 text-green-400 rounded-full text-xs' : 'px-2 py-1 bg-red-500 bg-opacity-20 text-red-400 rounded-full text-xs'">
+                <span [ngClass]="user.isActive ? 'users-status-active' : 'users-status-inactive'">
                   {{ user.isActive ? 'Ativo' : 'Inativo' }}
                 </span>
               </ng-template>
-            </td>
-            <td class="px-6 py-4 text-right">
-              <ng-container *ngIf="editUserId === user.id; else editDeleteBtns">
-                <button (click)="saveEdit(user)" 
-                        [disabled]="!canEditUser(user)"
-                        [class.opacity-50]="!canEditUser(user)"
-                        [class.cursor-not-allowed]="!canEditUser(user)"
-                        class="text-green-400 hover:text-green-300 p-1 mr-2">
-                  <span class="material-icons">check</span>
-                </button>
-                <button (click)="cancelEdit()" class="text-red-400 hover:text-red-300 p-1">
-                  <span class="material-icons">close</span>
-                </button>
-              </ng-container>
-              <ng-template #editDeleteBtns>
-                <button *ngIf="canEditUser(user)" (click)="startEdit(user)" class="text-secondary hover:text-primary p-1">
-                  <span class="material-icons">edit</span>
-                </button>
-                <span *ngIf="!canEditUser(user)" class="text-secondary cursor-not-allowed" title="Você não pode editar este usuário">
-                  <span class="material-icons">lock</span>
-                </span>
-              </ng-template>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+          
+          <div class="users-card-actions">
+            <ng-container *ngIf="editUserId === user.id; else editDeleteBtns">
+              <button (click)="saveEdit(user)" 
+                      [disabled]="!canEditUser(user)"
+                      [class.opacity-50]="!canEditUser(user)"
+                      [class.cursor-not-allowed]="!canEditUser(user)"
+                      class="users-action-btn users-action-save">
+                <span class="material-icons">check</span>
+                Salvar
+              </button>
+              <button (click)="cancelEdit()" class="users-action-btn users-action-cancel">
+                <span class="material-icons">close</span>
+                Cancelar
+              </button>
+            </ng-container>
+            <ng-template #editDeleteBtns>
+              <button *ngIf="canEditUser(user)" (click)="startEdit(user)" class="users-action-btn users-action-edit">
+                <span class="material-icons">edit</span>
+                Editar
+              </button>
+              <button *ngIf="canEditUser(user)" (click)="deleteUser(user)" class="users-action-btn users-action-delete">
+                <span class="material-icons">delete</span>
+                Deletar
+              </button>
+              <span *ngIf="!canEditUser(user)" class="users-action-locked" title="Você não pode editar este usuário">
+                <span class="material-icons">lock</span>
+                Bloqueado
+              </span>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela para Desktop -->
+      <div class="users-table-desktop">
+        <table class="users-table">
+          <thead>
+            <tr class="users-table-header">
+              <th class="users-table-th">ID</th>
+              <th class="users-table-th">E-mail</th>
+              <th class="users-table-th">Tipo</th>
+              <th class="users-table-th">Status</th>
+              <th class="users-table-th users-table-th-actions">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredUsers" class="users-table-row">
+              <td class="users-table-td">{{ user.id }}</td>
+              <td class="users-table-td">{{ user.email }}</td>
+              <td class="users-table-td">
+                <ng-container *ngIf="editUserId === user.id; else viewRole">
+                  <select [(ngModel)]="editRole" 
+                          [disabled]="!canEditUser(user)"
+                          [class.opacity-50]="!canEditUser(user)"
+                          [class.cursor-not-allowed]="!canEditUser(user)"
+                          class="users-table-select">
+                    <option value="ADMIN">Admin</option>
+                    <option value="STUDENT">Aluno</option>
+                    <option value="TEACHER">Professor</option>
+                  </select>
+                </ng-container>
+                <ng-template #viewRole>{{ user.role }}</ng-template>
+              </td>
+              <td class="users-table-td">
+                <ng-container *ngIf="editUserId === user.id; else viewStatus">
+                  <select [(ngModel)]="editIsActive" 
+                          [disabled]="!canEditUser(user)"
+                          [class.opacity-50]="!canEditUser(user)"
+                          [class.cursor-not-allowed]="!canEditUser(user)"
+                          class="users-table-select">
+                    <option [ngValue]="true">Ativo</option>
+                    <option [ngValue]="false">Inativo</option>
+                  </select>
+                </ng-container>
+                <ng-template #viewStatus>
+                  <span [ngClass]="user.isActive ? 'users-status-active' : 'users-status-inactive'">
+                    {{ user.isActive ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </ng-template>
+              </td>
+              <td class="users-table-td users-table-td-actions">
+                <ng-container *ngIf="editUserId === user.id; else editDeleteBtns">
+                  <button (click)="saveEdit(user)" 
+                          [disabled]="!canEditUser(user)"
+                          [class.opacity-50]="!canEditUser(user)"
+                          [class.cursor-not-allowed]="!canEditUser(user)"
+                          class="users-table-action users-table-action-save">
+                    <span class="material-icons">check</span>
+                  </button>
+                  <button (click)="cancelEdit()" class="users-table-action users-table-action-cancel">
+                    <span class="material-icons">close</span>
+                  </button>
+                </ng-container>
+                <ng-template #editDeleteBtns>
+                  <button *ngIf="canEditUser(user)" (click)="startEdit(user)" class="users-table-action users-table-action-edit">
+                    <span class="material-icons">edit</span>
+                  </button>
+                  <button *ngIf="canEditUser(user)" (click)="deleteUser(user)" class="users-table-action users-table-action-delete">
+                    <span class="material-icons">delete</span>
+                  </button>
+                  <span *ngIf="!canEditUser(user)" class="users-table-action users-table-action-locked" title="Você não pode editar este usuário">
+                    <span class="material-icons">lock</span>
+                  </span>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="p-4 border-t flex items-center justify-between" style="border-color: var(--border-color);">
-      <div class="text-secondary text-sm">
+
+    <!-- Footer com informações -->
+    <div class="users-footer">
+      <div class="users-footer-info">
         Mostrando {{ filteredUsers.length }} de {{ users.length }} usuários
       </div>
     </div>

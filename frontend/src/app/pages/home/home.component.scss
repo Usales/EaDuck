@@ -1,0 +1,76 @@
+// Estilos específicos para centralizar os ícones dos cards do dashboard
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+}
+
+.dashboard-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.dashboard-card-title {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-card-value {
+  text-align: center;
+  width: 100%;
+}
+
+// Garantir que os ícones fiquem perfeitamente centralizados
+.material-icons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Ajustes específicos para mobile
+@media (max-width: 640px) {
+  .dashboard-card {
+    padding: 1rem !important;
+    min-height: 120px;
+  }
+  
+  .dashboard-card-icon {
+    font-size: 2rem !important;
+    margin-bottom: 0.75rem;
+    margin-top: 0.25rem;
+  }
+}
+
+// Ajustes para tablet
+@media (min-width: 641px) and (max-width: 768px) {
+  .dashboard-card {
+    padding: 1.25rem !important;
+    min-height: 140px;
+  }
+  
+  .dashboard-card-icon {
+    font-size: 2.25rem !important;
+    margin-bottom: 0.75rem;
+  }
+}
+
+// Ajustes para desktop
+@media (min-width: 769px) {
+  .dashboard-card {
+    padding: 1.5rem !important;
+    min-height: 160px;
+  }
+  
+  .dashboard-card-icon {
+    font-size: 2.5rem !important;
+    margin-bottom: 1rem;
+  }
+}

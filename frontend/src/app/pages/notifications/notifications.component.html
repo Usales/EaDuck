@@ -1,109 +1,171 @@
 <app-sidebar></app-sidebar>
-<div class="ml-64 p-8 pt-28">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-white">Notificações
-      <span *ngIf="getUnreadCount() > 0" class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ getUnreadCount() }}</span>
-    </h1>
-    <button *ngIf="isAdminOrTeacher" (click)="openModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all flex items-center gap-2">
-      <span class="material-icons">add</span>
-      Nova Notificação
-    </button>
+<div class="notifications-container page-bg">
+  <!-- Header Mobile First -->
+  <div class="notifications-header">
+    <div class="notifications-header-content">
+      <h1 class="notifications-title">
+        Notificações
+        <span *ngIf="getUnreadCount() > 0" class="notifications-badge">{{ getUnreadCount() }}</span>
+      </h1>
+      <button *ngIf="isAdminOrTeacher" (click)="openModal()" class="notifications-add-btn">
+        <span class="material-icons">add</span>
+        <span class="notifications-add-text">Nova Notificação</span>
+      </button>
+    </div>
   </div>
-  <div class="flex gap-4 mb-4">
-    <input type="text" [(ngModel)]="searchText" placeholder="Buscar notificações..." class="w-1/3 px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none" />
-    <select [(ngModel)]="filterType" class="px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
-      <option value="ALL">Todos os tipos</option>
-      <option value="AVISO">Aviso</option>
-      <option value="TAREFA">Tarefa</option>
-      <option value="SISTEMA">Sistema</option>
-      <option value="FORUM">Fórum</option>
-    </select>
-    <select [(ngModel)]="filterRead" class="px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
-      <option value="ALL">Todas</option>
-      <option value="UNREAD">Não lidas</option>
-      <option value="READ">Lidas</option>
-    </select>
+
+  <!-- Filtros Mobile First -->
+  <div class="notifications-filters">
+    <div class="notifications-search">
+      <div class="notifications-search-wrapper">
+        <span class="notifications-search-icon">
+          <span class="material-icons">search</span>
+        </span>
+        <input type="text" [(ngModel)]="searchText" placeholder="Buscar notificações..." class="notifications-search-input" />
+      </div>
+    </div>
+    
+    <div class="notifications-filter-row">
+      <div class="notifications-filter-field">
+        <label class="notifications-filter-label">Tipo</label>
+        <select [(ngModel)]="filterType" class="notifications-filter-select">
+          <option value="ALL">Todos os tipos</option>
+          <option value="AVISO">Aviso</option>
+          <option value="TAREFA">Tarefa</option>
+          <option value="SISTEMA">Sistema</option>
+          <option value="FORUM">Fórum</option>
+        </select>
+      </div>
+      
+      <div class="notifications-filter-field">
+        <label class="notifications-filter-label">Status</label>
+        <select [(ngModel)]="filterRead" class="notifications-filter-select">
+          <option value="ALL">Todas</option>
+          <option value="UNREAD">Não lidas</option>
+          <option value="READ">Lidas</option>
+        </select>
+      </div>
+    </div>
   </div>
-  <div *ngIf="loading" class="text-white">Carregando...</div>
-  <div *ngIf="!loading && notifications.length === 0" class="text-gray-400">Nenhuma notificação encontrada.</div>
-  <div *ngIf="!loading && notifications.length > 0" class="bg-[#232b3e] rounded-xl shadow-lg overflow-hidden">
-    <div class="divide-y divide-[#2d3650]">
-      <div *ngFor="let n of filteredNotifications" class="p-4 hover:bg-[#1a2233] transition-all cursor-pointer" [class.opacity-60]="n.isRead" (click)="markAsRead(n)">
-        <div class="flex items-start gap-4">
-          <div [ngClass]="getNotifTypeColor(n.notificationType)" class="p-2 rounded-lg">
-            <span class="material-icons text-white">{{ getNotifTypeIcon(n.notificationType) }}</span>
+  <!-- Lista de Notificações Mobile First -->
+  <div class="notifications-list">
+    <div *ngIf="loading" class="notifications-loading">
+      <span class="material-icons">refresh</span>
+      Carregando...
+    </div>
+    
+    <div *ngIf="!loading && notifications.length === 0" class="notifications-empty">
+      <span class="material-icons">notifications_none</span>
+      Nenhuma notificação encontrada
+    </div>
+    
+    <div *ngIf="!loading && notifications.length > 0" class="notifications-cards">
+      <div *ngFor="let n of filteredNotifications" 
+           class="notification-card" 
+           [class.notification-read]="n.isRead" 
+           (click)="markAsRead(n)">
+        
+        <!-- Header do Card -->
+        <div class="notification-card-header">
+          <div class="notification-card-icon" [ngClass]="getNotifTypeColor(n.notificationType)">
+            <span class="material-icons">{{ getNotifTypeIcon(n.notificationType) }}</span>
           </div>
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-1">
-              <h3 class="text-white font-semibold">{{ n.title || 'Notificação' }}</h3>
-              <span class="text-gray-400 text-sm">{{ n.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <p class="text-gray-400 text-sm mb-2">{{ n.message }}</p>
-            <div class="flex items-center gap-2">
-              <span [ngClass]="getNotifTypeColor(n.notificationType)" class="px-2 py-1 rounded-full text-xs font-bold text-white">
-                {{ getNotifTypeLabel(n.notificationType) }}
-              </span>
-              <span *ngIf="!n.isRead" class="bg-blue-500 text-white text-xs px-2 py-1 rounded">Nova</span>
-              <span *ngIf="n.isRead" class="bg-gray-500 text-white text-xs px-2 py-1 rounded">Lida</span>
-            </div>
+          <div class="notification-card-info">
+            <h3 class="notification-card-title">{{ n.title || 'Notificação' }}</h3>
+            <span class="notification-card-date">{{ n.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
           </div>
+          <div class="notification-card-status">
+            <span *ngIf="!n.isRead" class="notification-status-new">Nova</span>
+            <span *ngIf="n.isRead" class="notification-status-read">Lida</span>
+          </div>
+        </div>
+
+        <!-- Body do Card -->
+        <div class="notification-card-body">
+          <p class="notification-card-message">{{ n.message }}</p>
+        </div>
+
+        <!-- Footer do Card -->
+        <div class="notification-card-footer">
+          <span [ngClass]="getNotifTypeColor(n.notificationType)" class="notification-type-badge">
+            {{ getNotifTypeLabel(n.notificationType) }}
+          </span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Nova Notificação -->
-  <div *ngIf="showModal && isAdminOrTeacher" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-[#232b3e] p-8 rounded-xl w-full max-w-md relative">
-      <button (click)="closeModal()" class="absolute top-2 right-2 text-gray-400 hover:text-white">
-        <span class="material-icons">close</span>
-      </button>
-      <h2 class="text-xl font-bold text-white mb-4">Nova Notificação</h2>
-      <form (ngSubmit)="sendNotification()" autocomplete="off">
-        <div class="mb-4">
-          <label class="block text-gray-300 mb-1">Destinatário</label>
-          <div class="flex gap-4 mb-2">
-            <label class="flex items-center gap-2 cursor-pointer">
+  <!-- Modal Nova Notificação Mobile First -->
+  <div *ngIf="showModal && isAdminOrTeacher" class="notification-modal">
+    <div class="notification-modal-overlay" (click)="closeModal()"></div>
+    <div class="notification-modal-content">
+      <div class="notification-modal-header">
+        <h2 class="notification-modal-title">Nova Notificação</h2>
+        <button (click)="closeModal()" class="notification-modal-close">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      
+      <form (ngSubmit)="sendNotification()" autocomplete="off" class="notification-modal-form">
+        <div class="notification-form-field">
+          <label class="notification-form-label">Destinatário</label>
+          <div class="notification-form-radio-group">
+            <label class="notification-form-radio">
               <input type="radio" name="recipientType" [(ngModel)]="recipientType" value="USER" />
-              <span class="font-semibold text-blue-400">Usuário</span>
+              <span class="notification-form-radio-text">Usuário</span>
             </label>
-            <label class="flex items-center gap-2 cursor-pointer">
+            <label class="notification-form-radio">
               <input type="radio" name="recipientType" [(ngModel)]="recipientType" value="CLASSROOM" />
-              <span class="font-semibold text-green-400">Turma</span>
+              <span class="notification-form-radio-text">Turma</span>
             </label>
           </div>
-          <div *ngIf="recipientType === 'USER'">
-            <select [(ngModel)]="selectedUserId" name="selectedUserId" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+          
+          <div *ngIf="recipientType === 'USER'" class="notification-form-select-wrapper">
+            <select [(ngModel)]="selectedUserId" name="selectedUserId" required class="notification-form-select">
               <option [ngValue]="null">Selecione o usuário</option>
               <option *ngFor="let u of users" [ngValue]="u.id">{{ u.email }}</option>
             </select>
           </div>
-          <div *ngIf="recipientType === 'CLASSROOM'">
-            <select [(ngModel)]="selectedClassroomId" name="selectedClassroomId" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+          
+          <div *ngIf="recipientType === 'CLASSROOM'" class="notification-form-select-wrapper">
+            <select [(ngModel)]="selectedClassroomId" name="selectedClassroomId" required class="notification-form-select">
               <option [ngValue]="null">Selecione a turma</option>
               <option *ngFor="let c of classrooms" [ngValue]="c.id">{{ c.name }}</option>
             </select>
           </div>
         </div>
-        <div class="mb-4">
-          <label class="block text-gray-300 mb-1">Título</label>
-          <input [(ngModel)]="newNotification.title" name="title" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none" />
+        
+        <div class="notification-form-field">
+          <label class="notification-form-label">Título</label>
+          <input [(ngModel)]="newNotification.title" name="title" required class="notification-form-input" placeholder="Digite o título da notificação" />
         </div>
-        <div class="mb-4">
-          <label class="block text-gray-300 mb-1">Mensagem</label>
-          <textarea [(ngModel)]="newNotification.message" name="message" required rows="3" class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none"></textarea>
+        
+        <div class="notification-form-field">
+          <label class="notification-form-label">Mensagem</label>
+          <textarea [(ngModel)]="newNotification.message" name="message" required rows="4" class="notification-form-textarea" placeholder="Digite a mensagem da notificação"></textarea>
         </div>
-        <div class="mb-4">
-          <label class="block text-gray-300 mb-1">Tipo</label>
-          <select [(ngModel)]="newNotification.notificationType" name="notificationType" required class="w-full px-3 py-2 rounded bg-[#1a2233] text-white border border-[#2d3650] focus:outline-none">
+        
+        <div class="notification-form-field">
+          <label class="notification-form-label">Tipo</label>
+          <select [(ngModel)]="newNotification.notificationType" name="notificationType" required class="notification-form-select">
             <option value="AVISO">Aviso</option>
             <option value="TAREFA">Tarefa</option>
             <option value="FORUM">Fórum</option>
             <option value="SISTEMA">Sistema</option>
           </select>
         </div>
-        <div *ngIf="sendError" class="mb-2 text-red-400 text-sm">{{ sendError }}</div>
-        <button type="submit" class="w-full py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 transition-all font-semibold">Enviar</button>
+        
+        <div *ngIf="sendError" class="notification-form-error">{{ sendError }}</div>
+        
+        <div class="notification-form-actions">
+          <button type="button" (click)="closeModal()" class="notification-form-cancel">
+            Cancelar
+          </button>
+          <button type="submit" class="notification-form-submit">
+            <span class="material-icons">send</span>
+            Enviar
+          </button>
+        </div>
       </form>
     </div>
   </div>

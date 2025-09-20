@@ -248,4 +248,36 @@ export class UsersComponent implements OnInit {
     if (s === 3 || s === 4) return 'Forte';
     return 'Excelente';
   }
+
+  deleteUser(user: User) {
+    if (!this.canEditUser(user)) {
+      this.showErrorModal(
+        'Ação Não Permitida',
+        'Você não pode deletar este usuário.',
+        'warning'
+      );
+      return;
+    }
+
+    if (confirm(`Tem certeza que deseja deletar o usuário ${user.email}? Esta ação não pode ser desfeita.`)) {
+      this.userService.deleteUser(user.id).subscribe({
+        next: () => {
+          this.users = this.users.filter(u => u.id !== user.id);
+          this.applyFilter();
+          this.showErrorModal(
+            'Sucesso',
+            'Usuário deletado com sucesso!',
+            'success'
+          );
+        },
+        error: (error) => {
+          this.showErrorModal(
+            'Erro ao Deletar Usuário',
+            error.error?.message || 'Ocorreu um erro ao deletar o usuário. Por favor, tente novamente.',
+            'error'
+          );
+        }
+      });
+    }
+  }
 }

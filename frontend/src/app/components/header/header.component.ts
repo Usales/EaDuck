@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService, Notification } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
@@ -16,6 +16,8 @@ import { filter, catchError, switchMap } from 'rxjs/operators';
   styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent implements OnInit, OnDestroy {
+  @Output() sidebarToggle = new EventEmitter<void>();
+  
   notifications: Notification[] = [];
   showDropdown = false;
   loading = false;
@@ -112,5 +114,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
         return of(null);
       })
     ).subscribe();
+  }
+
+  toggleSidebar() {
+    this.sidebarToggle.emit();
   }
 } 

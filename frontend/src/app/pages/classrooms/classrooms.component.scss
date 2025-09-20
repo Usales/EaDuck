@@ -1,0 +1,750 @@
+// ===== MOBILE FIRST STYLES =====
+
+// Container principal
+.classrooms-container {
+  min-height: 100vh;
+  padding: 1rem;
+  padding-top: 5rem; // Espaço para o header fixo
+  position: relative;
+  overflow-x: hidden;
+}
+
+// Header
+.classrooms-header {
+  margin-bottom: 1.5rem;
+}
+
+.classrooms-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.classrooms-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.classrooms-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.classrooms-add-btn:hover {
+  background: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.classrooms-add-text {
+  font-size: 0.875rem;
+}
+
+// Formulário
+.classrooms-form {
+  background: var(--panel-bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.classrooms-form-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1.5rem 0;
+}
+
+.classrooms-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.classrooms-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.classrooms-form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.classrooms-form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.classrooms-form-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  z-index: 1;
+}
+
+.classrooms-form-icon .material-icons {
+  font-size: 1.125rem;
+}
+
+.classrooms-form-input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  color: var(--input-text);
+  font-size: 0.875rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.classrooms-form-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.classrooms-form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.classrooms-form-submit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.classrooms-form-submit:hover {
+  background: var(--button-bg);
+  transform: translateY(-1px);
+}
+
+// Barra de busca
+.classrooms-search {
+  margin-bottom: 1.5rem;
+}
+
+.classrooms-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.classrooms-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  z-index: 1;
+}
+
+.classrooms-search-input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  color: var(--input-text);
+  font-size: 0.875rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.classrooms-search-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+// Lista de salas
+.classrooms-list {
+  margin-bottom: 2rem;
+}
+
+.classrooms-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+// Card da sala
+.classroom-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: visible;
+  margin-bottom: 1rem;
+}
+
+.classroom-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+// Header do card
+.classroom-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.classroom-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.classroom-card-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+  word-break: break-word;
+}
+
+.classroom-card-name-input {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.375rem;
+  color: var(--input-text);
+  font-size: 1.125rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.classroom-card-status {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.classroom-status-active {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.classroom-status-inactive {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+// Body do card
+.classroom-card-body {
+  margin-bottom: 1rem;
+}
+
+.classroom-card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.classroom-card-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.classroom-card-value {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.classroom-card-input {
+  padding: 0.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.375rem;
+  color: var(--input-text);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.classroom-card-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.classroom-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.classroom-stat .material-icons {
+  font-size: 1rem;
+}
+
+// Ações de atribuição
+.classroom-card-assignments {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 5;
+}
+
+.classroom-assign-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  justify-content: center;
+  min-width: 100px;
+}
+
+.classroom-assign-teacher {
+  background: #3b82f6;
+  color: white;
+}
+
+.classroom-assign-teacher:hover {
+  background: #2563eb;
+}
+
+.classroom-assign-student {
+  background: #10b981;
+  color: white;
+}
+
+.classroom-assign-student:hover {
+  background: #059669;
+}
+
+// Ações do card
+.classroom-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 5;
+  margin-top: 1rem;
+}
+
+.classroom-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  justify-content: center;
+  min-width: 80px;
+}
+
+.classroom-action-save {
+  background: #10b981;
+  color: white;
+}
+
+.classroom-action-save:hover {
+  background: #059669;
+}
+
+.classroom-action-cancel {
+  background: #ef4444;
+  color: white;
+}
+
+.classroom-action-cancel:hover {
+  background: #dc2626;
+}
+
+.classroom-action-edit {
+  background: var(--accent-color);
+  color: white;
+}
+
+.classroom-action-edit:hover {
+  background: var(--button-bg);
+}
+
+.classroom-action-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.classroom-action-delete:hover {
+  background: #dc2626;
+}
+
+// Seção de atribuição
+.classroom-assignment {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  position: relative;
+  z-index: 10;
+  clear: both;
+}
+
+.classroom-assignment-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+.classroom-assignment-selected {
+  margin-bottom: 1rem;
+}
+
+.classroom-assignment-empty {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.classroom-assignment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.classroom-assignment-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.classroom-assignment-tag-teacher {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.classroom-assignment-tag-student {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.classroom-assignment-tag-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+  margin-left: 0.25rem;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.classroom-assignment-tag-remove:hover {
+  opacity: 1;
+}
+
+.classroom-assignment-search {
+  margin-bottom: 1rem;
+}
+
+.classroom-assignment-input {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.375rem;
+  color: var(--input-text);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.classroom-assignment-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
+}
+
+.classroom-assignment-results {
+  max-height: 8rem;
+  overflow-y: auto;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.classroom-assignment-item {
+  padding: 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+.classroom-assignment-item:hover {
+  background: var(--bg-secondary);
+}
+
+.classroom-assignment-item:last-child {
+  border-bottom: none;
+}
+
+.classroom-assignment-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.classroom-assignment-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  justify-content: center;
+}
+
+.classroom-assignment-save {
+  background: #10b981;
+  color: white;
+}
+
+.classroom-assignment-save:hover:not(:disabled) {
+  background: #059669;
+}
+
+.classroom-assignment-save:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.classroom-assignment-cancel {
+  background: #ef4444;
+  color: white;
+}
+
+.classroom-assignment-cancel:hover {
+  background: #dc2626;
+}
+
+// ===== RESPONSIVE BREAKPOINTS =====
+
+// Tablet (640px+)
+@media (min-width: 640px) {
+  .classrooms-container {
+    padding: 1.5rem;
+    padding-top: 6rem;
+  }
+  
+  .classrooms-header-content {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .classrooms-add-btn {
+    width: auto;
+  }
+  
+  .classrooms-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  
+  .classrooms-form-field:last-child {
+    grid-column: 1 / -1;
+  }
+  
+  .classrooms-form-actions {
+    justify-content: flex-start;
+  }
+  
+  .classrooms-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .classroom-card-assignments {
+    flex-wrap: nowrap;
+  }
+  
+  .classroom-assign-btn {
+    flex: 1;
+  }
+}
+
+// Desktop (768px+)
+@media (min-width: 768px) {
+  .classrooms-container {
+    margin-left: 16rem; // Largura da sidebar
+    padding: 2rem;
+    padding-top: 7rem;
+  }
+  
+  .classrooms-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+  
+  .classroom-card {
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 300px;
+  }
+  
+  .classroom-card-field {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .classroom-card-label {
+    min-width: 80px;
+    font-size: 0.875rem;
+  }
+  
+  .classroom-card-value {
+    font-size: 1rem;
+  }
+  
+  .classroom-card-assignments {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: nowrap;
+  }
+  
+  .classroom-assign-btn {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .classroom-card-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+    margin-top: auto;
+  }
+  
+  .classroom-action-btn {
+    flex: 1;
+    min-width: 100px;
+  }
+  
+  .classroom-assignment {
+    margin-top: 1.5rem;
+    z-index: 15;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Large Desktop (1024px+)
+@media (min-width: 1024px) {
+  .classrooms-container {
+    padding: 2.5rem;
+  }
+  
+  .classrooms-title {
+    font-size: 2rem;
+  }
+  
+  .classrooms-form {
+    padding: 2rem;
+  }
+  
+  .classrooms-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.5rem;
+  }
+  
+  .classroom-card {
+    min-height: 320px;
+  }
+  
+  .classroom-assign-btn {
+    min-width: 140px;
+  }
+  
+  .classroom-action-btn {
+    min-width: 120px;
+  }
+}

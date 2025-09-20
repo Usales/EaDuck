@@ -41,5 +41,9 @@ export class UserService {
     return this.http.put<User>(`${this.apiUrl}/${id}/status?isActive=${isActive}`, {});
   }
 
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
   // Adicionar métodos para ativar/desativar usuário e outros conforme necessário
 } 

@@ -1,17 +1,31 @@
-<header class="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-8 z-50 shadow" style="background: var(--panel-bg);">
-  <div class="flex items-center gap-4">
-    <span class="text-2xl font-bold tracking-tight" style="color: var(--text-primary);">EaDuck</span>
-  </div>
-  <div class="flex items-center gap-6">
-    <!-- Theme Toggle -->
-    <app-theme-toggle></app-theme-toggle>
+<header class="fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-2 sm:px-4 md:px-8 z-50 shadow" style="background: var(--panel-bg);">
+  <div class="flex items-center gap-2 sm:gap-4">
+    <!-- Botão de menu hambúrguer para mobile -->
+    <button 
+      (click)="toggleSidebar()" 
+      class="md:hidden p-1.5 sm:p-2 rounded-lg hover:bg-gray-700 transition-colors flex-shrink-0"
+      style="color: var(--text-primary);">
+      <span class="material-icons text-xl sm:text-2xl">menu</span>
+    </button>
     
-    <span class="text-sm" style="color: var(--text-secondary);" *ngIf="authService.getCurrentUser()">
+    <span class="text-lg sm:text-xl md:text-2xl font-bold tracking-tight truncate" style="color: var(--text-primary);">EaDuck</span>
+  </div>
+  
+  <div class="flex items-center gap-1 sm:gap-2 md:gap-6 flex-shrink-0">
+    <!-- Theme Toggle -->
+    <div class="theme-toggle-wrapper">
+      <app-theme-toggle></app-theme-toggle>
+    </div>
+    
+    <!-- Informações do usuário (oculto no mobile) -->
+    <span class="hidden md:block text-sm" style="color: var(--text-secondary);" *ngIf="authService.getCurrentUser()">
       {{ authService.getCurrentUser()?.email }} <span class="font-semibold" style="color: var(--accent-color);">({{ authService.getCurrentUser()?.role }})</span>
     </span>
+    
+    <!-- Notificações -->
     <div class="relative">
-      <button (click)="toggleDropdown()" class="relative focus:outline-none">
-        <span class="material-icons text-3xl" style="color: var(--text-primary);">notifications</span>
+      <button (click)="toggleDropdown()" class="relative focus:outline-none p-1.5 sm:p-2 rounded-lg hover:bg-gray-700 transition-colors">
+        <span class="material-icons text-xl sm:text-2xl md:text-3xl" style="color: var(--text-primary);">notifications</span>
         <span *ngIf="getUnreadCount() > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ getUnreadCount() }}</span>
       </button>
       <div *ngIf="showDropdown" class="absolute right-0 mt-2 w-80 rounded-lg shadow-lg overflow-hidden" style="background: var(--panel-bg); border: 1px solid var(--border-color);">
