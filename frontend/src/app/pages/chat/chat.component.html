@@ -1,245 +1,104 @@
-<div class="chat-container h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
+<div class="chat-container h-screen flex flex-col" [attr.data-theme]="currentTheme">
   <!-- Header -->
-  <div class="chat-header bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between">
+  <div class="chat-header p-4 flex items-center justify-between">
     <div class="flex items-center space-x-3">
-      <button 
-        (click)="toggleSidebar()"
-        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        title="Menu">
-        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </button>
-      <h1 class="text-xl font-semibold text-gray-800 dark:text-white">Chat EaDuck</h1>
-    </div>
-    <div class="flex items-center space-x-4">
+      <h1 class="text-xl font-bold">Chat EaDuck</h1>
       <div class="flex items-center space-x-2">
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ onlineUsers }} online</span>
         <div class="w-2 h-2 rounded-full" [ngClass]="connected ? 'bg-green-500' : 'bg-red-500'"></div>
+        <span class="text-sm">{{ connected ? 'Conectado' : 'Desconectado' }}</span>
       </div>
-      <button 
-        (click)="toggleEmojiPicker()"
-        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        title="Emojis">
-        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-      </button>
+    </div>
+    
+    <div class="flex items-center space-x-4">
+      <span class="text-sm">{{ onlineUsers }} online</span>
       
-      <!-- Theme Toggle Button -->
+      <!-- Theme Toggle -->
       <div class="relative group">
         <button 
           (click)="toggleTheme()"
-          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+          class="p-2 rounded-lg hover:bg-opacity-20 transition-colors"
           [title]="'Tema: ' + getThemeLabel()">
           <span class="text-lg">{{ getThemeIcon() }}</span>
-          <span class="text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">{{ getThemeLabel() }}</span>
         </button>
         
         <!-- Theme Dropdown -->
-        <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-          <div class="py-2">
-            <button 
-              (click)="setTheme('light')"
-              class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
-              [class.bg-blue-50 dark:bg-blue-900]="currentTheme === 'light'">
-              <span class="text-lg">☀️</span>
-              <span class="text-sm">Claro</span>
-              <span *ngIf="currentTheme === 'light'" class="ml-auto text-blue-500">✓</span>
-            </button>
-            <button 
-              (click)="setTheme('dark')"
-              class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
-              [class.bg-blue-50 dark:bg-blue-900]="currentTheme === 'dark'">
-              <span class="text-lg">🌙</span>
-              <span class="text-sm">Escuro</span>
-              <span *ngIf="currentTheme === 'dark'" class="ml-auto text-blue-500">✓</span>
-            </button>
-            <button 
-              (click)="setTheme('auto')"
-              class="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-3 transition-colors"
-              [class.bg-blue-50 dark:bg-blue-900]="currentTheme === 'auto'">
-              <span class="text-lg">🔄</span>
-              <span class="text-sm">Automático</span>
-              <span *ngIf="currentTheme === 'auto'" class="ml-auto text-blue-500">✓</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <button 
-        (click)="toggleSettings()"
-        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        title="Configurações">
-        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- Sidebar -->
-  <div class="sidebar chat-sidebar bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 w-64 h-full absolute left-0 top-16 z-10 transform transition-transform duration-300" 
-       [ngClass]="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}">
-    <div class="p-4">
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Usuários Online</h3>
-      <div class="space-y-2">
-        <div *ngFor="let user of onlineUsersList" class="chat-sidebar-user flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-          <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-            {{ user.name?.charAt(0) || user.email?.charAt(0) }}
-          </div>
-          <span class="text-sm text-gray-700 dark:text-gray-300">{{ user.name || user.email }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Messages Area -->
-  <div class="flex-1 overflow-y-auto p-4 space-y-4" #messagesContainer>
-    <!-- Welcome Message -->
-    <div *ngIf="messages.length === 0" class="text-center py-8">
-      <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-        </svg>
-      </div>
-      <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">Bem-vindo ao Chat EaDuck!</h3>
-      <p class="text-sm text-gray-500 dark:text-gray-500">Comece uma conversa enviando uma mensagem abaixo.</p>
-    </div>
-
-    <!-- Messages -->
-    <div *ngFor="let message of messages; let i = index" class="flex" [ngClass]="{'justify-end': message.isMine, 'justify-start': !message.isMine}">
-      <div class="chat-message max-w-xs lg:max-w-md px-4 py-2 rounded-lg relative group"
-           [ngClass]="{
-             'own-message bg-blue-500 text-white': message.isMine,
-             'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm': !message.isMine
-           }">
-        
-        <!-- Message Header -->
-        <div class="flex items-center space-x-2 mb-1" *ngIf="!message.isMine">
-          <div class="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-            {{ message.senderName?.charAt(0) || message.sender?.charAt(0) }}
-          </div>
-          <span class="text-xs font-medium">{{ message.senderName || message.sender }}</span>
-        </div>
-
-        <!-- Message Content -->
-        <div class="text-sm break-words">
-          <span *ngIf="message.type === 'JOIN'" class="italic text-green-600 dark:text-green-400">
-            {{ message.senderName || message.sender }} entrou no chat
-          </span>
-          <span *ngIf="message.type === 'LEAVE'" class="italic text-red-600 dark:text-red-400">
-            {{ message.senderName || message.sender }} saiu do chat
-          </span>
-          <span *ngIf="message.type === 'CHAT'">{{ message.message }}</span>
-        </div>
-
-        <!-- Message Footer -->
-        <div class="flex items-center justify-between mt-1">
-          <span class="text-xs opacity-70">{{ message.timestamp | date:'HH:mm' }}</span>
-          <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button 
-              (click)="copyMessage(message.message)"
-              class="p-1 rounded hover:bg-black hover:bg-opacity-10 transition-colors"
-              title="Copiar mensagem">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-              </svg>
-            </button>
-            <button 
-              (click)="deleteMessage(i)"
-              *ngIf="message.isMine"
-              class="p-1 rounded hover:bg-red-500 hover:bg-opacity-20 transition-colors"
-              title="Excluir mensagem">
-              <svg class="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Emoji Picker -->
-  <div class="emoji-picker bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4" 
-       *ngIf="showEmojiPicker">
-    <div class="grid grid-cols-8 gap-2">
-      <button 
-        *ngFor="let emoji of emojis" 
-        (click)="addEmoji(emoji)"
-        class="p-2 text-lg hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
-        {{ emoji }}
-      </button>
-    </div>
-  </div>
-
-  <!-- Message Input -->
-  <div class="chat-message-input bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-    <!-- File Upload Preview -->
-    <div *ngIf="selectedFiles.length > 0" class="mb-4">
-      <div class="flex flex-wrap gap-2">
-        <div *ngFor="let file of selectedFiles; let i = index" class="file-preview flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
-          <span class="text-sm">{{ file.name }}</span>
-          <button (click)="removeFile(i)" class="text-red-500 hover:text-red-700">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
+        <div *ngIf="showThemeDropdown" 
+             class="absolute right-0 top-12 rounded-lg shadow-lg py-2 z-50 min-w-[140px]">
+          <button 
+            (click)="setTheme('light')"
+            class="w-full px-4 py-2 text-left hover:bg-opacity-20 flex items-center space-x-2">
+            <span>☀️</span>
+            <span class="text-sm">Claro</span>
+            <span *ngIf="currentTheme === 'light'" class="ml-auto">✓</span>
+          </button>
+          <button 
+            (click)="setTheme('dark')"
+            class="w-full px-4 py-2 text-left hover:bg-opacity-20 flex items-center space-x-2">
+            <span>🌙</span>
+            <span class="text-sm">Escuro</span>
+            <span *ngIf="currentTheme === 'dark'" class="ml-auto">✓</span>
+          </button>
+          <button 
+            (click)="setTheme('auto')"
+            class="w-full px-4 py-2 text-left hover:bg-opacity-20 flex items-center space-x-2">
+            <span>🔄</span>
+            <span class="text-sm">Automático</span>
+            <span *ngIf="currentTheme === 'auto'" class="ml-auto">✓</span>
           </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="flex space-x-2">
-      <!-- File Upload Button -->
-      <input 
-        type="file" 
-        #fileInput 
-        (change)="onFileSelected($event)" 
-        multiple 
-        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-        class="hidden">
-      
-      <button 
-        (click)="fileInput.click()"
-        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        title="Anexar arquivo">
-        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-        </svg>
-      </button>
-
-      <!-- Message Input -->
-      <div class="flex-1 relative">
-        <input
-          type="text"
-          [(ngModel)]="newMessage"
-          (keyup.enter)="sendMessage()"
-          (keyup.escape)="clearMessage()"
-          placeholder="Digite sua mensagem..."
-          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white pr-10"
-        />
-        <button 
-          (click)="toggleEmojiPicker()"
-          class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-          title="Emojis">
-          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </button>
+  <!-- Messages -->
+  <div class="messages-container flex-1 overflow-y-auto p-4" #messagesContainer>
+    <div *ngIf="messages.length === 0" class="text-center mt-8">
+      <div class="text-6xl mb-4">💬</div>
+      <p class="text-lg font-medium mb-2">Bem-vindo ao Chat EaDuck!</p>
+      <p class="text-sm opacity-75">Seja o primeiro a começar a conversa</p>
+    </div>
+    
+    <div *ngFor="let message of messages" class="message-wrapper mb-4">
+      <div class="flex items-start space-x-3" [class.justify-end]="message.isMine">
+        <div *ngIf="!message.isMine" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+          {{ (message.senderName || message.sender)?.charAt(0) || '?' }}
+        </div>
+        
+        <div class="flex-1 max-w-xs lg:max-w-md" [class.flex-row-reverse]="message.isMine">
+          <div *ngIf="!message.isMine" class="flex items-center space-x-2 mb-1">
+            <span class="font-medium text-sm">{{ message.senderName || message.sender }}</span>
+            <span class="text-xs opacity-75">{{ message.timestamp | date:'HH:mm' }}</span>
+          </div>
+          
+          <div class="message-bubble p-3 rounded-lg shadow-sm" 
+               [ngClass]="message.isMine ? 'own-message' : 'other-message'">
+            <p class="text-sm">{{ message.content || message.message }}</p>
+            <div *ngIf="message.isMine" class="text-xs opacity-75 mt-1 text-right">
+              {{ message.timestamp | date:'HH:mm' }}
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="message.isMine" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+          {{ (message.senderName || message.sender)?.charAt(0) || '?' }}
+        </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Send Button -->
-      <button
+  <!-- Input -->
+  <div class="input-area border-t p-4">
+    <div class="flex space-x-3">
+      <input 
+        [(ngModel)]="newMessage"
+        (keydown.enter)="sendMessage()"
+        placeholder="Digite sua mensagem..."
+        class="flex-1 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 transition-all">
+      <button 
         (click)="sendMessage()"
-        [disabled]="!newMessage.trim() && selectedFiles.length === 0"
-        class="chat-button px-6 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 flex items-center space-x-2"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-        </svg>
-        <span>Enviar</span>
+        [disabled]="!newMessage.trim()"
+        class="px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+        Enviar
       </button>
     </div>
   </div>
