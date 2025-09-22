@@ -230,6 +230,22 @@ export class ChatHubComponent implements OnInit, OnDestroy {
       filtered = filtered.filter(classroom => classroom.studentCount > 0);
     }
 
+    // Filtro por status ativo/inativo baseado no campo isActive
+    // Se for ADMIN, mostrar todas as salas
+    // Se for TEACHER, mostrar apenas salas ativas ou salas que ele criou
+    // Se for STUDENT, mostrar apenas salas ativas
+    if (this.currentUser?.role === 'ADMIN') {
+      // Admin vê todas as salas
+    } else if (this.currentUser?.role === 'TEACHER') {
+      // Professor vê salas ativas ou salas que ele criou (mesmo inativas)
+      filtered = filtered.filter(classroom => 
+        classroom.isActive || this.isClassroomCreator(classroom)
+      );
+    } else {
+      // Estudante vê apenas salas ativas
+      filtered = filtered.filter(classroom => classroom.isActive !== false);
+    }
+
     // Ordenação
     filtered.sort((a, b) => {
       let comparison = 0;
@@ -306,5 +322,17 @@ export class ChatHubComponent implements OnInit, OnDestroy {
       };
       this.applyFilters(); // Reaplica os filtros
     }
+  }
+
+  private isClassroomCreator(classroom: ClassroomChat): boolean {
+    // Verifica se o usuário atual é um dos professores da sala
+    if (!this.currentUser || !classroom.teacherNames || classroom.teacherNames.length === 0) {
+      return false;
+    }
+    
+    // Verifica se o usuário atual está na lista de professores
+    return classroom.teacherNames.some(teacher => 
+      teacher === this.currentUser.name || teacher === this.currentUser.email
+    );
   }
 }
