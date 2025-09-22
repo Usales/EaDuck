@@ -85,3 +85,10 @@
     </form>
   </div>
 </div>
+
+<!-- Modal de configuração de nome -->
+<app-name-setup-modal 
+  [isVisible]="showNameSetupModal"
+  (nameSet)="onNameSet($event)"
+  (close)="onCloseNameSetup()">
+</app-name-setup-modal>

@@ -66,45 +66,78 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   loadDashboardData() {
-    this.userService.getAllUsers().subscribe((users: any[]) => {
-      this.totalUsers = users.length;
-      this.usersByRole = users.reduce((acc, u) => {
-        acc[u.role] = (acc[u.role] || 0) + 1;
-        return acc;
-      }, {} as { [role: string]: number });
-    });
+    // Only load admin-specific data if user is ADMIN
+    if (this.currentUser?.role === 'ADMIN') {
+      this.userService.getAllUsers().subscribe({
+        next: (users: any[]) => {
+          this.totalUsers = users.length;
+          this.usersByRole = users.reduce((acc, u) => {
+            acc[u.role] = (acc[u.role] || 0) + 1;
+            return acc;
+          }, {} as { [role: string]: number });
+        },
+        error: (error) => {
+          console.log('Erro ao carregar usuários (apenas para ADMIN):', error);
+        }
+      });
+    }
+
+    // Load dashboard data for all authenticated users
     this.http.get<any>('http://localhost:8080/api/dashboard/tasks-by-classroom', {
       headers: this.authService.getAuthHeaders()
-    }).subscribe((data) => {
-      const arr = Array.isArray(data) ? data : Object.values(data);
-      const labels = arr.map((d: any) => d.classroom);
-      const concluidas = arr.map((d: any) => d.concluidas ?? 0);
-      const pendentes = arr.map((d: any) => d.pendentes ?? 0);
-      const atrasadas = arr.map((d: any) => d.atrasadas ?? 0);
-      this.classroomsChart = {
-        ...this.classroomsChart,
-        labels: labels,
-        series: [
-          { name: 'Concluídas', data: concluidas },
-          { name: 'Pendentes', data: pendentes },
-          { name: 'Atrasadas', data: atrasadas }
-        ]
-      };
-      this.totalClassrooms = labels.length;
+    }).subscribe({
+      next: (data) => {
+        const arr = Array.isArray(data) ? data : Object.values(data);
+        const labels = arr.map((d: any) => d.classroom);
+        const concluidas = arr.map((d: any) => d.concluidas ?? 0);
+        const pendentes = arr.map((d: any) => d.pendentes ?? 0);
+        const atrasadas = arr.map((d: any) => d.atrasadas ?? 0);
+        this.classroomsChart = {
+          ...this.classroomsChart,
+          labels: labels,
+          series: [
+            { name: 'Concluídas', data: concluidas },
+            { name: 'Pendentes', data: pendentes },
+            { name: 'Atrasadas', data: atrasadas }
+          ]
+        };
+        this.totalClassrooms = labels.length;
+      },
+      error: (error) => {
+        console.log('Erro ao carregar dados de tarefas por sala:', error);
+      }
     });
-    this.http.get<any[]>('http://localhost:8080/api/notifications').subscribe((notifications: any[]) => {
-      this.totalNotifications = notifications.length;
-      // Tipos de notificações
-      const types = ['AVISO', 'TAREFA', 'SISTEMA', 'FÓRUM'];
-      const counts = types.map(type => notifications.filter((n: any) => (n.notificationType || '').toUpperCase() === type).length);
-      this.notificationsChart.series = counts;
+
+    // Load notifications for all authenticated users
+    this.http.get<any[]>('http://localhost:8080/api/notifications', {
+      headers: this.authService.getAuthHeaders()
+    }).subscribe({
+      next: (notifications: any[]) => {
+        this.totalNotifications = notifications.length;
+        // Tipos de notificações
+        const types = ['AVISO', 'TAREFA', 'SISTEMA', 'FÓRUM'];
+        const counts = types.map(type => notifications.filter((n: any) => (n.notificationType || '').toUpperCase() === type).length);
+        this.notificationsChart.series = counts;
+      },
+      error: (error) => {
+        console.log('Erro ao carregar notificações:', error);
+      }
     });
-    this.http.get<any[]>('http://localhost:8080/api/tasks').subscribe((tasks: any[]) => {
-      this.totalTasks = tasks.length;
-      // Tarefas feitas x para fazer
-      const feitas = tasks.filter((t: any) => t.status === 'CONCLUIDA' || t.status === 'CONCLUIDO').length;
-      const paraFazer = tasks.length - feitas;
-      this.tasksChart.series = [feitas, paraFazer];
+
+    // Load tasks for all authenticated users
+    this.http.get<any[]>('http://localhost:8080/api/tasks', {
+      headers: this.authService.getAuthHeaders()
+    }).subscribe({
+      next: (tasks: any[]) => {
+        this.totalTasks = tasks.length;
+        // Tarefas feitas x para fazer
+        const feitas = tasks.filter((t: any) => t.status === 'CONCLUIDA' || t.status === 'CONCLUIDO').length;
+        const paraFazer = tasks.length - feitas;
+        this.tasksChart.series = [feitas, paraFazer];
+      },
+      error: (error) => {
+        console.log('Erro ao carregar tarefas:', error);
+      }
     });
   }
 

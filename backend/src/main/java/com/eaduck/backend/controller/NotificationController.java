@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import jakarta.persistence.EntityManager;
 import org.springframework.transaction.annotation.Transactional;
 
 @RestController
@@ -39,9 +38,6 @@ public class NotificationController {
 
     @Autowired
     private ClassroomRepository classroomRepository;
-
-    @Autowired
-    private EntityManager entityManager;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
@@ -122,6 +118,7 @@ public class NotificationController {
             List<NotificationDTO> dtos = notifications.stream().map(this::toDTO).toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
+            logger.error("Erro ao buscar notificações: {}", e.getMessage());
             return ResponseEntity.status(500).body("Erro ao buscar notificações: " + e.getMessage());
         }
     }
@@ -129,21 +126,55 @@ public class NotificationController {
     private NotificationDTO toDTO(Notification n) {
         NotificationDTO dto = new NotificationDTO();
         dto.setId(n.getId());
+        if (n.getUser() != null) {
+            dto.setUserId(n.getUser().getId());
+        }
         dto.setMessage(n.getMessage());
         dto.setNotificationType(n.getNotificationType());
         dto.setCreatedAt(n.getCreatedAt());
         dto.setRead(n.isRead());
         dto.setTitle(n.getTitle());
+        if (n.getTask() != null && n.getTask().getClassroom() != null) {
+            dto.setClassroomId(n.getTask().getClassroom().getId());
+        }
         return dto;
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<List<Notification>> getAllNotifications() {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<NotificationDTO>> getAllNotifications(Authentication authentication) {
         try {
-        return ResponseEntity.ok(notificationRepository.findAll());
+            logger.info("Buscando notificações para usuário: {}", authentication.getName());
+            
+            // Get current user
+            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+            if (userOpt.isEmpty()) {
+                logger.warn("Usuário não encontrado: {}", authentication.getName());
+                return ResponseEntity.status(403).body(java.util.Collections.emptyList());
+            }
+            
+            User currentUser = userOpt.get();
+            logger.info("Usuário encontrado: {} com role: {}", currentUser.getEmail(), currentUser.getRole());
+            
+            List<Notification> notifications;
+            
+            // If user is ADMIN or TEACHER, return all notifications
+            if (currentUser.getRole().name().equals("ROLE_ADMIN") || currentUser.getRole().name().equals("ROLE_TEACHER")) {
+                logger.info("Buscando todas as notificações para ADMIN/TEACHER");
+                notifications = notificationRepository.findAll();
+            } else {
+                // If user is STUDENT, return only their notifications
+                logger.info("Buscando notificações para estudante ID: {}", currentUser.getId());
+                notifications = notificationRepository.findByUserId(currentUser.getId());
+            }
+            
+            logger.info("Encontradas {} notificações", notifications.size());
+            
+            // Convert to DTOs
+            List<NotificationDTO> dtos = notifications.stream().map(this::toDTO).toList();
+            return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            logger.error("Erro ao buscar notificações: {}", e.getMessage());
+            logger.error("Erro ao buscar notificações: {}", e.getMessage(), e);
             return ResponseEntity.ok(java.util.Collections.emptyList());
         }
     }
@@ -155,8 +186,7 @@ public class NotificationController {
         return notificationRepository.findById(id)
                 .map(notification -> {
                     notification.setRead(true);
-                    entityManager.merge(notification);
-                    entityManager.flush();
+                    notificationRepository.save(notification);
                     return ResponseEntity.ok().build();
                 })
                 .orElse(ResponseEntity.notFound().build());

@@ -658,8 +658,8 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   loadAllStudents() {
-    this.userService.getAllUsers().subscribe(users => {
-      this.allStudents = users.filter(user => user.role === 'STUDENT');
+    this.userService.getStudents().subscribe(users => {
+      this.allStudents = users;
     });
   }
 

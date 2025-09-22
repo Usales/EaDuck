@@ -4,6 +4,7 @@ CREATE TABLE users (
                        password VARCHAR(255) NOT NULL,
                        role VARCHAR(50) NOT NULL,
                        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                       name VARCHAR(255),
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        CONSTRAINT users_pkey PRIMARY KEY (id),
                        CONSTRAINT valid_role CHECK (role IN ('STUDENT', 'TEACHER', 'ADMIN')),
@@ -21,3 +22,7 @@ CREATE TABLE grades (
 
 ALTER TABLE grades
     ADD CONSTRAINT fk_grades_student FOREIGN KEY (student_id) REFERENCES users(id);
+
+-- Inserir usuário admin padrão
+INSERT INTO users (email, password, role, is_active, name) VALUES 
+('compeaduck@gmail.com', '$2a$10$Qsn5kBoMuF4tI81tNtNs4uVbqrHpoVKyTImOzhkffe9OyhUr2u2FK', 'ADMIN', true, 'Administrador EaDuck');

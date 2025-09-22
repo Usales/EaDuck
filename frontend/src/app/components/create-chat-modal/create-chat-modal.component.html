@@ -1,0 +1,215 @@
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" *ngIf="visible"
+     [style.background]="'var(--modal-overlay)'">
+  <div class="modal-content rounded-2xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all duration-300" 
+       [class]="visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'"
+       [style.background]="'var(--panel-bg)'"
+       [style.color]="'var(--text-primary)'"
+       [style.border]="'1px solid var(--border-color)'">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6" 
+         [ngClass]="{
+           'border-gray-200': !isDarkMode(),
+           'border-gray-700': isDarkMode()
+         }"
+         style="border-bottom: 1px solid;">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center"
+             [ngClass]="{
+               'bg-green-100': !isDarkMode(),
+               'bg-green-900': isDarkMode()
+             }">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+               [ngClass]="{
+                 'text-green-600': !isDarkMode(),
+                 'text-green-400': isDarkMode()
+               }">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold"
+              [ngClass]="{
+                'text-gray-900': !isDarkMode(),
+                'text-white': isDarkMode()
+              }">Criar Nova Conversa</h3>
+          <p class="text-sm"
+             [ngClass]="{
+               'text-gray-500': !isDarkMode(),
+               'text-gray-400': isDarkMode()
+             }">Configure uma nova sala de aula</p>
+        </div>
+      </div>
+      <button (click)="closeModal()" class="transition-colors"
+              [ngClass]="{
+                'text-gray-400 hover:text-gray-600': !isDarkMode(),
+                'text-gray-400 hover:text-gray-300': isDarkMode()
+              }">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6">
+      <form (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Nome da Sala -->
+        <div>
+          <label class="block text-sm font-medium mb-2"
+                 [ngClass]="{
+                   'text-gray-700': !isDarkMode(),
+                   'text-gray-300': isDarkMode()
+                 }">
+            Nome da Sala *
+          </label>
+          <input 
+            type="text"
+            [(ngModel)]="chatData.name"
+            name="name"
+            placeholder="Ex: Matemática 9º Ano A"
+            class="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all"
+            [ngClass]="{
+              'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+              'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+            }">
+        </div>
+
+        <!-- Ano Letivo -->
+        <div>
+          <label class="block text-sm font-medium mb-2"
+                 [ngClass]="{
+                   'text-gray-700': !isDarkMode(),
+                   'text-gray-300': isDarkMode()
+                 }">
+            Ano Letivo *
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="chatData.academicYear"
+            name="academicYear"
+            (keypress)="onKeyPress($event)"
+            (input)="onYearInput($event)"
+            placeholder="Ex: 2025"
+            maxlength="4"
+            class="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all"
+            [ngClass]="{
+              'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+              'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+            }"
+          />
+        </div>
+
+        <!-- Descrição -->
+        <div>
+          <label class="block text-sm font-medium mb-2"
+                 [ngClass]="{
+                   'text-gray-700': !isDarkMode(),
+                   'text-gray-300': isDarkMode()
+                 }">
+            Descrição (Opcional)
+          </label>
+          <textarea 
+            [(ngModel)]="chatData.description"
+            name="description"
+            rows="3"
+            placeholder="Descreva a sala de aula..."
+            class="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all resize-none"
+            [ngClass]="{
+              'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+              'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+            }"></textarea>
+        </div>
+
+        <!-- Seleção de Professores (apenas para admin) -->
+        <div *ngIf="isAdmin">
+          <label class="block text-sm font-medium mb-2"
+                 [ngClass]="{
+                   'text-gray-700': !isDarkMode(),
+                   'text-gray-300': isDarkMode()
+                 }">
+            Professores *
+          </label>
+          <div class="max-h-40 overflow-y-auto border rounded-lg p-3"
+               [ngClass]="{
+                 'bg-white border-gray-300': !isDarkMode(),
+                 'bg-gray-700 border-gray-600': isDarkMode()
+               }">
+            <div *ngFor="let teacher of availableTeachers" 
+                 class="flex items-center space-x-3 p-2 hover:bg-opacity-10 rounded cursor-pointer"
+                 [ngClass]="{
+                   'hover:bg-gray-100': !isDarkMode(),
+                   'hover:bg-gray-600': isDarkMode()
+                 }"
+                 (click)="onTeacherToggle(teacher)">
+              <input 
+                type="checkbox" 
+                [checked]="isTeacherSelected(teacher)"
+                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+              <div class="flex-1">
+                <div class="font-medium"
+                     [ngClass]="{
+                       'text-gray-900': !isDarkMode(),
+                       'text-white': isDarkMode()
+                     }">
+                  {{ teacher.name || teacher.email }}
+                </div>
+                <div class="text-sm"
+                     [ngClass]="{
+                       'text-gray-500': !isDarkMode(),
+                       'text-gray-400': isDarkMode()
+                     }">
+                  {{ teacher.email }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs mt-1"
+             [ngClass]="{
+               'text-gray-500': !isDarkMode(),
+               'text-gray-400': isDarkMode()
+             }">
+            Selecione os professores que terão acesso a esta sala
+          </p>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="p-3 rounded-lg"
+             [ngClass]="{
+               'bg-red-100 text-red-700': !isDarkMode(),
+               'bg-red-900 text-red-300': isDarkMode()
+             }">
+          {{ errorMessage }}
+        </div>
+
+        <!-- Actions -->
+        <div class="flex space-x-3 pt-4">
+          <button 
+            type="button" 
+            (click)="closeModal()"
+            class="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+            [ngClass]="{
+              'text-gray-700 border border-gray-300 bg-transparent hover:bg-gray-50': !isDarkMode(),
+              'text-gray-300 border border-gray-600 bg-transparent hover:bg-gray-700': isDarkMode()
+            }">
+            Cancelar
+          </button>
+          
+          <button 
+            type="submit"
+            [disabled]="isSubmitting"
+            class="flex-1 px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            [ngClass]="{
+              'bg-blue-600 text-white hover:bg-blue-700': true
+            }">
+            <span *ngIf="!isSubmitting">Criar Sala</span>
+            <span *ngIf="isSubmitting" class="flex items-center justify-center">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 mr-2 border-white"></div>
+              Criando...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

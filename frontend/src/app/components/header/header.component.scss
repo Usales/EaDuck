@@ -1,7 +1,7 @@
 header {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   min-height: 4rem; /* 64px */
-  overflow: hidden; /* Evita que elementos saiam do header */
+  overflow: visible; /* Permite que o dropdown seja visível */
 }
 
 .material-icons {
@@ -105,6 +105,23 @@ header > div {
 /* Garantir que o botão de notificações não seja cortado */
 header .relative {
   flex-shrink: 0;
+  z-index: 1000; /* Garantir que o dropdown apareça acima de outros elementos */
+}
+
+/* Estilo para o dropdown de notificações */
+.notification-dropdown {
+  z-index: 1001 !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: 100% !important;
+  margin-top: 0.5rem !important;
+  width: 20rem !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Garantir que o título não quebre o layout */

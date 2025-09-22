@@ -1,0 +1,438 @@
+<div class="chat-hub-container h-screen flex flex-col" [ngClass]="getThemeClass()">
+  <!-- Header -->
+  <div class="chat-hub-header p-6 border-b" 
+       [ngClass]="{
+         'bg-white border-gray-200': !isDarkMode(),
+         'bg-gray-800 border-gray-700': isDarkMode()
+       }">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold mb-2"
+            [ngClass]="{
+              'text-gray-900': !isDarkMode(),
+              'text-white': isDarkMode()
+            }">
+          💬 HUB de Conversas
+        </h1>
+        <p class="text-sm"
+           [ngClass]="{
+             'text-gray-600': !isDarkMode(),
+             'text-gray-400': isDarkMode()
+           }">
+          {{ isAdmin ? 'Todas as salas de aula' : 'Suas salas de aula' }}
+        </p>
+      </div>
+      
+      <div class="flex items-center space-x-4">
+        <button 
+          (click)="createNewChat()"
+          class="px-4 py-2 rounded-lg font-medium transition-all"
+          [ngClass]="{
+            'bg-blue-600 text-white hover:bg-blue-700': true
+          }">
+          ➕ Nova Conversa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filters -->
+  <div class="search-section p-6 border-b"
+       [ngClass]="{
+         'bg-white border-gray-200': !isDarkMode(),
+         'bg-gray-800 border-gray-700': isDarkMode()
+       }">
+    <!-- Barra de busca -->
+    <div class="flex items-center space-x-4 mb-4">
+      <div class="flex-1 relative">
+        <input 
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+          type="text"
+          placeholder="Buscar por nome da sala, série ou professor..."
+          class="w-full px-4 py-3 pl-10 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all"
+          [ngClass]="{
+            'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+            'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+          }">
+        <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+               [ngClass]="{
+                 'text-gray-400': !isDarkMode(),
+                 'text-gray-500': isDarkMode()
+               }">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+      </div>
+      <button 
+        (click)="clearFilters()"
+        class="px-4 py-2 rounded-lg font-medium transition-all"
+        [ngClass]="{
+          'bg-gray-200 text-gray-700 hover:bg-gray-300': !isDarkMode(),
+          'bg-gray-600 text-gray-300 hover:bg-gray-500': isDarkMode()
+        }">
+        🗑️ Limpar
+      </button>
+    </div>
+
+    <!-- Filtros avançados -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <!-- Filtro por ano -->
+      <div>
+        <label class="block text-sm font-medium mb-2"
+               [ngClass]="{
+                 'text-gray-700': !isDarkMode(),
+                 'text-gray-300': isDarkMode()
+               }">
+          📅 Ano Letivo
+        </label>
+        <select 
+          [(ngModel)]="selectedYear"
+          (change)="onFilterChange()"
+          class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+          [ngClass]="{
+            'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+            'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+          }">
+          <option value="">Todos os anos</option>
+          <option *ngFor="let year of availableYears" [value]="year">{{ year }}</option>
+        </select>
+      </div>
+
+      <!-- Filtro por professor -->
+      <div>
+        <label class="block text-sm font-medium mb-2"
+               [ngClass]="{
+                 'text-gray-700': !isDarkMode(),
+                 'text-gray-300': isDarkMode()
+               }">
+          👨‍🏫 Professor
+        </label>
+        <select 
+          [(ngModel)]="selectedTeacher"
+          (change)="onFilterChange()"
+          class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+          [ngClass]="{
+            'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+            'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+          }">
+          <option value="">Todos os professores</option>
+          <option *ngFor="let teacher of availableTeachers" [value]="teacher">{{ teacher }}</option>
+        </select>
+      </div>
+
+      <!-- Filtro por aluno -->
+      <div>
+        <label class="block text-sm font-medium mb-2"
+               [ngClass]="{
+                 'text-gray-700': !isDarkMode(),
+                 'text-gray-300': isDarkMode()
+               }">
+          👨‍🎓 Aluno
+        </label>
+        <select 
+          [(ngModel)]="selectedStudent"
+          (change)="onFilterChange()"
+          class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+          [ngClass]="{
+            'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+            'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+          }">
+          <option value="">Todos os alunos</option>
+          <option *ngFor="let student of availableStudents" [value]="student.name">{{ student.name || student.email }}</option>
+        </select>
+      </div>
+
+      <!-- Ordenação -->
+      <div>
+        <label class="block text-sm font-medium mb-2"
+               [ngClass]="{
+                 'text-gray-700': !isDarkMode(),
+                 'text-gray-300': isDarkMode()
+               }">
+          🔄 Ordenar por
+        </label>
+        <select 
+          [(ngModel)]="sortBy"
+          (change)="onFilterChange()"
+          class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+          [ngClass]="{
+            'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+            'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+          }">
+          <option value="name">Nome</option>
+          <option value="year">Ano Letivo</option>
+          <option value="students">Número de Estudantes</option>
+          <option value="lastMessage">Última Mensagem</option>
+        </select>
+      </div>
+
+      <!-- Ordem e filtros adicionais -->
+      <div class="flex flex-col space-y-2">
+        <div>
+          <label class="block text-sm font-medium mb-2"
+                 [ngClass]="{
+                   'text-gray-700': !isDarkMode(),
+                   'text-gray-300': isDarkMode()
+                 }">
+            📊 Ordem
+          </label>
+          <select 
+            [(ngModel)]="sortOrder"
+            (change)="onFilterChange()"
+            class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 transition-all"
+            [ngClass]="{
+              'bg-white border-gray-300 focus:border-blue-500 focus:ring-blue-200': !isDarkMode(),
+              'bg-gray-700 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-800': isDarkMode()
+            }">
+            <option value="asc">Crescente</option>
+            <option value="desc">Decrescente</option>
+          </select>
+        </div>
+        
+        <!-- Checkbox para salas ativas -->
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="showOnlyActive"
+            (change)="onFilterChange()"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+          <span class="text-sm"
+                [ngClass]="{
+                  'text-gray-700': !isDarkMode(),
+                  'text-gray-300': isDarkMode()
+                }">
+            Apenas salas ativas
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Contador de resultados -->
+    <div class="mt-4 text-sm"
+         [ngClass]="{
+           'text-gray-600': !isDarkMode(),
+           'text-gray-400': isDarkMode()
+         }">
+      Mostrando {{ filteredClassrooms.length }} de {{ classrooms.length }} salas
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex-1 flex items-center justify-center">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+           [ngClass]="{
+             'border-blue-600': !isDarkMode(),
+             'border-blue-400': isDarkMode()
+           }"></div>
+      <p [ngClass]="{
+        'text-gray-600': !isDarkMode(),
+        'text-gray-400': isDarkMode()
+      }">Carregando salas...</p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredClassrooms.length === 0" class="flex-1 flex items-center justify-center">
+    <div class="text-center">
+      <div class="text-6xl mb-4">🏫</div>
+      <h3 class="text-xl font-semibold mb-2"
+          [ngClass]="{
+            'text-gray-900': !isDarkMode(),
+            'text-white': isDarkMode()
+          }">
+        {{ searchTerm ? 'Nenhuma sala encontrada' : 'Nenhuma sala disponível' }}
+      </h3>
+      <p [ngClass]="{
+        'text-gray-600': !isDarkMode(),
+        'text-gray-400': isDarkMode()
+      }">
+        {{ searchTerm ? 'Tente ajustar sua busca' : 'Entre em contato com um administrador' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Classrooms Grid -->
+  <div *ngIf="!isLoading && filteredClassrooms.length > 0" class="flex-1 overflow-y-auto p-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div 
+        *ngFor="let classroom of filteredClassrooms"
+        (click)="openChat(classroom)"
+        class="classroom-card p-6 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
+        [ngClass]="{
+          'bg-white border-gray-200 hover:border-blue-300 hover:shadow-blue-100': !isDarkMode(),
+          'bg-gray-800 border-gray-700 hover:border-blue-500 hover:shadow-blue-900': isDarkMode()
+        }">
+        
+        <!-- Card Header -->
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-lg font-semibold"
+                  [ngClass]="{
+                    'text-gray-900': !isDarkMode(),
+                    'text-white': isDarkMode()
+                  }">
+                {{ classroom.name }}
+              </h3>
+              <!-- Status Tag -->
+              <span class="px-2 py-1 text-xs font-medium rounded-full"
+                    [ngClass]="{
+                      'bg-green-100 text-green-800': classroom.isActive && !isDarkMode(),
+                      'bg-green-900 text-green-200': classroom.isActive && isDarkMode(),
+                      'bg-red-100 text-red-800': !classroom.isActive && !isDarkMode(),
+                      'bg-red-900 text-red-200': !classroom.isActive && isDarkMode()
+                    }">
+                {{ classroom.isActive ? '🟢 Ativa' : '🔴 Inativa' }}
+              </span>
+            </div>
+            <p class="text-sm"
+               [ngClass]="{
+                 'text-gray-600': !isDarkMode(),
+                 'text-gray-400': isDarkMode()
+               }">
+              {{ classroom.academicYear }}
+            </p>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <!-- Settings Button (only for teachers/admins) -->
+            <button 
+              *ngIf="isAdmin || (currentUser?.role === 'TEACHER')"
+              (click)="openSettings($event, classroom)"
+              class="p-2 rounded-lg transition-colors"
+              [ngClass]="{
+                'text-gray-500 hover:text-gray-700 hover:bg-gray-100': !isDarkMode(),
+                'text-gray-400 hover:text-gray-200 hover:bg-gray-700': isDarkMode()
+              }"
+              title="Configurações da sala">
+              ⚙️
+            </button>
+            
+            <!-- Unread Badge -->
+            <div *ngIf="classroom.unreadCount > 0" 
+                 class="bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+              {{ classroom.unreadCount }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Teachers -->
+        <div class="mb-4">
+          <p class="text-xs font-medium mb-2"
+             [ngClass]="{
+               'text-gray-500': true
+             }">
+            👨‍🏫 Professores
+          </p>
+          <div class="flex flex-wrap gap-1">
+            <span 
+              *ngFor="let teacher of classroom.teacherNames.slice(0, 3)"
+              class="px-2 py-1 text-xs rounded-full"
+              [ngClass]="{
+                'bg-blue-100 text-blue-800': !isDarkMode(),
+                'bg-blue-900 text-blue-200': isDarkMode()
+              }">
+              {{ teacher }}
+            </span>
+            <span 
+              *ngIf="classroom.teacherNames.length > 3"
+              class="px-2 py-1 text-xs rounded-full"
+              [ngClass]="{
+                'bg-gray-100 text-gray-600': !isDarkMode(),
+                'bg-gray-700 text-gray-300': isDarkMode()
+              }">
+              +{{ classroom.teacherNames.length - 3 }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Students Count and Names -->
+        <div class="mb-4">
+          <p class="text-xs font-medium mb-2"
+             [ngClass]="{
+               'text-gray-500': true
+             }">
+            👥 {{ classroom.studentCount }} {{ classroom.studentCount === 1 ? 'aluno' : 'alunos' }}
+          </p>
+          <div *ngIf="classroom.studentNames && classroom.studentNames.length > 0" class="flex flex-wrap gap-1">
+            <span 
+              *ngFor="let student of classroom.studentNames.slice(0, 3)"
+              class="px-2 py-1 text-xs rounded-full"
+              [ngClass]="{
+                'bg-green-100 text-green-800': !isDarkMode(),
+                'bg-green-900 text-green-200': isDarkMode()
+              }">
+              {{ student }}
+            </span>
+            <span 
+              *ngIf="classroom.studentNames.length > 3"
+              class="px-2 py-1 text-xs rounded-full"
+              [ngClass]="{
+                'bg-gray-100 text-gray-600': !isDarkMode(),
+                'bg-gray-700 text-gray-300': isDarkMode()
+              }">
+              +{{ classroom.studentNames.length - 3 }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Last Message -->
+        <div *ngIf="classroom.lastMessage" class="mb-4">
+          <p class="text-xs font-medium mb-1"
+             [ngClass]="{
+               'text-gray-500': true
+             }">
+            💬 Última mensagem
+          </p>
+          <p class="text-sm truncate"
+             [ngClass]="{
+               'text-gray-700': !isDarkMode(),
+               'text-gray-300': isDarkMode()
+             }">
+            {{ classroom.lastMessage }}
+          </p>
+          <p class="text-xs mt-1"
+             [ngClass]="{
+               'text-gray-500': true
+             }">
+            {{ classroom.lastMessageTime | date:'dd/MM HH:mm' }}
+          </p>
+        </div>
+
+        <!-- Action Button -->
+        <div class="pt-4 border-t"
+             [ngClass]="{
+               'border-gray-200': !isDarkMode(),
+               'border-gray-700': isDarkMode()
+             }">
+          <button 
+            class="w-full py-2 px-4 rounded-lg font-medium transition-all"
+            [ngClass]="{
+              'bg-blue-600 text-white hover:bg-blue-700': true
+            }">
+            Entrar na Conversa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Criação de Chat -->
+  <app-create-chat-modal
+    [visible]="showCreateModal"
+    [isAdmin]="isAdmin"
+    (close)="onCloseCreateModal()"
+    (chatCreated)="onChatCreated($event)">
+  </app-create-chat-modal>
+
+  <!-- Modal de Configurações da Sala -->
+  <app-classroom-settings-modal
+    [isVisible]="showSettingsModal"
+    [classroom]="selectedClassroom"
+    (close)="onCloseSettings()"
+    (classroomUpdated)="onClassroomUpdated($event)">
+  </app-classroom-settings-modal>
+</div>

@@ -31,6 +31,9 @@ public class Classroom {
     @Column(name = "academic_year")
     private String academicYear;
 
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

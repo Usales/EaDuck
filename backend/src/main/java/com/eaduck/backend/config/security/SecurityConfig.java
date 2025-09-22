@@ -40,23 +40,28 @@ public class SecurityConfig {
                 .and()
                 .csrf().disable()
                 .authorizeHttpRequests()
-                .requestMatchers(
-                        "/api/auth/**",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/swagger-resources/**",
-                        "/configuration/**",
-                        "/webjars/**",
-                        "/h2-console/**",
-                        "/ws/**",
-                        "/topic/**",
-                        "/app/**"
-                ).permitAll()
+                    .requestMatchers(
+                            "/api/auth/**",
+                            "/api/email-confirmation/**",
+                            "/api/chat/**",
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/swagger-resources/**",
+                            "/configuration/**",
+                            "/webjars/**",
+                            "/h2-console/**",
+                            "/ws/**",
+                            "/topic/**",
+                            "/app/**"
+                    ).permitAll()
                 .requestMatchers("/files/**").permitAll()
                 .requestMatchers("/api/users/me").authenticated()
                 .requestMatchers("/api/users/me/classrooms").authenticated()
-                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                .requestMatchers("/api/users/me/name").authenticated()
+                .requestMatchers("/api/users/all").hasRole("ADMIN")
+                .requestMatchers("/api/users/teachers").authenticated()
+                .requestMatchers("/api/users/students").authenticated()
                 .requestMatchers("/api/notifications/**").authenticated()
                 .requestMatchers("/api/tasks/**").authenticated()
                 .requestMatchers("/api/classrooms/**").authenticated()
@@ -76,10 +81,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.List.of("http://localhost:4200"));
+        configuration.setAllowedOriginPatterns(java.util.List.of("*"));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(java.util.List.of("*"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(java.util.List.of("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

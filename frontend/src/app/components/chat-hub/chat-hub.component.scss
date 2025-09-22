@@ -1,0 +1,33 @@
+.chat-hub-container {
+  .classroom-card {
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+  
+  .search-section {
+    input {
+      &::placeholder {
+        color: var(--text-secondary);
+      }
+    }
+  }
+}
+
+// Dark mode specific styles
+.dark {
+  .classroom-card {
+    &:hover {
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+    }
+  }
+}
+
+// Light mode specific styles
+.light {
+  .classroom-card {
+    &:hover {
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+    }
+  }
+}

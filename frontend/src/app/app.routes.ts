@@ -11,6 +11,8 @@ import { TasksComponent } from './pages/tasks/tasks.component';
 import { AuthGuard } from './auth.guard';
 import { ConfirmResetPasswordComponent } from './pages/confirm-reset-password/confirm-reset-password.component';
 import { ChatComponent } from './pages/chat/chat.component';
+import { ChatHubComponent } from './components/chat-hub/chat-hub.component';
+import { SettingsComponent } from './pages/settings/settings.component';
 // import { DashboardComponent } from './pages/dashboard/dashboard.component'; // será criado
 
 export const routes: Routes = [
@@ -25,6 +27,8 @@ export const routes: Routes = [
   { path: 'notifications', component: NotificationsComponent, canActivate: [AuthGuard] },
   { path: 'tasks', component: TasksComponent, canActivate: [AuthGuard] },
   { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] },
+  { path: 'chat-hub', component: ChatHubComponent, canActivate: [AuthGuard] },
+  { path: 'settings', component: SettingsComponent, canActivate: [AuthGuard] },
   { path: 'confirm-reset-password', component: ConfirmResetPasswordComponent },
   { path: '**', redirectTo: '/login' }
   // { path: 'dashboard', component: DashboardComponent },

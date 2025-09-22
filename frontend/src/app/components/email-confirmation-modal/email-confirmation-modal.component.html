@@ -1,0 +1,213 @@
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 email-confirmation-modal" *ngIf="visible"
+     [style.background]="'var(--modal-overlay)'">
+  <div class="modal-content rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300" 
+       [class]="visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'"
+       [style.background]="'var(--panel-bg)'"
+       [style.color]="'var(--text-primary)'"
+       [style.border]="'1px solid var(--border-color)'">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6" 
+         [ngClass]="{
+           'border-gray-200': !isDarkMode(),
+           'border-gray-700': isDarkMode()
+         }"
+         style="border-bottom: 1px solid;">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center"
+             [ngClass]="{
+               'bg-blue-100': !isDarkMode(),
+               'bg-blue-900': isDarkMode()
+             }">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+               [ngClass]="{
+                 'text-blue-600': !isDarkMode(),
+                 'text-blue-400': isDarkMode()
+               }">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold"
+              [ngClass]="{
+                'text-gray-900': !isDarkMode(),
+                'text-white': isDarkMode()
+              }">Confirmar E-mail</h3>
+          <p class="text-sm"
+             [ngClass]="{
+               'text-gray-500': !isDarkMode(),
+               'text-gray-400': isDarkMode()
+             }">Verificação de segurança</p>
+        </div>
+      </div>
+      <button (click)="onClose()" class="transition-colors"
+              [ngClass]="{
+                'text-gray-400 hover:text-gray-600': !isDarkMode(),
+                'text-gray-400 hover:text-gray-300': isDarkMode()
+              }">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6">
+      <!-- Status Messages -->
+      <div *ngIf="status === 'sending'" class="mb-6">
+        <div class="flex items-center justify-center space-x-3 mb-4">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2"
+               [ngClass]="{
+                 'border-blue-600': !isDarkMode(),
+                 'border-blue-400': isDarkMode()
+               }"></div>
+          <span [ngClass]="{
+            'text-gray-700': !isDarkMode(),
+            'text-gray-300': isDarkMode()
+          }">Enviando código...</span>
+        </div>
+      </div>
+
+      <div *ngIf="status === 'sent'" class="mb-6">
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+               [ngClass]="{
+                 'bg-green-100': !isDarkMode(),
+                 'bg-green-900': isDarkMode()
+               }">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                 [ngClass]="{
+                   'text-green-600': !isDarkMode(),
+                   'text-green-400': isDarkMode()
+                 }">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h4 class="text-lg font-semibold mb-2"
+              [ngClass]="{
+                'text-gray-900': !isDarkMode(),
+                'text-white': isDarkMode()
+              }">Código Enviado!</h4>
+          <p class="text-sm"
+             [ngClass]="{
+               'text-gray-600': !isDarkMode(),
+               'text-gray-400': isDarkMode()
+             }">
+            Enviamos um código de confirmação para <strong [ngClass]="{
+              'text-blue-600': !isDarkMode(),
+              'text-blue-400': isDarkMode()
+            }">{{ email }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div *ngIf="status === 'error'" class="mb-6">
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+               [ngClass]="{
+                 'bg-red-100': !isDarkMode(),
+                 'bg-red-900': isDarkMode()
+               }">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                 [ngClass]="{
+                   'text-red-600': !isDarkMode(),
+                   'text-red-400': isDarkMode()
+                 }">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </div>
+          <h4 class="text-lg font-semibold mb-2"
+              [ngClass]="{
+                'text-gray-900': !isDarkMode(),
+                'text-white': isDarkMode()
+              }">Erro no Envio</h4>
+          <p class="text-sm"
+             [ngClass]="{
+               'text-gray-600': !isDarkMode(),
+               'text-gray-400': isDarkMode()
+             }">{{ errorMessage }}</p>
+        </div>
+      </div>
+
+      <!-- Code Input Form -->
+      <div *ngIf="status === 'sent' || status === 'verifying'">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2"
+                   [ngClass]="{
+                     'text-gray-700': !isDarkMode(),
+                     'text-gray-300': isDarkMode()
+                   }">
+              Digite o código de 6 dígitos
+            </label>
+            <div class="flex space-x-2 justify-center">
+              <input 
+                *ngFor="let digit of codeDigits; let i = index"
+                type="text" 
+                maxlength="1"
+                [value]="codeDigits[i]"
+                (input)="onDigitInput(i, $event)"
+                (keydown)="onKeyDown(i, $event)"
+                (paste)="onPaste($event)"
+                class="w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:ring-2 focus:outline-none transition-all"
+                [style.background]="isCodeInvalid ? 'var(--error-bg)' : (isCodeValid ? 'var(--success-bg)' : 'var(--input-bg)')"
+                [style.color]="isCodeInvalid ? 'var(--error-color)' : (isCodeValid ? 'var(--success-color)' : 'var(--input-text)')"
+                [style.border-color]="isCodeInvalid ? 'var(--error-color)' : (isCodeValid ? 'var(--success-color)' : 'var(--input-border)')"
+              />
+            </div>
+            <p *ngIf="isCodeInvalid" class="text-xs mt-2 text-center"
+               [ngClass]="{
+                 'text-red-500': !isDarkMode(),
+                 'text-red-400': isDarkMode()
+               }">
+              Código inválido. Tente novamente.
+            </p>
+          </div>
+
+          <div class="flex space-x-3">
+            <button 
+              type="button" 
+              (click)="resendCode()" 
+              [disabled]="isResending || resendTimer > 0"
+              class="flex-1 px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              [ngClass]="{
+                'text-blue-600 border border-blue-300 bg-transparent hover:bg-blue-50': !isDarkMode(),
+                'text-blue-400 border border-blue-600 bg-transparent hover:bg-blue-900': isDarkMode()
+              }"
+            >
+              <span *ngIf="!isResending && resendTimer === 0">Reenviar Código</span>
+              <span *ngIf="!isResending && resendTimer > 0">
+                Reenviar em {{ resendTimer }}s
+              </span>
+              <span *ngIf="isResending" class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 mr-2"
+                     [ngClass]="{
+                       'border-blue-600': !isDarkMode(),
+                       'border-blue-400': isDarkMode()
+                     }"></div>
+                Reenviando...
+              </span>
+            </button>
+            
+            <button 
+              type="button" 
+              (click)="onSubmitCode()"
+              [disabled]="!isCodeComplete || isVerifying"
+              class="flex-1 px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              [ngClass]="{
+                'bg-blue-600 text-white hover:bg-blue-700': true
+              }"
+            >
+              <span *ngIf="!isVerifying">Verificar</span>
+              <span *ngIf="isVerifying" class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 mr-2 border-white"></div>
+                Verificando...
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

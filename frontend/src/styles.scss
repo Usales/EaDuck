@@ -17,7 +17,14 @@ html.light {
   --input-text: #1E293B;
   --button-bg: #3b82f6;
   --button-text: #ffffff;
+  --button-hover-bg: #2563eb;
   --link-color: #3b82f6;
+  --accent-bg: #dbeafe;
+  --success-bg: #dcfce7;
+  --success-color: #16a34a;
+  --error-bg: #fef2f2;
+  --error-color: #dc2626;
+  --modal-overlay: rgba(0, 0, 0, 0.5);
 }
 
 html.light body {
@@ -41,7 +48,14 @@ html.dark {
   --input-text: #f1f5f9;
   --button-bg: #3b82f6;
   --button-text: #ffffff;
+  --button-hover-bg: #2563eb;
   --link-color: #60a5fa;
+  --accent-bg: #1e3a8a;
+  --success-bg: #14532d;
+  --success-color: #22c55e;
+  --error-bg: #7f1d1d;
+  --error-color: #ef4444;
+  --modal-overlay: rgba(0, 0, 0, 0.7);
 }
 
 html.dark body {
@@ -66,7 +80,14 @@ html.dark body {
     --input-text: #1E293B;
     --button-bg: #3b82f6;
     --button-text: #ffffff;
+    --button-hover-bg: #2563eb;
     --link-color: #3b82f6;
+    --accent-bg: #dbeafe;
+    --success-bg: #dcfce7;
+    --success-color: #16a34a;
+    --error-bg: #fef2f2;
+    --error-color: #dc2626;
+    --modal-overlay: rgba(0, 0, 0, 0.5);
   }
   
   html:not(.dark):not(.light) body {
@@ -89,7 +110,14 @@ html.dark body {
     --input-text: #f1f5f9;
     --button-bg: #3b82f6;
     --button-text: #ffffff;
+    --button-hover-bg: #2563eb;
     --link-color: #60a5fa;
+    --accent-bg: #1e3a8a;
+    --success-bg: #14532d;
+    --success-color: #22c55e;
+    --error-bg: #7f1d1d;
+    --error-color: #ef4444;
+    --modal-overlay: rgba(0, 0, 0, 0.7);
   }
   
   html:not(.dark):not(.light) body {
@@ -387,6 +415,104 @@ html.dark body {
   button {
     padding: 0.625rem 0.875rem;
     font-size: 0.875rem;
+  }
+}
+
+// Email Confirmation Modal Styles
+.email-confirmation-modal {
+  .modal-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .modal-content {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+  
+  .code-input {
+    background: var(--input-bg);
+    color: var(--input-text);
+    border: 2px solid var(--input-border);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .code-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: scale(1.05);
+  }
+  
+  .code-input.valid {
+    border-color: var(--success-color);
+    background: var(--success-bg);
+  }
+  
+  .code-input.invalid {
+    border-color: var(--error-color);
+    background: var(--error-bg);
+    animation: errorShake 0.5s ease-in-out;
+  }
+  
+  .btn-resend {
+    background: transparent;
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .btn-resend:hover:not(:disabled) {
+    background: var(--accent-bg);
+    transform: translateY(-1px);
+  }
+  
+  .btn-verify {
+    background: var(--button-bg);
+    color: var(--button-text);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .btn-verify:hover:not(:disabled) {
+    background: var(--button-hover-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .status-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+  }
+  
+  .status-icon.success {
+    background: var(--success-bg);
+    color: var(--success-color);
+  }
+  
+  .status-icon.error {
+    background: var(--error-bg);
+    color: var(--error-color);
+  }
+  
+  .status-icon.loading {
+    background: var(--accent-bg);
+    color: var(--accent-color);
+  }
+}
+
+@keyframes errorShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
   }
 }
 

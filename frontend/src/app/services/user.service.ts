@@ -8,6 +8,7 @@ export interface User {
   name?: string;
   role: string;
   isActive: boolean;
+  needsNameSetup?: boolean;
 }
 
 export interface CreateUserRequest {
@@ -28,6 +29,14 @@ export class UserService {
 
   getUsersByRole(role: string): Observable<User[]> {
     return this.http.get<User[]>(`${this.apiUrl}?role=${role}`);
+  }
+
+  getStudents(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/students`);
+  }
+
+  getTeachers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/teachers`);
   }
 
   createUser(user: CreateUserRequest): Observable<User> {

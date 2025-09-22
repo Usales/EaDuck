@@ -31,7 +31,10 @@ export class ClassroomService {
         students: c.studentIds && c.studentNames ? c.studentIds.map((id: number, idx: number) => ({
           id,
           email: c.studentNames[idx]
-        })) : []
+        })) : [],
+        // Preservar teacherNames e studentNames para exibição
+        teacherNames: c.teacherNames || [],
+        studentNames: c.studentNames || []
       })))
     );
   }
@@ -49,7 +52,16 @@ export class ClassroomService {
   }
 
   getMyClassrooms(): Observable<Classroom[]> {
-    return this.http.get<Classroom[]>('http://localhost:8080/api/users/me/classrooms');
+    return this.http.get<any[]>('http://localhost:8080/api/users/me/classrooms').pipe(
+      map(classrooms => classrooms.map(c => ({
+        ...c,
+        teachers: [],
+        students: [],
+        // Preservar teacherNames e studentNames para exibição
+        teacherNames: c.teacherNames || [],
+        studentNames: c.studentNames || []
+      })))
+    );
   }
 
   assignTeacher(classroomId: number, teacherId: number): Observable<any> {
@@ -84,7 +96,10 @@ export class ClassroomService {
           id,
           email: c.studentNames[idx],
           name: c.studentNames[idx]
-        })) : []
+        })) : [],
+        // Preservar teacherNames e studentNames para exibição
+        teacherNames: c.teacherNames || [],
+        studentNames: c.studentNames || []
       }))
     );
   }

@@ -6,6 +6,7 @@ import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.config.security.JwtService;
 import com.eaduck.backend.exceptions.DuplicateEmailException;
+import com.eaduck.backend.service.EmailConfirmationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
@@ -19,8 +20,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +37,7 @@ public class AuthController {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+    private final EmailConfirmationService emailConfirmationService;
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
@@ -68,6 +72,51 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/register-with-confirmation")
+    public ResponseEntity<?> registerWithConfirmation(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String password = request.get("password");
+            String confirmationCode = request.get("confirmationCode");
+            
+            if (email == null || password == null || confirmationCode == null || 
+                email.isEmpty() || password.isEmpty() || confirmationCode.isEmpty()) {
+                return ResponseEntity.badRequest().body(new ResponseMessage("E-mail, senha e código de confirmação são obrigatórios."));
+            }
+            
+            if (userRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.badRequest().body(new ResponseMessage("E-mail já cadastrado."));
+            }
+            
+            // Verificar código de confirmação
+            if (!emailConfirmationService.verifyConfirmationCode(email, confirmationCode)) {
+                return ResponseEntity.badRequest().body(new ResponseMessage("Código de confirmação inválido ou expirado."));
+            }
+            
+            // Criar usuário
+            User user = User.builder()
+                    .email(email)
+                    .password(passwordEncoder.encode(password))
+                    .role(Role.STUDENT)
+                    .isActive(true)
+                    .name(email.split("@")[0].replaceAll("\\d", ""))
+                    .build();
+            
+            user = userRepository.save(user);
+            
+            // Consumir o código após registro bem-sucedido
+            emailConfirmationService.consumeConfirmationCode(email);
+            
+            String token = jwtService.generateToken(user);
+            
+            return ResponseEntity.ok(new AuthResponse(token, String.valueOf(user.getId()), user.getRole().name()));
+            
+        } catch (Exception e) {
+            logger.error("Erro ao registrar com confirmação: " + e.getMessage());
+            return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao registrar: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/activate")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> activateUser(@RequestBody UserActivationDTO request) {
@@ -90,7 +139,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
+            logger.info("Tentativa de login para email: {}", request.getEmail());
+            logger.info("Request body: {}", request);
+            
             if (request.getEmail() == null || request.getPassword() == null || request.getEmail().isEmpty() || request.getPassword().isEmpty()) {
+                logger.warn("Email ou senha vazios");
                 return ResponseEntity.badRequest().body(new ResponseMessage("E-mail e senha são obrigatórios."));
             }
             Authentication authentication = authenticationManager.authenticate(
@@ -153,6 +206,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao redefinir senha: " + e.getMessage()));
         }
     }
+
 
     @PostMapping("/validate-token")
     public ResponseEntity<?> validateToken(@RequestBody ValidateTokenRequest request) {

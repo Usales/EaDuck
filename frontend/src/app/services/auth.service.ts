@@ -12,12 +12,15 @@ export class AuthService {
   public currentUser$ = this.currentUserSubject.asObservable();
   private apiUrl = 'http://localhost:8080/api/auth';
   private userId: number | null = null;
-  private TOKEN_EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2 horas
-  private TOKEN_REFRESH_MS = 25 * 60 * 1000; // 25 minutos
+  private TOKEN_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 horas
+  private TOKEN_REFRESH_MS = 23 * 60 * 60 * 1000; // 23 horas (renovar 1 hora antes de expirar)
   private lastActivity = Date.now();
   private refreshTimer: any;
 
   constructor(private http: HttpClient) {
+    // Limpar dados antigos na inicialização
+    this.clearOldAuthData();
+    
     // Recupera o usuário do localStorage ao iniciar
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -48,45 +51,116 @@ export class AuthService {
     this.lastActivity = Date.now();
   }
 
+  private clearAuthData(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('token_last_used');
+    localStorage.removeItem('currentUser');
+    this.userId = null;
+    this.currentUserSubject.next(null);
+  }
+
+  private clearOldAuthData(): void {
+    // Verificar se há dados de autenticação válidos
+    const token = localStorage.getItem('token');
+    const currentUser = localStorage.getItem('currentUser');
+    
+    // Se não há token, limpar tudo
+    if (!token) {
+      if (currentUser) {
+        console.log('Token ausente, limpando dados de usuário...');
+        this.clearAuthData();
+      }
+      return;
+    }
+    
+    // Se há token mas não há usuário, tentar manter o token (pode ser renovado)
+    if (!currentUser) {
+      return;
+    }
+    
+    // Verificar se os dados do usuário estão corrompidos
+    try {
+      const user = JSON.parse(currentUser);
+      if (!user.email || !user.id) {
+        console.log('Dados de usuário incompletos, limpando...');
+        this.clearAuthData();
+      }
+    } catch (error) {
+      console.log('Dados de usuário corrompidos, limpando...');
+      this.clearAuthData();
+    }
+  }
+
   private startRefreshTimer() {
     if (this.refreshTimer) {
       clearInterval(this.refreshTimer);
     }
 
     this.refreshTimer = setInterval(() => {
-      const now = Date.now();
-      const inactiveTime = now - this.lastActivity;
+      if (!this.isAuthenticated()) {
+        return; // Se não está autenticado, não faz nada
+      }
 
-      if (this.isAuthenticated() && inactiveTime < this.TOKEN_REFRESH_MS) {
-        // Se o usuário está ativo, renova o token
-        this.refreshToken();
-      } else if (inactiveTime >= this.TOKEN_REFRESH_MS) {
-        // Se o usuário está inativo por mais de 25 minutos, faz logout
+      const token = this.getToken();
+      if (!token) {
+        this.logout();
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeUntilExpiry = payload.exp - currentTime;
+        
+        // Renovar token se restam menos de 2 horas (7200 segundos)
+        if (timeUntilExpiry < 7200 && timeUntilExpiry > 0) {
+          console.log('Renovando token automaticamente...');
+          this.refreshToken();
+        } else if (timeUntilExpiry <= 0) {
+          console.log('Token expirado, fazendo logout...');
+          this.logout();
+        }
+      } catch (error) {
+        console.log('Erro ao verificar expiração do token:', error);
         this.logout();
       }
-    }, 60000); // Verifica a cada minuto
+    }, 300000); // Verifica a cada 5 minutos
   }
 
   private refreshToken() {
     const token = this.getToken();
-    if (token) {
-      this.http.post<{ token: string }>(`${this.apiUrl}/refresh`, { token })
-        .subscribe({
-          next: (response) => {
-            localStorage.setItem('token', response.token);
-            localStorage.setItem('token_last_used', Date.now().toString());
-          },
-          error: (error) => {
-            console.error('Erro ao renovar token:', error);
+    if (!token) {
+      console.log('Nenhum token para renovar');
+      return;
+    }
+
+    console.log('Tentando renovar token...');
+    this.http.post<{ token: string, userId: string }>(`${this.apiUrl}/refresh`, { token })
+      .subscribe({
+        next: (response) => {
+          console.log('Token renovado com sucesso');
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('token_last_used', Date.now().toString());
+          this.userId = parseInt(response.userId, 10);
+          this.updateLastActivity();
+        },
+        error: (error) => {
+          console.error('Erro ao renovar token:', error);
+          // Só faz logout se o erro for de autenticação (401/403)
+          if (error.status === 401 || error.status === 403) {
             this.logout();
           }
-        });
-    }
+        }
+      });
   }
 
   setCurrentUser(user: User) {
     localStorage.setItem('currentUser', JSON.stringify(user));
     this.currentUserSubject.next(user);
+  }
+
+  updateCurrentUser(updatedUser: User) {
+    this.setCurrentUser(updatedUser);
   }
 
   getCurrentUser(): User | null {
@@ -99,15 +173,24 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<User> {
+    // Limpar tokens antigos antes do login
+    this.clearAuthData();
+    
     return this.http.post<{ token: string, userId: string }>(`${this.apiUrl}/login`, { email, password }).pipe(
       tap(response => {
+        console.log('Login response:', response);
+        console.log('Email do login:', email);
         localStorage.setItem('token', response.token);
         localStorage.setItem('token_last_used', Date.now().toString());
         this.userId = parseInt(response.userId, 10);
         this.updateLastActivity();
       }),
-      switchMap(() => this.getProfile()),
+      switchMap(() => {
+        // Após login bem-sucedido, obter dados completos do usuário
+        return this.getProfile();
+      }),
       tap(user => {
+        // Definir o usuário atual após obter o perfil
         this.setCurrentUser(user);
       })
     );
@@ -123,42 +206,89 @@ export class AuthService {
     );
   }
 
+  // Métodos para confirmação de e-mail
+  sendConfirmationCode(email: string): Observable<any> {
+    return this.http.post('http://localhost:8080/api/email-confirmation/send', { email });
+  }
+
+  verifyConfirmationCode(email: string, code: string): Observable<any> {
+    return this.http.post('http://localhost:8080/api/email-confirmation/verify', { email, code });
+  }
+
+  resendConfirmationCode(email: string): Observable<any> {
+    return this.http.post('http://localhost:8080/api/email-confirmation/resend', { email });
+  }
+
+  registerWithConfirmation(email: string, password: string, confirmationCode: string): Observable<{ token: string, userId: string, role: string }> {
+    return this.http.post<{ token: string, userId: string, role: string }>(`${this.apiUrl}/register-with-confirmation`, { 
+      email, 
+      password, 
+      confirmationCode 
+    }).pipe(
+      tap(response => {
+        localStorage.setItem('token', response.token);
+        this.userId = parseInt(response.userId, 10);
+        this.updateLastActivity();
+      })
+    );
+  }
+
   confirmResetPassword(token: string, newPassword: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/confirm-reset-password`, { token, newPassword });
   }
 
   isAuthenticated(): boolean {
-    const token = localStorage.getItem('token');
-    const lastUsed = localStorage.getItem('token_last_used');
+    const token = this.getToken();
     
-    if (!token || !lastUsed) {
+    if (!token) {
       return false;
     }
 
-    const now = Date.now();
-    const lastUsedTime = parseInt(lastUsed, 10);
-    
-    if (now - lastUsedTime > this.TOKEN_EXPIRATION_MS) {
+    // Verificar se o token não está expirado usando a expiração real do JWT
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      if (payload.exp && payload.exp < currentTime) {
+        console.log('Token JWT expirado, fazendo logout...');
+        this.logout();
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.log('Token JWT inválido, fazendo logout...');
       this.logout();
       return false;
     }
-
-    return true;
   }
 
   logout() {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('token');
-    localStorage.removeItem('token_last_used');
-    this.currentUserSubject.next(null);
-    this.userId = null;
+    this.clearAuthData();
     if (this.refreshTimer) {
       clearInterval(this.refreshTimer);
     }
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Verificar se o token não está expirado
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        if (payload.exp && payload.exp < currentTime) {
+          console.log('Token expirado, removendo...');
+          this.clearAuthData();
+          return null;
+        }
+      } catch (error) {
+        console.log('Token inválido, removendo...');
+        this.clearAuthData();
+        return null;
+      }
+    }
+    return token;
   }
 
   getAuthHeaders(): HttpHeaders {
@@ -175,12 +305,30 @@ export class AuthService {
       });
     }
 
-    return this.http.get<User>('http://localhost:8080/api/users/me', {
+    return this.http.get<any>('http://localhost:8080/api/users/me', {
       headers: this.getAuthHeaders()
     }).pipe(
+      map(response => ({
+        id: response.id,
+        email: response.email,
+        name: response.name, // Manter null se for null
+        role: response.role,
+        isActive: response.isActive,
+        needsNameSetup: response.needsNameSetup
+      })),
+      tap(user => {
+        // Definir o usuário atual após obter os dados completos
+        this.setCurrentUser(user);
+      }),
       tap({
         error: (error) => console.error('Erro ao carregar perfil:', error)
       })
     );
+  }
+
+  updateUserName(name: string): Observable<any> {
+    return this.http.put('http://localhost:8080/api/users/me/name', { name }, {
+      headers: this.getAuthHeaders()
+    });
   }
 } 

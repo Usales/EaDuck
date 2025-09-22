@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 
 export interface Notification {
@@ -33,20 +34,15 @@ export class NotificationService {
   }
 
   markAsRead(notificationId: number): Observable<any> {
-    return new Observable(observer => {
-      this.http.put(`${this.apiUrl}/${notificationId}/read`, {}, {
-        headers: this.authService.getAuthHeaders()
-      }).subscribe({
-        next: () => {
-          this.loadNotifications();
-          observer.next(null);
-          observer.complete();
-        },
-        error: (err) => {
-          observer.error(err);
-        }
-      });
-    });
+    return this.http.put(`${this.apiUrl}/${notificationId}/read`, {}, {
+      headers: this.authService.getAuthHeaders()
+    }).pipe(
+      switchMap(() => {
+        // Recarregar notificações após marcar como lida
+        this.loadNotifications();
+        return of(null);
+      })
+    );
   }
 
   createNotification(notification: Partial<Notification>): Observable<Notification> {
@@ -63,9 +59,21 @@ export class NotificationService {
 
   loadNotifications() {
     const user = this.authService.getCurrentUser();
-    if (!user) return;
-    this.getUserNotifications(user.id).subscribe(notifs => {
-      this.notificationsSubject.next(notifs.map(n => ({ ...n, isRead: n.isRead ?? n.read })));
+    if (!user) {
+      this.notificationsSubject.next([]);
+      return;
+    }
+    
+    this.http.get<Notification[]>(this.apiUrl, {
+      headers: this.authService.getAuthHeaders()
+    }).subscribe({
+      next: (notifs) => {
+        this.notificationsSubject.next(notifs.map(n => ({ ...n, isRead: n.isRead ?? n.read })));
+      },
+      error: (error) => {
+        console.error('Erro ao carregar notificações:', error);
+        this.notificationsSubject.next([]);
+      }
     });
   }
 } 

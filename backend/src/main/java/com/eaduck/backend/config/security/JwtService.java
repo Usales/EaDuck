@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
@@ -28,8 +27,8 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
     
-    // Aumentar para 2 horas
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 2; // 2 horas
+    // Aumentar para 24 horas
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24 horas
     // Adicionar margem de tolerância de 5 minutos
     private static final long CLOCK_SKEW = 1000 * 60 * 5; // 5 minutos
 
@@ -66,7 +65,7 @@ public class JwtService {
             throw new RuntimeException("Token JWT malformado: " + e.getMessage());
         } catch (ExpiredJwtException e) {
             throw new RuntimeException("Token JWT expirado: " + e.getMessage());
-        } catch (SignatureException e) {
+        } catch (io.jsonwebtoken.security.SignatureException e) {
             throw new RuntimeException("Assinatura do token JWT inválida: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Erro ao parsear token JWT: " + e.getMessage());

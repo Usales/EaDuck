@@ -57,11 +57,13 @@
 
 .chat-container {
   height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -89,6 +91,8 @@
   background-image: 
     radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  min-height: 0;
+  max-height: calc(100vh - 140px);
 }
 
 .message-wrapper {
@@ -173,12 +177,17 @@
   border-top: 1px solid var(--border-color);
   background-color: var(--bg-secondary);
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
   
   input {
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     transition: all 0.2s ease;
+    min-height: 44px;
     
     &:focus {
       outline: none;
@@ -194,23 +203,29 @@
   button {
     background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%);
     color: white;
-    border: none;
+    border: 2px solid var(--accent-primary);
     font-weight: 600;
     transition: all 0.2s ease;
+    min-height: 44px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     
     &:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent-primary) 100%);
     }
     
     &:active:not(:disabled) {
       transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
+      background: #9ca3af;
+      border-color: #9ca3af;
     }
   }
 }
@@ -286,12 +301,24 @@
 
 // Responsive design
 @media (max-width: 768px) {
+  .chat-container {
+    height: 100vh;
+    height: 100dvh; // Dynamic viewport height for mobile
+  }
+  
   .chat-header {
     padding: 0.75rem;
+    flex-shrink: 0;
     
     h1 {
       font-size: 1.125rem;
     }
+  }
+  
+  .messages-container {
+    max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
+    padding: 0.75rem;
   }
   
   .message-bubble {
@@ -300,6 +327,29 @@
   
   .input-area {
     padding: 0.75rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .input-area input,
+  .input-area button {
+    min-height: 48px; // Larger touch targets for mobile
+  }
+}
+
+// Extra small screens
+@media (max-width: 480px) {
+  .input-area {
+    padding: 0.5rem;
+  }
+  
+  .messages-container {
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
   }
 }
 
@@ -328,4 +378,116 @@ button:focus {
 input:focus {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
+}
+
+// Animações melhoradas para comportamento WhatsApp
+.message-wrapper {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Animação de envio
+.message-bubble[class*="animate-pulse"] {
+  animation: sendingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes sendingPulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+// Animação de scroll suave
+.messages-container {
+  scroll-behavior: smooth;
+}
+
+// Animação de entrada das mensagens
+.message-bubble {
+  animation: messageBubbleIn 0.2s ease-out;
+}
+
+@keyframes messageBubbleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Animação especial para mensagens recebidas
+.new-message {
+  animation: newMessageSlideIn 0.5s ease-out;
+}
+
+@keyframes newMessageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-5px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+// Animação de destaque para mensagens recebidas
+.new-message .message-bubble {
+  animation: highlightMessage 0.6s ease-out;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+@keyframes highlightMessage {
+  0% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    transform: scale(1.02);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+    transform: scale(1.01);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.1);
+    transform: scale(1);
+  }
+}
+
+// Animação de status de envio
+.status-icon {
+  transition: all 0.2s ease-in-out;
+}
+
+.status-icon:hover {
+  transform: scale(1.1);
+}
+
+// Animação de falha
+.message-bubble[class*="opacity-70"] {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
 }

@@ -4,9 +4,9 @@ import com.eaduck.backend.model.classroom.Classroom;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.ClassroomRepository;
 import com.eaduck.backend.repository.UserRepository;
-import com.eaduck.backend.service.NotificationService;
 import com.eaduck.backend.model.classroom.dto.ClassroomDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomCreateDTO;
+import com.eaduck.backend.model.classroom.dto.ClassroomUpdateDTO;
 import com.eaduck.backend.model.user.dto.UserDTO;
 import com.eaduck.backend.model.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,15 +15,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.HashMap;
 import java.util.ArrayList;
-import com.eaduck.backend.model.classroom.dto.ClassroomSimpleDTO;
-import com.eaduck.backend.model.classroom.dto.ClassroomDashboardDTO;
 
 @RestController
 @RequestMapping("/api/classrooms")
@@ -35,8 +31,6 @@ public class ClassroomController {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private NotificationService notificationService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -60,11 +54,12 @@ public class ClassroomController {
             .name(classroom.getName())
             .academicYear(classroom.getAcademicYear())
             .teacherIds(classroom.getTeachers().stream().map(User::getId).toList())
-            .teacherNames(classroom.getTeachers().stream().map(u -> u.getEmail() != null ? u.getEmail() : "").toList())
+            .teacherNames(classroom.getTeachers().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
             .studentIds(classroom.getStudents().stream().map(User::getId).toList())
-            .studentNames(classroom.getStudents().stream().map(u -> u.getEmail() != null ? u.getEmail() : "").toList())
+            .studentNames(classroom.getStudents().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
             .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
             .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
+            .isActive(classroom.getIsActive() != null ? classroom.getIsActive() : true)
             .build()).toList();
         return ResponseEntity.ok(dtos);
     }
@@ -101,11 +96,12 @@ public class ClassroomController {
             .name(classroom.getName())
             .academicYear(classroom.getAcademicYear())
             .teacherIds(classroom.getTeachers().stream().map(User::getId).toList())
-            .teacherNames(classroom.getTeachers().stream().map(User::getEmail).toList())
+            .teacherNames(classroom.getTeachers().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
             .studentIds(classroom.getStudents().stream().map(User::getId).toList())
-            .studentNames(classroom.getStudents().stream().map(User::getEmail).toList())
+            .studentNames(classroom.getStudents().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
             .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
             .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
+            .isActive(classroom.getIsActive() != null ? classroom.getIsActive() : true)
             .build();
         return ResponseEntity.ok(dto);
     }
@@ -152,54 +148,60 @@ public class ClassroomController {
         return ResponseEntity.ok(response);
     }
 
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    public ResponseEntity<ClassroomDTO> updateClassroom(@PathVariable Long id, @RequestBody ClassroomCreateDTO dto, Authentication authentication) {
+    public ResponseEntity<?> updateClassroom(@PathVariable Long id, @RequestBody ClassroomUpdateDTO updateDTO, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElse(null);
         if (user == null) {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<Classroom> classroomOpt = classroomRepository.findById(id);
-        if (classroomOpt.isEmpty()) {
+        Classroom classroom = classroomRepository.findById(id).orElse(null);
+        if (classroom == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Classroom existing = classroomOpt.get();
-
-        // Verifica se o professor tem acesso à sala
-        if (user.getRole() == Role.TEACHER) {
-            boolean hasAccess = user.getClassroomsAsTeacher().contains(existing);
-            if (!hasAccess) {
-                return ResponseEntity.status(403).build();
-            }
+        // Verifica se o usuário tem permissão para editar a sala
+        boolean canEdit = false;
+        if (user.getRole() == Role.ADMIN) {
+            canEdit = true;
+        } else if (user.getRole() == Role.TEACHER) {
+            canEdit = user.getClassroomsAsTeacher().contains(classroom);
         }
 
-        existing.setName(dto.getName());
-        existing.setAcademicYear(dto.getAcademicYear());
-
-        // Atualizar professores se teacherIds vierem preenchidos
-        if (dto.getTeacherIds() != null) {
-            Set<User> teachers = new HashSet<>();
-            for (Long teacherId : dto.getTeacherIds()) {
-                userRepository.findById(teacherId).ifPresent(teachers::add);
-            }
-            existing.setTeachers(teachers);
+        if (!canEdit) {
+            return ResponseEntity.status(403).body("Você não tem permissão para editar esta sala");
         }
 
-        Classroom updated = classroomRepository.save(existing);
-        ClassroomDTO response = ClassroomDTO.builder()
-            .id(updated.getId())
-            .name(updated.getName())
-            .academicYear(updated.getAcademicYear())
-            .teacherIds(updated.getTeachers().stream().map(User::getId).toList())
-            .teacherNames(updated.getTeachers().stream().map(User::getEmail).toList())
-            .studentIds(updated.getStudents().stream().map(User::getId).toList())
-            .studentNames(updated.getStudents().stream().map(User::getEmail).toList())
-            .studentCount(updated.getStudents() != null ? updated.getStudents().size() : 0)
-            .active(updated.getStudents() != null && !updated.getStudents().isEmpty())
+        // Atualiza os campos fornecidos
+        if (updateDTO.getName() != null && !updateDTO.getName().trim().isEmpty()) {
+            classroom.setName(updateDTO.getName().trim());
+        }
+        if (updateDTO.getAcademicYear() != null) {
+            classroom.setAcademicYear(updateDTO.getAcademicYear());
+        }
+        if (updateDTO.getIsActive() != null) {
+            classroom.setIsActive(updateDTO.getIsActive());
+        }
+
+        classroomRepository.save(classroom);
+
+        // Retorna o DTO atualizado
+        ClassroomDTO dto = ClassroomDTO.builder()
+            .id(classroom.getId())
+            .name(classroom.getName())
+            .academicYear(classroom.getAcademicYear())
+            .teacherIds(classroom.getTeachers().stream().map(User::getId).toList())
+            .teacherNames(classroom.getTeachers().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
+            .studentIds(classroom.getStudents().stream().map(User::getId).toList())
+            .studentNames(classroom.getStudents().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
+            .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
+            .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
+            .isActive(classroom.getIsActive() != null ? classroom.getIsActive() : true)
             .build();
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity.ok(dto);
     }
 
     @DeleteMapping("/{id}")
@@ -338,5 +340,62 @@ public class ClassroomController {
         classroom.getTeachers().remove(teacher);
         classroomRepository.save(classroom);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ClassroomDTO>> getUserClassrooms(@PathVariable Long userId, Authentication authentication) {
+        User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (currentUser == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Verifica se o usuário pode acessar as salas do usuário solicitado
+        boolean canAccess = false;
+        if (currentUser.getRole() == Role.ADMIN) {
+            canAccess = true;
+        } else if (currentUser.getId().equals(userId)) {
+            canAccess = true;
+        } else if (currentUser.getRole() == Role.TEACHER) {
+            // Professor pode ver salas onde ele é professor
+            canAccess = true;
+        }
+
+        if (!canAccess) {
+            return ResponseEntity.status(403).build();
+        }
+
+        User targetUser = userRepository.findById(userId).orElse(null);
+        if (targetUser == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<Classroom> classrooms = new ArrayList<>();
+        
+        if (currentUser.getRole() == Role.ADMIN) {
+            // Admin vê todas as salas
+            classrooms = classroomRepository.findAll();
+        } else if (currentUser.getRole() == Role.TEACHER) {
+            // Professor vê suas salas como professor
+            classrooms = new ArrayList<>(currentUser.getClassroomsAsTeacher());
+        } else {
+            // Estudante vê suas salas
+            classrooms = new ArrayList<>(targetUser.getClassrooms());
+        }
+
+        List<ClassroomDTO> dtos = classrooms.stream().map(classroom -> ClassroomDTO.builder()
+            .id(classroom.getId())
+            .name(classroom.getName())
+            .academicYear(classroom.getAcademicYear())
+            .teacherIds(classroom.getTeachers().stream().map(User::getId).toList())
+            .teacherNames(classroom.getTeachers().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
+            .studentIds(classroom.getStudents().stream().map(User::getId).toList())
+            .studentNames(classroom.getStudents().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
+            .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
+            .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
+            .isActive(classroom.getIsActive() != null ? classroom.getIsActive() : true)
+            .build()).toList();
+
+        return ResponseEntity.ok(dtos);
     }
 }

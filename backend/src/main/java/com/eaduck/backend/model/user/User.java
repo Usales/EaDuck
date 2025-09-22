@@ -30,7 +30,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column
     private String name;
 
     @Enumerated(EnumType.STRING)

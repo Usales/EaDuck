@@ -24,17 +24,23 @@
     
     <!-- Notificações -->
     <div class="relative">
-      <button (click)="toggleDropdown()" class="relative focus:outline-none p-1.5 sm:p-2 rounded-lg hover:bg-gray-700 transition-colors">
+      <button (click)="toggleDropdown()" class="relative focus:outline-none p-1.5 sm:p-2 rounded-lg hover:bg-gray-700 transition-colors" [class.bg-gray-700]="showDropdown">
         <span class="material-icons text-xl sm:text-2xl md:text-3xl" style="color: var(--text-primary);">notifications</span>
-        <span *ngIf="getUnreadCount() > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{{ getUnreadCount() }}</span>
+        <span *ngIf="getUnreadCount() > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full animate-pulse">{{ getUnreadCount() }}</span>
       </button>
-      <div *ngIf="showDropdown" class="absolute right-0 mt-2 w-80 rounded-lg shadow-lg overflow-hidden" style="background: var(--panel-bg); border: 1px solid var(--border-color);">
+      <div *ngIf="showDropdown" class="notification-dropdown" style="background: var(--panel-bg); border: 1px solid var(--border-color);">
         <div class="p-4 border-b flex items-center justify-between" style="border-color: var(--border-color);">
           <span class="font-semibold" style="color: var(--text-primary);">Notificações</span>
           <a routerLink="/notifications" class="text-sm hover:underline" style="color: var(--accent-color);">Ver todas</a>
         </div>
-        <div *ngIf="loading" class="p-4" style="color: var(--text-secondary);">Carregando...</div>
-        <div *ngIf="!loading && notifications.length === 0" class="p-4" style="color: var(--text-secondary);">Nenhuma notificação.</div>
+        <div *ngIf="loading" class="p-4 flex items-center justify-center" style="color: var(--text-secondary);">
+          <span class="material-icons animate-spin mr-2">refresh</span>
+          Carregando...
+        </div>
+        <div *ngIf="!loading && notifications.length === 0" class="p-4 text-center" style="color: var(--text-secondary);">
+          <span class="material-icons text-4xl mb-2 block opacity-50">notifications_none</span>
+          Nenhuma notificação
+        </div>
         <div *ngIf="!loading && notifications.length > 0" class="max-h-80 overflow-y-auto" style="border-color: var(--border-color);">
           <div *ngFor="let n of notifications | slice:0:8" class="p-4 transition-all cursor-pointer" [class.opacity-60]="n.isRead" (click)="markAsRead(n)" style="border-color: var(--border-color);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
             <div class="flex items-start gap-3">

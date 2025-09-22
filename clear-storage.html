@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Limpar LocalStorage</title>
+</head>
+<body>
+    <h1>Limpar LocalStorage</h1>
+    <button onclick="clearStorage()">Limpar LocalStorage</button>
+    <div id="result"></div>
+
+    <script>
+        function clearStorage() {
+            // Limpar todos os dados do localStorage
+            localStorage.clear();
+            
+            // Limpar sessionStorage também
+            sessionStorage.clear();
+            
+            document.getElementById('result').innerHTML = 
+                '<p style="color: green;">LocalStorage limpo com sucesso!</p>' +
+                '<p>Você pode fechar esta aba e tentar fazer login novamente.</p>';
+        }
+    </script>
+</body>
+</html>

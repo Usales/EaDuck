@@ -1,11 +1,3 @@
-<app-modal 
-  [visible]="modalVisible" 
-  [type]="modalType" 
-  [title]="modalTitle" 
-  [message]="modalMessage" 
-  (close)="closeModal()">
-</app-modal>
-
 <div class="min-h-screen flex items-center justify-center px-4 py-8 screen-fade" style="background: var(--bg-primary);">
   <!-- Theme Toggle - Fixed Position -->
   <div class="absolute top-4 right-4 z-10">
@@ -51,19 +43,24 @@
             </button>
           </div>
         </div>
-        <div class="mt-2 w-full h-2 rounded-full" style="background: var(--border-color);">
+        <!-- Barra de força da senha -->
+        <div class="mt-2 w-full h-2 rounded-full" style="background: var(--border-color);" *ngIf="password">
           <div [ngClass]="{
             'bg-red-500': passwordStrength === 'fraca',
             'bg-yellow-400': passwordStrength === 'media',
             'bg-green-500': passwordStrength === 'forte'
-          }" [style.width]="passwordStrength === 'fraca' ? '33%' : (passwordStrength === 'media' ? '66%' : '100%')" class="h-2 rounded-full transition-all"></div>
+          }" [style.width]="passwordStrength === 'fraca' ? '33%' : (passwordStrength === 'media' ? '66%' : '100%')" class="h-2 rounded-full transition-all duration-300"></div>
         </div>
-        <div class="text-xs mt-1" [ngClass]="{
+        
+        <!-- Texto de força da senha -->
+        <div class="text-xs mt-1" *ngIf="password" [ngClass]="{
           'text-red-400': passwordStrength === 'fraca',
           'text-yellow-300': passwordStrength === 'media',
           'text-green-400': passwordStrength === 'forte'
         }">
-          {{ passwordStrength === 'fraca' ? 'Senha fraca' : (passwordStrength === 'media' ? 'Senha média' : 'Senha forte') }}
+          <span *ngIf="passwordStrength === 'fraca'">🔴 Senha fraca - Use pelo menos 6 caracteres</span>
+          <span *ngIf="passwordStrength === 'media'">🟡 Senha média - Adicione maiúsculas, números ou símbolos</span>
+          <span *ngIf="passwordStrength === 'forte'">🟢 Senha forte - Excelente!</span>
         </div>
       </div>
       <div class="mb-4">
@@ -90,3 +87,29 @@
     </form>
   </div>
 </div>
+
+<!-- Modais fora do formulário para evitar conflitos ngModel -->
+<app-modal 
+  [visible]="modalVisible" 
+  [type]="modalType" 
+  [title]="modalTitle" 
+  [message]="modalMessage" 
+  (close)="closeModal()">
+</app-modal>
+
+<app-email-confirmation-modal
+  [visible]="emailConfirmationVisible"
+  [email]="email"
+  [status]="emailConfirmationStatus"
+  [errorMessage]="emailConfirmationError"
+  (close)="onEmailConfirmationClose()"
+  (codeSubmitted)="onCodeSubmitted($event)"
+  (resendRequested)="onResendCode()">
+</app-email-confirmation-modal>
+
+<!-- Modal de configuração de nome -->
+<app-name-setup-modal 
+  [isVisible]="showNameSetupModal"
+  (nameSet)="onNameSet($event)"
+  (close)="onCloseNameSetup()">
+</app-name-setup-modal>

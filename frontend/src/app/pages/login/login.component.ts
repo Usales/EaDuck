@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ModalComponent } from '../../components/modal/modal.component';
-import { AnimatedDuckComponent } from '../../components/animated-duck/animated-duck.component';
 import { ThemeToggleComponent } from '../../components/theme-toggle/theme-toggle.component';
+import { NameSetupModalComponent } from '../../components/name-setup-modal/name-setup-modal.component';
 import { AuthService } from '../../services/auth.service';
 import { HttpClientModule } from '@angular/common/http';
 import { take } from 'rxjs/operators';
@@ -12,7 +12,7 @@ import { take } from 'rxjs/operators';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, AnimatedDuckComponent, ThemeToggleComponent, RouterModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, ModalComponent, ThemeToggleComponent, NameSetupModalComponent, RouterModule, HttpClientModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
@@ -28,6 +28,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
   modalType: 'success' | 'error' | 'info' | 'loading' = 'info';
   modalTitle = '';
   modalMessage = '';
+
+  // Name setup modal
+  showNameSetupModal = false;
 
   constructor(private router: Router, private authService: AuthService) {}
 
@@ -52,13 +55,18 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.showModal('loading', '', 'Autenticando...');
     this.authService.login(this.email, this.password).subscribe({
       next: (user) => {
-        this.showModal('success', 'Login realizado', 'Bem-vindo ao sistema EaDuck!');
-        this.authService.currentUser$.pipe(take(1)).subscribe((u) => {
-          if (u) {
-            this.closeModal();
-            this.router.navigate(['/home']);
-          }
-        });
+        console.log('Login successful, user:', user);
+        console.log('needsNameSetup:', user.needsNameSetup);
+        console.log('user.name:', user.name);
+        this.closeModal();
+        // Verificar se o usuário precisa configurar o nome
+        if (user.needsNameSetup) {
+          console.log('Showing name setup modal');
+          this.showNameSetupModal = true;
+        } else {
+          console.log('Navigating to home');
+          this.router.navigate(['/home']);
+        }
       },
       error: (err) => {
         let msg = '';
@@ -91,6 +99,20 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
   togglePassword() {
     this.showPassword = !this.showPassword;
+  }
+
+  onNameSet(name: string) {
+    this.showNameSetupModal = false;
+    // Atualizar o usuário atual com o novo nome
+    this.authService.getProfile().subscribe(user => {
+      this.authService.setCurrentUser(user);
+      this.router.navigate(['/home']);
+    });
+  }
+
+  onCloseNameSetup() {
+    // Não permitir fechar o modal sem definir o nome
+    // O usuário deve definir o nome para continuar
   }
 
   loginWithGoogle() {

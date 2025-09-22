@@ -31,7 +31,7 @@
           <span class="classrooms-form-icon">
             <span class="material-icons">calendar_today</span>
           </span>
-          <input type="number" placeholder="Ex: 2024" [(ngModel)]="newAcademicYear" min="1900" max="2100" (input)="onYearInput($event, 'new')" class="classrooms-form-input">
+          <input type="text" placeholder="Ex: 2025" [(ngModel)]="newAcademicYear" (input)="onYearInput($event, 'new')" (keypress)="onKeyPress($event)" maxlength="4" class="classrooms-form-input">
         </div>
       </div>
       
@@ -79,7 +79,7 @@
           <div class="classroom-card-field">
             <span class="classroom-card-label">Ano letivo:</span>
             <ng-container *ngIf="editClassroomId === classroom.id; else viewYear">
-              <input type="number" [(ngModel)]="editAcademicYear" min="1900" max="2100" (input)="onYearInput($event, 'edit')" class="classroom-card-input" />
+              <input type="text" [(ngModel)]="editAcademicYear" (input)="onYearInput($event, 'edit')" (keypress)="onKeyPress($event)" maxlength="4" class="classroom-card-input" />
             </ng-container>
             <ng-template #viewYear>
               <span class="classroom-card-value">{{ classroom.academicYear }}</span>
@@ -100,9 +100,9 @@
           </div>
         </div>
 
-        <!-- Ações de Atribuição (Admin) -->
-        <div *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" class="classroom-card-assignments">
-          <button (click)="openAssignTeacher(classroom)" class="classroom-assign-btn classroom-assign-teacher">
+        <!-- Ações de Atribuição -->
+        <div *ngIf="isAdminOrTeacher" class="classroom-card-assignments">
+          <button *ngIf="currentUser?.role === 'ADMIN'" (click)="openAssignTeacher(classroom)" class="classroom-assign-btn classroom-assign-teacher">
             <span class="material-icons">person_add</span>
             Professores
           </button>

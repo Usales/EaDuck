@@ -1,6 +1,5 @@
 package com.eaduck.backend.controller;
 
-import com.eaduck.backend.model.classroom.Classroom;
 import com.eaduck.backend.model.enums.Role;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.UserRepository;
@@ -13,14 +12,19 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -55,7 +59,7 @@ public class UserController {
                     .password(passwordEncoder.encode(request.getPassword()))
                     .role(request.getRole() != null ? request.getRole() : Role.STUDENT)
                     .isActive(true)
-                    .name(request.getEmail().split("@")[0].replaceAll("\\d", ""))
+                    .name(null) // Deixar nome como null para forçar setup no primeiro login
                     .build();
 
             user = userRepository.save(user);
@@ -152,11 +156,38 @@ public class UserController {
             return ResponseEntity.ok(new java.util.HashMap<>() {{
                 put("id", user.getId());
                 put("email", user.getEmail());
+                put("name", user.getName());
                 put("role", user.getRole());
                 put("isActive", user.isActive());
+                put("needsNameSetup", user.getName() == null || user.getName().trim().isEmpty());
             }});
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/me/name")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateUserName(@RequestBody Map<String, String> request, Authentication authentication) {
+        logger.info("=== UPDATE USER NAME ENDPOINT CALLED ===");
+        logger.info("Request body: {}", request);
+        String email = authentication.getName();
+        logger.info("User email: {}", email);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        String newName = request.get("name");
+        if (newName == null || newName.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nome é obrigatório"));
+        }
+        
+        User user = userOpt.get();
+        user.setName(newName.trim());
+        userRepository.save(user);
+        
+        return ResponseEntity.ok(Map.of("message", "Nome atualizado com sucesso", "name", user.getName()));
     }
 
     @PutMapping("/{id}/status")
@@ -232,6 +263,129 @@ public class UserController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Erro ao deletar usuário: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Busca todos os professores para seleção em criação de salas
+     */
+    @GetMapping("/teachers")
+    public ResponseEntity<List<UserDTO>> getTeachers() {
+        try {
+            List<User> teachers = userRepository.findByRole(Role.TEACHER);
+            List<UserDTO> teacherDTOs = teachers.stream()
+                .map(user -> UserDTO.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .role(user.getRole())
+                    .isActive(user.isActive())
+                    .build())
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(teacherDTOs);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    /**
+     * Endpoint para obter todos os alunos (STUDENT)
+     */
+    @GetMapping("/students")
+    public ResponseEntity<List<UserDTO>> getStudents() {
+        try {
+            List<User> students = userRepository.findByRole(Role.STUDENT);
+            List<UserDTO> studentDTOs = students.stream()
+                .map(user -> UserDTO.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .name(user.getName())
+                    .role(user.getRole())
+                    .isActive(user.isActive())
+                    .build())
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(studentDTOs);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PutMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateProfile(@RequestBody Map<String, String> request, Authentication authentication) {
+        try {
+            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Usuário não encontrado");
+            }
+
+            User user = userOpt.get();
+            String name = request.get("name");
+            
+            if (name != null && !name.trim().isEmpty()) {
+                user.setName(name.trim());
+                userRepository.save(user);
+                return ResponseEntity.ok(Map.of("message", "Perfil atualizado com sucesso"));
+            } else {
+                return ResponseEntity.badRequest().body("Nome é obrigatório");
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar perfil: {}", e.getMessage());
+            return ResponseEntity.status(500).body("Erro interno do servidor");
+        }
+    }
+
+    @PutMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request, Authentication authentication) {
+        try {
+            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Usuário não encontrado");
+            }
+
+            User user = userOpt.get();
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest().body("Senha atual e nova senha são obrigatórias");
+            }
+
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                return ResponseEntity.badRequest().body("Senha atual incorreta");
+            }
+
+            if (newPassword.length() < 6) {
+                return ResponseEntity.badRequest().body("Nova senha deve ter pelo menos 6 caracteres");
+            }
+
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Senha alterada com sucesso"));
+        } catch (Exception e) {
+            logger.error("Erro ao alterar senha: {}", e.getMessage());
+            return ResponseEntity.status(500).body("Erro interno do servidor");
+        }
+    }
+
+    @PutMapping("/notification-settings")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateNotificationSettings(@RequestBody Map<String, Object> request, Authentication authentication) {
+        try {
+            Optional<User> userOpt = userRepository.findByEmail(authentication.getName());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Usuário não encontrado");
+            }
+
+            // Por enquanto, apenas retorna sucesso
+            // Futuramente, pode ser implementado um sistema de configurações de notificação
+            return ResponseEntity.ok(Map.of("message", "Configurações de notificação atualizadas"));
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar configurações de notificação: {}", e.getMessage());
+            return ResponseEntity.status(500).body("Erro interno do servidor");
         }
     }
 }

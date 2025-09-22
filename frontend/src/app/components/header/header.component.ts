@@ -1,5 +1,6 @@
-import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { NotificationService, Notification } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
@@ -11,7 +12,7 @@ import { filter, catchError, switchMap } from 'rxjs/operators';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, ThemeToggleComponent],
+  imports: [CommonModule, ThemeToggleComponent, RouterModule],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })
@@ -49,6 +50,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     // Inscreve-se nas notificações globais
     this.notificationsSubscription = this.notificationService.notifications$.subscribe(notifs => {
       this.notifications = notifs.sort((a, b) => b.id - a.id);
+      this.loading = false;
     });
   }
 
@@ -57,6 +59,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     const currentUser = this.authService.getCurrentUser();
 
     if (isAuthenticated && currentUser && !this.isLoginPage) {
+      this.loading = true;
       this.notificationService.loadNotifications();
       this.setupUpdateInterval();
     } else {
@@ -108,9 +111,15 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   markAsRead(notification: Notification) {
     if (notification.isRead) return;
+    
+    // Atualizar localmente primeiro para feedback imediato
+    notification.isRead = true;
+    
     this.notificationService.markAsRead(notification.id).pipe(
       catchError(error => {
         console.error('Erro ao marcar notificação como lida:', error);
+        // Reverter a mudança local se houver erro
+        notification.isRead = false;
         return of(null);
       })
     ).subscribe();
@@ -118,5 +127,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.sidebarToggle.emit();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const target = event.target as HTMLElement;
+    const notificationContainer = target.closest('.relative');
+    const notificationButton = target.closest('button');
+    
+    // Só fecha o dropdown se o clique não foi no botão de notificações nem no dropdown
+    if (!notificationContainer && !notificationButton?.querySelector('.material-icons')) {
+      this.showDropdown = false;
+    }
   }
 } 

@@ -1,0 +1,86 @@
+// Estilos específicos para o modal de configurações da sala
+.classroom-settings-modal {
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .status-active {
+    background-color: var(--success-color);
+  }
+
+  .status-inactive {
+    background-color: var(--error-color);
+  }
+
+  .radio-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    
+    input[type="radio"] {
+      margin-right: 0.5rem;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--input-border);
+    border-radius: 0.5rem;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    transition: all 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px var(--primary-color);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .error-message {
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+  }
+
+  .info-box {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background-color: var(--info-bg);
+    color: var(--info-text);
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem;
+  }
+}

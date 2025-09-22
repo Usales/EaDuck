@@ -1,0 +1,274 @@
+<app-sidebar></app-sidebar>
+
+<div class="settings-container page-bg">
+  <!-- Header -->
+  <div class="settings-header">
+    <div class="settings-header-content">
+      <h1 class="settings-title">
+        <span class="material-icons">settings</span>
+        Configurações
+      </h1>
+      <p class="settings-subtitle">Gerencie suas preferências e informações pessoais</p>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="settings-content">
+    <div class="settings-grid">
+      
+      <!-- Informações Pessoais -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <h2 class="settings-card-title">
+            <span class="material-icons">person</span>
+            Informações Pessoais
+          </h2>
+        </div>
+        <div class="settings-card-body">
+          <div class="form-group">
+            <label for="userName" class="form-label">Nome Completo</label>
+            <input
+              type="text"
+              id="userName"
+              [(ngModel)]="nameForm.name"
+              class="form-input"
+              placeholder="Digite seu nome completo"
+              [disabled]="isUpdatingName"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              type="email"
+              [value]="currentUser?.email || ''"
+              class="form-input"
+              disabled
+            />
+            <small class="form-help">O email não pode ser alterado</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Função</label>
+            <input
+              type="text"
+              [value]="currentUser?.role || ''"
+              class="form-input"
+              disabled
+            />
+          </div>
+
+          <button
+            (click)="updateName()"
+            [disabled]="isUpdatingName || !nameForm.name.trim()"
+            class="btn btn-primary"
+          >
+            <span *ngIf="!isUpdatingName" class="material-icons">save</span>
+            <span *ngIf="isUpdatingName" class="material-icons spin">refresh</span>
+            {{ isUpdatingName ? 'Salvando...' : 'Salvar Nome' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Segurança -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <h2 class="settings-card-title">
+            <span class="material-icons">security</span>
+            Segurança
+          </h2>
+        </div>
+        <div class="settings-card-body">
+          <div class="form-group">
+            <label for="currentPassword" class="form-label">Senha Atual</label>
+            <input
+              type="password"
+              id="currentPassword"
+              [(ngModel)]="passwordForm.currentPassword"
+              class="form-input"
+              placeholder="Digite sua senha atual"
+              [disabled]="isUpdatingPassword"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="newPassword" class="form-label">Nova Senha</label>
+            <input
+              type="password"
+              id="newPassword"
+              [(ngModel)]="passwordForm.newPassword"
+              class="form-input"
+              placeholder="Digite sua nova senha"
+              [disabled]="isUpdatingPassword"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirmar Nova Senha</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              [(ngModel)]="passwordForm.confirmPassword"
+              class="form-input"
+              placeholder="Confirme sua nova senha"
+              [disabled]="isUpdatingPassword"
+            />
+          </div>
+
+          <button
+            (click)="updatePassword()"
+            [disabled]="isUpdatingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword"
+            class="btn btn-primary"
+          >
+            <span *ngIf="!isUpdatingPassword" class="material-icons">lock</span>
+            <span *ngIf="isUpdatingPassword" class="material-icons spin">refresh</span>
+            {{ isUpdatingPassword ? 'Atualizando...' : 'Alterar Senha' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Notificações -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <h2 class="settings-card-title">
+            <span class="material-icons">notifications</span>
+            Notificações
+          </h2>
+        </div>
+        <div class="settings-card-body">
+          <div class="notification-options">
+            <div class="notification-option">
+              <div class="notification-option-content">
+                <div class="notification-option-info">
+                  <h3 class="notification-option-title">Notificações por Email</h3>
+                  <p class="notification-option-description">Receba notificações importantes por email</p>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="notificationSettings.emailNotifications"
+                    [disabled]="isUpdatingNotifications"
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="notification-option">
+              <div class="notification-option-content">
+                <div class="notification-option-info">
+                  <h3 class="notification-option-title">Notificações Push</h3>
+                  <p class="notification-option-description">Receba notificações instantâneas no navegador</p>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="notificationSettings.pushNotifications"
+                    [disabled]="isUpdatingNotifications"
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="notification-option">
+              <div class="notification-option-content">
+                <div class="notification-option-info">
+                  <h3 class="notification-option-title">Lembretes de Tarefas</h3>
+                  <p class="notification-option-description">Receba lembretes sobre tarefas pendentes</p>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="notificationSettings.taskReminders"
+                    [disabled]="isUpdatingNotifications"
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="notification-option">
+              <div class="notification-option-content">
+                <div class="notification-option-info">
+                  <h3 class="notification-option-title">Notificações de Mensagens</h3>
+                  <p class="notification-option-description">Receba notificações de novas mensagens no chat</p>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="notificationSettings.messageNotifications"
+                    [disabled]="isUpdatingNotifications"
+                  />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button
+            (click)="updateNotifications()"
+            [disabled]="isUpdatingNotifications"
+            class="btn btn-primary"
+          >
+            <span *ngIf="!isUpdatingNotifications" class="material-icons">save</span>
+            <span *ngIf="isUpdatingNotifications" class="material-icons spin">refresh</span>
+            {{ isUpdatingNotifications ? 'Salvando...' : 'Salvar Configurações' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Tema -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <h2 class="settings-card-title">
+            <span class="material-icons">palette</span>
+            Aparência
+          </h2>
+        </div>
+        <div class="settings-card-body">
+          <div class="theme-options">
+            <div class="theme-option">
+              <label class="theme-option-label">
+                <input type="radio" name="theme" value="light" />
+                <div class="theme-option-content">
+                  <span class="material-icons">light_mode</span>
+                  <span>Tema Claro</span>
+                </div>
+              </label>
+            </div>
+            <div class="theme-option">
+              <label class="theme-option-label">
+                <input type="radio" name="theme" value="dark" />
+                <div class="theme-option-content">
+                  <span class="material-icons">dark_mode</span>
+                  <span>Tema Escuro</span>
+                </div>
+              </label>
+            </div>
+            <div class="theme-option">
+              <label class="theme-option-label">
+                <input type="radio" name="theme" value="auto" checked />
+                <div class="theme-option-content">
+                  <span class="material-icons">auto_mode</span>
+                  <span>Automático</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div *ngIf="successMessage" class="alert alert-success">
+      <span class="material-icons">check_circle</span>
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-error">
+      <span class="material-icons">error</span>
+      {{ errorMessage }}
+    </div>
+  </div>
+</div>

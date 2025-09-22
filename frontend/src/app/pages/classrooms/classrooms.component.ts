@@ -80,20 +80,24 @@ export class ClassroomsComponent implements OnInit {
   }
 
   ngOnInit() {
-    const user = this.authService.getCurrentUser();
-    this.currentUser = user;
-    if (user?.role === 'ADMIN' || user?.role === 'TEACHER') {
-      this.loadClassrooms();
-    } else {
-      this.classroomService.getMyClassrooms().subscribe(classrooms => {
-        this.classrooms = classrooms;
-        this.applyFilter();
-      });
-    }
-    if (user?.role === 'ADMIN') {
-      this.loadTeachers();
-      this.loadStudents();
-    }
+    // Subscribe to current user changes
+    this.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      if (user?.role === 'ADMIN' || user?.role === 'TEACHER') {
+        this.loadClassrooms();
+      } else {
+        this.classroomService.getMyClassrooms().subscribe(classrooms => {
+          this.classrooms = classrooms;
+          this.applyFilter();
+        });
+      }
+      if (user?.role === 'ADMIN') {
+        this.loadTeachers();
+        this.loadStudents();
+      } else if (user?.role === 'TEACHER') {
+        this.loadStudents();
+      }
+    });
   }
 
   loadClassrooms() {
@@ -134,10 +138,14 @@ export class ClassroomsComponent implements OnInit {
 
   onYearInput(event: any, type: 'new' | 'edit') {
     let value = event.target.value;
+    // Remover caracteres não numéricos
+    value = value.replace(/[^0-9]/g, '');
+    // Limitar a 4 dígitos
     if (value.length > 4) {
       value = value.slice(0, 4);
-      event.target.value = value;
     }
+    event.target.value = value;
+    
     if (type === 'new') {
       this.newAcademicYear = value;
     } else {
@@ -145,19 +153,36 @@ export class ClassroomsComponent implements OnInit {
     }
   }
 
+  onKeyPress(event: KeyboardEvent): boolean {
+    // Permitir apenas números (0-9), backspace, delete, tab, escape, enter
+    const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    
+    if (allowedKeys.includes(event.key)) {
+      return true;
+    }
+    
+    // Permitir apenas números
+    if (event.key >= '0' && event.key <= '9') {
+      return true;
+    }
+    
+    // Bloquear todas as outras teclas (letras, símbolos, etc.)
+    event.preventDefault();
+    return false;
+  }
+
   get isAdminOrTeacher(): boolean {
-    const user = this.authService.getCurrentUser();
-    return user?.role === 'ADMIN' || user?.role === 'TEACHER';
+    return this.currentUser?.role === 'ADMIN' || this.currentUser?.role === 'TEACHER';
   }
 
   loadTeachers() {
-    this.userService.getUsersByRole('TEACHER').subscribe(teachers => {
+    this.userService.getTeachers().subscribe(teachers => {
       this.teachers = teachers;
     });
   }
 
   loadStudents() {
-    this.userService.getUsersByRole('STUDENT').subscribe(students => {
+    this.userService.getStudents().subscribe(students => {
       this.students = students;
     });
   }

@@ -132,6 +132,30 @@ public class TaskController {
         }
     }
 
+    @GetMapping("/sent")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<TaskSimpleDTO>> getSentTasks(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<Task> sentTasks = taskRepository.findByCreatedBy(user);
+        List<TaskSimpleDTO> dtos = sentTasks.stream()
+            .map(task -> new TaskSimpleDTO(
+                task.getId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getDueDate(),
+                task.getType(),
+                task.getClassroom().getId(),
+                task.getClassroom().getName()
+            ))
+            .collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Task> getTaskById(@PathVariable Long id, Authentication authentication) {

@@ -20,4 +20,5 @@ public class ClassroomDTO {
     private List<Long> studentIds;
     private List<String> studentNames;
     private boolean active;
+    private boolean isActive;
 } 
