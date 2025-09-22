@@ -34,6 +34,7 @@ public class ChatMessageService {
         ChatMessageEntity entity = ChatMessageEntity.builder()
                 .senderEmail(chatMessage.getSender())
                 .senderName(chatMessage.getSenderName())
+                .senderRole(chatMessage.getSenderRole())
                 .content(chatMessage.getContent())
                 .messageType(convertMessageType(chatMessage.getType()))
                 .classroomId(chatMessage.getClassroomId() != null ? 
@@ -171,6 +172,7 @@ public class ChatMessageService {
         chatMessage.setContent(entity.getContent());
         chatMessage.setSender(entity.getSenderEmail());
         chatMessage.setSenderName(entity.getSenderName());
+        chatMessage.setSenderRole(entity.getSenderRole());
         chatMessage.setMessage(entity.getContent());
         chatMessage.setTimestamp(Date.from(entity.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()));
         chatMessage.setClassroomId(entity.getClassroomId() != null ? entity.getClassroomId().toString() : null);

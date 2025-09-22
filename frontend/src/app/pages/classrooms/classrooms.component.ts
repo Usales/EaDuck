@@ -109,10 +109,40 @@ export class ClassroomsComponent implements OnInit {
 
   applyFilter() {
     const f = this.filter.toLowerCase();
-    this.filteredClassrooms = this.classrooms.filter(c =>
-      c.name.toLowerCase().includes(f) ||
-      (c.academicYear || '').toLowerCase().includes(f)
-    );
+    this.filteredClassrooms = this.classrooms.filter(c => {
+      // Filtrar por texto de busca
+      const matchesSearch = c.name.toLowerCase().includes(f) ||
+        (c.academicYear || '').toLowerCase().includes(f);
+      
+      // Filtrar por status ativo/inativo
+      // Se for ADMIN, mostrar todas as salas
+      // Se for TEACHER, mostrar apenas salas ativas ou salas que ele criou
+      // Se for STUDENT, mostrar apenas salas ativas
+      let matchesStatus = true;
+      
+      if (this.currentUser?.role === 'ADMIN') {
+        matchesStatus = true; // Admin vê todas as salas
+      } else if (this.currentUser?.role === 'TEACHER') {
+        // Professor vê salas ativas ou salas que ele criou (mesmo inativas)
+        matchesStatus = c.isActive || this.isClassroomCreator(c);
+      } else {
+        // Estudante vê apenas salas ativas
+        matchesStatus = c.isActive !== false; // Default para true se não definido
+      }
+      
+      return matchesSearch && matchesStatus;
+    });
+  }
+
+  private isClassroomCreator(classroom: Classroom): boolean {
+    // Verifica se o usuário atual é um dos professores da sala
+    // Assumindo que o primeiro professor é o criador
+    if (!this.currentUser || !classroom.teachers || classroom.teachers.length === 0) {
+      return false;
+    }
+    
+    // Verifica se o usuário atual está na lista de professores
+    return classroom.teachers.some(teacher => teacher.id === this.currentUser?.id);
   }
 
   startEdit(classroom: Classroom) {

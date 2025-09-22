@@ -68,8 +68,8 @@
             </ng-template>
           </div>
           <div class="classroom-card-status">
-            <span [ngClass]="(classroom.studentCount ?? 0) > 0 ? 'classroom-status-active' : 'classroom-status-inactive'">
-              {{ (classroom.studentCount ?? 0) > 0 ? 'Ativa' : 'Inativa' }}
+            <span [ngClass]="classroom.isActive !== false ? 'classroom-status-active' : 'classroom-status-inactive'">
+              {{ classroom.isActive !== false ? 'Ativa' : 'Inativa' }}
             </span>
           </div>
         </div>

@@ -16,6 +16,7 @@ interface ChatMessage {
   content: string;
   sender: string;
   senderName: string;
+  senderRole?: string;
   message?: string;
   isMine: boolean;
   timestamp: Date;
@@ -191,6 +192,7 @@ export class ChatComponent implements OnInit, OnDestroy {
                   type: 'JOIN',
                   sender: user.email,
                   senderName: user.name || user.email,
+                  senderRole: user.role,
                   content: `${user.name || user.email} entrou na sala`,
                   classroomId: this.classroomId
                 };
@@ -230,6 +232,7 @@ export class ChatComponent implements OnInit, OnDestroy {
                   type: 'JOIN',
                   sender: user.email,
                   senderName: user.name || user.email,
+                  senderRole: user.role,
                   content: `${user.name || user.email} entrou no chat`
                 };
                 console.log('Enviando mensagem de entrada no chat geral:', joinMessage);
@@ -358,6 +361,7 @@ export class ChatComponent implements OnInit, OnDestroy {
       content: messageContent,
       sender: user.email,
       senderName: user.name || user.email,
+      senderRole: user.role,
       classroomId: this.classroomId,
       id: messageId
     };
@@ -472,7 +476,6 @@ export class ChatComponent implements OnInit, OnDestroy {
         // Adicionar nova mensagem
         message.status = 'delivered';
         this.messages.push(message);
-        console.log('Mensagem adicionada. Total:', this.messages.length);
         
         // Tocar som de notificação para mensagens recebidas
         if (!message.isMine) {
@@ -559,6 +562,19 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   trackByMessage(index: number, message: ChatMessage): string {
     return message.id || `${message.sender}-${message.timestamp}-${index}`;
+  }
+
+  getRoleDisplayName(role: string): string {
+    switch (role) {
+      case 'STUDENT':
+        return 'Estudante';
+      case 'TEACHER':
+        return 'Professor';
+      case 'ADMIN':
+        return 'Administrador';
+      default:
+        return 'Usuário';
+    }
   }
 
   // Método para forçar atualização da view

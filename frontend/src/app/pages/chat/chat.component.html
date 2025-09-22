@@ -82,6 +82,14 @@
         <div class="flex-1 max-w-xs lg:max-w-md" [class.flex-row-reverse]="message.isMine">
           <div *ngIf="!message.isMine" class="flex items-center space-x-2 mb-1">
             <span class="font-medium text-sm">{{ message.senderName || message.sender }}</span>
+            <span *ngIf="message.senderRole" class="text-xs px-2 py-1 rounded-full font-medium" 
+                  [ngClass]="{
+                    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200': message.senderRole === 'STUDENT',
+                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': message.senderRole === 'TEACHER',
+                    'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200': message.senderRole === 'ADMIN'
+                  }">
+              {{ getRoleDisplayName(message.senderRole) }}
+            </span>
             <span class="text-xs opacity-75">{{ message.timestamp | date:'HH:mm' }}</span>
           </div>
           

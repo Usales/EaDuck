@@ -14,6 +14,7 @@ public class ChatMessage {
     private String content;
     private String sender;
     private String senderName;
+    private String senderRole;
     private String message;
     private boolean isMine;
     private Date timestamp;

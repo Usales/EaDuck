@@ -1,6 +1,8 @@
 package com.eaduck.backend.controller;
 
 import com.eaduck.backend.model.ChatMessage;
+import com.eaduck.backend.model.user.User;
+import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.service.ChatMessageService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -17,11 +19,19 @@ public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatMessageService chatMessageService;
+    private final UserRepository userRepository;
     private final Map<String, OnlineUser> onlineUsers = new ConcurrentHashMap<>();
 
-    public ChatController(SimpMessagingTemplate messagingTemplate, ChatMessageService chatMessageService) {
+    public ChatController(SimpMessagingTemplate messagingTemplate, ChatMessageService chatMessageService, UserRepository userRepository) {
         this.messagingTemplate = messagingTemplate;
         this.chatMessageService = chatMessageService;
+        this.userRepository = userRepository;
+    }
+
+    private String getUserRole(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> user.getRole().name())
+                .orElse("STUDENT");
     }
 
     @MessageMapping("/chat.sendMessage")
@@ -35,7 +45,9 @@ public class ChatController {
         
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
-        chatMessage.setSenderName(chatMessage.getSender());
+        // Manter o senderName que já foi enviado pelo frontend
+        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
+        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
         
         // Salvar mensagem no banco de dados
         try {
@@ -64,7 +76,8 @@ public class ChatController {
         }
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
-        chatMessage.setSenderName(chatMessage.getSender());
+        // Manter o senderName que já foi enviado pelo frontend
+        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
         
         // Add user to online list
         if (chatMessage.getType() == ChatMessage.MessageType.JOIN) {
@@ -95,7 +108,8 @@ public class ChatController {
         
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
-        chatMessage.setSenderName(chatMessage.getSender());
+        // Manter o senderName que já foi enviado pelo frontend
+        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
         
         // Salvar mensagem no banco de dados
         try {
@@ -127,7 +141,8 @@ public class ChatController {
         }
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
-        chatMessage.setSenderName(chatMessage.getSender());
+        // Manter o senderName que já foi enviado pelo frontend
+        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
         
         // Add user to online list for the room
         String roomKey = chatMessage.getClassroomId() + "_" + chatMessage.getSender();

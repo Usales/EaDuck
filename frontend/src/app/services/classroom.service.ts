@@ -12,6 +12,7 @@ export interface Classroom {
   students?: any[];
   teacherNames?: string[];
   studentCount?: number;
+  isActive?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -34,7 +35,9 @@ export class ClassroomService {
         })) : [],
         // Preservar teacherNames e studentNames para exibição
         teacherNames: c.teacherNames || [],
-        studentNames: c.studentNames || []
+        studentNames: c.studentNames || [],
+        // Preservar isActive
+        isActive: c.isActive !== undefined ? c.isActive : true
       })))
     );
   }
@@ -59,7 +62,9 @@ export class ClassroomService {
         students: [],
         // Preservar teacherNames e studentNames para exibição
         teacherNames: c.teacherNames || [],
-        studentNames: c.studentNames || []
+        studentNames: c.studentNames || [],
+        // Preservar isActive
+        isActive: c.isActive !== undefined ? c.isActive : true
       })))
     );
   }
@@ -99,7 +104,9 @@ export class ClassroomService {
         })) : [],
         // Preservar teacherNames e studentNames para exibição
         teacherNames: c.teacherNames || [],
-        studentNames: c.studentNames || []
+        studentNames: c.studentNames || [],
+        // Preservar isActive
+        isActive: c.isActive !== undefined ? c.isActive : true
       }))
     );
   }

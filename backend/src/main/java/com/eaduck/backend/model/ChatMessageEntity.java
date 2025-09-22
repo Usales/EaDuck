@@ -28,6 +28,9 @@ public class ChatMessageEntity {
     @Column(name = "sender_name", nullable = false)
     private String senderName;
     
+    @Column(name = "sender_role", nullable = false)
+    private String senderRole;
+    
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
     
