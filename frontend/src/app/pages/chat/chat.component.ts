@@ -448,31 +448,45 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (currentUser) {
       const user = currentUser as User;
       message.isMine = message.sender === user.email;
-      // message.isMine já foi definido acima
     }
 
     // Only add CHAT messages to the display, not JOIN/LEAVE messages
     if (message.type === 'CHAT') {
       // Verificar se a mensagem já existe para evitar duplicação
-      const messageExists = this.messages.some(m => 
-        m.id === message.id || 
-        (m.content === message.content && 
-         m.sender === message.sender && 
-         Math.abs(new Date(m.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000)
-      );
+      let messageExists = false;
       
-      if (!messageExists) {
-        // Se for uma mensagem própria que já existe localmente, atualizar status
-        if (message.isMine && message.id) {
+      if (message.isMine && message.id) {
+        // Para mensagens próprias com ID, verificar por ID
+        messageExists = this.messages.some(m => m.id === message.id);
+        
+        if (messageExists) {
+          // Atualizar status da mensagem existente
           const existingMessageIndex = this.messages.findIndex(m => m.id === message.id);
           if (existingMessageIndex !== -1) {
             this.messages[existingMessageIndex].status = 'delivered';
             this.cdr.markForCheck();
-            // Status atualizado para delivered
             return;
           }
         }
-        
+      } else if (message.isMine && !message.id) {
+        // Para mensagens próprias sem ID (enviadas localmente), verificar se já existe
+        // uma mensagem com mesmo conteúdo e timestamp próximo
+        messageExists = this.messages.some(m => 
+          m.isMine && 
+          m.content === message.content && 
+          Math.abs(new Date(m.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000
+        );
+      } else {
+        // Para mensagens recebidas, verificar se já existe uma mensagem idêntica
+        messageExists = this.messages.some(m => 
+          !m.isMine &&
+          m.content === message.content && 
+          m.sender === message.sender && 
+          Math.abs(new Date(m.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000
+        );
+      }
+      
+      if (!messageExists) {
         // Adicionar nova mensagem
         message.status = 'delivered';
         this.messages.push(message);
