@@ -76,36 +76,21 @@ export class EmailConfirmationModalComponent implements OnInit, OnDestroy, OnCha
   }
 
   onDigitInput(index: number, event: any) {
-    const value = event.target.value;
+    const input = event.target as HTMLInputElement;
+    let value = input.value;
     
     // Only allow numbers
     if (!/^\d*$/.test(value)) {
-      event.target.value = this.codeDigits[index];
+      this.codeDigits[index] = '';
       return;
     }
 
-    // Update the array
-    this.codeDigits[index] = value;
+    // Limit to single digit only - take only the last character
+    const singleDigit = value.slice(-1);
+    
+    // Update the array with single digit
+    this.codeDigits[index] = singleDigit;
     this.checkCodeComplete();
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      const nextInput = event.target.parentElement.children[index + 1];
-      if (nextInput) {
-        nextInput.focus();
-      }
-    }
-  }
-
-  onKeyDown(index: number, event: KeyboardEvent) {
-    // Handle backspace
-    if (event.key === 'Backspace' && !this.codeDigits[index] && index > 0) {
-      const prevInput = event.target as HTMLInputElement;
-      const prevElement = prevInput.parentElement?.children[index - 1] as HTMLInputElement;
-      if (prevElement) {
-        prevElement.focus();
-      }
-    }
   }
 
   onPaste(event: ClipboardEvent) {
@@ -113,20 +98,23 @@ export class EmailConfirmationModalComponent implements OnInit, OnDestroy, OnCha
     const pastedData = event.clipboardData?.getData('text') || '';
     const digits = pastedData.replace(/\D/g, '').slice(0, 6);
     
+    // Clear all digits first
+    this.codeDigits = ['', '', '', '', '', ''];
+    
+    // Fill with pasted digits
     for (let i = 0; i < 6; i++) {
       this.codeDigits[i] = digits[i] || '';
     }
     
-    this.checkCodeComplete();
-    
-    // Focus last filled input
-    const lastFilledIndex = this.codeDigits.findIndex(digit => !digit) - 1;
-    if (lastFilledIndex >= 0) {
-      const inputs = (event.target as HTMLInputElement).parentElement?.children;
-      if (inputs && inputs[lastFilledIndex]) {
-        (inputs[lastFilledIndex] as HTMLInputElement).focus();
+    // Update all input values
+    const inputs = (event.target as HTMLInputElement).parentElement?.children;
+    if (inputs) {
+      for (let i = 0; i < 6; i++) {
+        (inputs[i] as HTMLInputElement).value = this.codeDigits[i];
       }
     }
+    
+    this.checkCodeComplete();
   }
 
   private checkCodeComplete() {

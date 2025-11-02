@@ -147,8 +147,6 @@
                 maxlength="1"
                 [value]="codeDigits[i]"
                 (input)="onDigitInput(i, $event)"
-                (keydown)="onKeyDown(i, $event)"
-                (paste)="onPaste($event)"
                 class="w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:ring-2 focus:outline-none transition-all"
                 [style.background]="isCodeInvalid ? 'var(--error-bg)' : (isCodeValid ? 'var(--success-bg)' : 'var(--input-bg)')"
                 [style.color]="isCodeInvalid ? 'var(--error-color)' : (isCodeValid ? 'var(--success-color)' : 'var(--input-text)')"

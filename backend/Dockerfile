@@ -1,14 +1,26 @@
-# Use an OpenJDK runtime as a parent image
-FROM openjdk:17-alpine3.14
+# Use a imagem oficial do OpenJDK 17
+FROM openjdk:17-jdk-slim
 
-# Set the working directory
+# Define o diretório de trabalho
 WORKDIR /app
 
-# Copy the packaged JAR file into the container
-COPY target/backend-0.0.1-SNAPSHOT.jar /app/backend-0.0.1-SNAPSHOT.jar
+# Copia o arquivo pom.xml primeiro para aproveitar o cache do Docker
+COPY pom.xml .
 
-# Expose the port that your Spring Boot application uses
+# Instala o Maven
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+
+# Baixa as dependências do Maven
+RUN mvn dependency:go-offline -B
+
+# Copia o código fonte
+COPY src ./src
+
+# Compila a aplicação
+RUN mvn clean package -DskipTests
+
+# Expõe a porta 8080
 EXPOSE 8080
 
-# Command to run the Spring Boot application
-CMD ["java", "-jar", "backend-0.0.1-SNAPSHOT.jar"]
+# Define o comando para executar a aplicação
+CMD ["java", "-jar", "target/backend-0.0.1-SNAPSHOT.jar"]
