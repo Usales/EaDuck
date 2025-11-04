@@ -206,6 +206,22 @@
             Apenas salas ativas
           </span>
         </label>
+        
+        <!-- Checkbox para mostrar salas inativas (apenas para ADMIN e TEACHER) -->
+        <label *ngIf="isAdmin || currentUser?.role === 'TEACHER'" class="flex items-center space-x-2 cursor-pointer">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="showInactive"
+            (change)="onFilterChange()"
+            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+          <span class="text-sm"
+                [ngClass]="{
+                  'text-gray-700': !isDarkMode(),
+                  'text-gray-300': isDarkMode()
+                }">
+            Mostrar salas inativas
+          </span>
+        </label>
       </div>
     </div>
 

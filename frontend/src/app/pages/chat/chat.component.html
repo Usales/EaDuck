@@ -26,42 +26,6 @@
         }">
         ← HUB
       </button>
-      
-      <!-- Theme Toggle -->
-      <div class="relative group">
-        <button 
-          (click)="toggleTheme()"
-          class="p-2 rounded-lg hover:bg-opacity-20 transition-colors"
-          [title]="'Tema: ' + getThemeLabel()">
-          <span class="text-lg">{{ getThemeIcon() }}</span>
-        </button>
-        
-        <!-- Theme Dropdown -->
-        <div *ngIf="showThemeDropdown" 
-             class="absolute right-0 top-12 rounded-lg shadow-lg py-2 z-50 min-w-[140px]">
-          <button 
-            (click)="setTheme('light')"
-            class="w-full px-4 py-2 text-left hover:bg-opacity-20 flex items-center space-x-2">
-            <span>☀️</span>
-            <span class="text-sm">Claro</span>
-            <span *ngIf="currentTheme === 'light'" class="ml-auto">✓</span>
-          </button>
-          <button 
-            (click)="setTheme('dark')"
-            class="w-full px-4 py-2 text-left hover:bg-opacity-20 flex items-center space-x-2">
-            <span>🌙</span>
-            <span class="text-sm">Escuro</span>
-            <span *ngIf="currentTheme === 'dark'" class="ml-auto">✓</span>
-          </button>
-          <button 
-            (click)="setTheme('auto')"
-            class="w-full px-4 py-2 text-left hover:bg-opacity-20 flex items-center space-x-2">
-            <span>🔄</span>
-            <span class="text-sm">Automático</span>
-            <span *ngIf="currentTheme === 'auto'" class="ml-auto">✓</span>
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -73,9 +37,12 @@
       <p class="text-sm opacity-75">Seja o primeiro a começar a conversa</p>
     </div>
     
-    <div *ngFor="let message of messages; let i = index; trackBy: trackByMessage" class="message-wrapper mb-4" [class.new-message]="i === messages.length - 1 && !message.isMine">
+    <div *ngFor="let message of messages; let i = index; trackBy: trackByMessage" 
+         class="message-wrapper mb-4" 
+         [class.new-message]="i === messages.length - 1 && !message.isMine"
+         [attr.data-message-id]="message.id">
       <div class="flex items-start space-x-3" [class.justify-end]="message.isMine">
-        <div *ngIf="!message.isMine" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+        <div *ngIf="!message.isMine" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 self-end" style="margin-top: auto;">
           {{ (message.senderName || message.sender).charAt(0) || '?' }}
         </div>
         
@@ -93,31 +60,165 @@
             <span class="text-xs opacity-75">{{ message.timestamp | date:'HH:mm' }}</span>
           </div>
           
-          <div class="message-bubble p-3 rounded-lg shadow-sm transition-all duration-300 ease-out" 
+          <div class="message-bubble p-3 rounded-lg shadow-sm transition-all duration-300 ease-out relative group" 
                [ngClass]="message.isMine ? 'own-message' : 'other-message'"
                [class.animate-pulse]="message.status === 'sending'"
-               [class.opacity-70]="message.status === 'sending'">
-            <p class="text-sm">{{ message.content || message.message }}</p>
-            <div *ngIf="message.isMine" class="text-xs opacity-75 mt-1 text-right flex items-center justify-end space-x-1">
+               [class.opacity-70]="message.status === 'sending'"
+               [attr.data-message-type]="message.type">
+            
+                         <!-- Mensagem respondida (embed) -->
+             <div *ngIf="message.repliedToMessage" class="replied-message mb-2 p-2.5 rounded-lg border-l-4 cursor-pointer transition-all hover:opacity-90" 
+                  [ngClass]="message.isMine ? 'border-blue-500 bg-blue-100/90 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100' : 'border-gray-400 dark:border-gray-500 bg-gray-100/90 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200'"
+                  (click)="scrollToMessage(message.repliedToMessage && message.repliedToMessage.id ? message.repliedToMessage.id : undefined)">
+               <div class="text-xs font-semibold mb-0.5">{{ message.repliedToMessage.senderName }}</div>
+               <div class="text-xs truncate opacity-90">{{ message.repliedToMessage.content || message.repliedToMessage.message }}</div>
+             </div>
+            
+            <!-- Imagem -->
+            <div *ngIf="message.type === 'IMAGE' && message.fileUrl" class="mb-2">
+              <img [src]="'http://localhost:8080' + message.fileUrl" 
+                   [alt]="message.content || message.fileName" 
+                   class="max-w-full rounded-lg cursor-pointer"
+                   (click)="openImageInNewTab(message.fileUrl)">
+            </div>
+            
+            <!-- Áudio -->
+            <div *ngIf="message.type === 'AUDIO' && message.fileUrl" class="audio-message-container">
+              <!-- Player customizado com espectrograma -->
+              <div *ngIf="message.spectrogram" class="audio-spectrogram-wrapper">
+                <img [src]="message.spectrogram" alt="Espectrograma" class="audio-spectrogram-image">
+                <div class="audio-play-overlay" (click)="toggleAudioPlayback(message.id!, 'http://localhost:8080' + message.fileUrl)">
+                  <svg *ngIf="!getAudioPlayingState(message.id!)" class="audio-play-icon" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <svg *ngIf="getAudioPlayingState(message.id!)" class="audio-play-icon" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                  </svg>
+                </div>
+                <audio #audioPlayer [id]="'audio-' + message.id" class="hidden-audio-player" 
+                       [src]="'http://localhost:8080' + message.fileUrl"
+                       (ended)="setAudioPlayingState(message.id!, false)"
+                       (pause)="setAudioPlayingState(message.id!, false)"
+                       (play)="setAudioPlayingState(message.id!, true)">
+                  <source [src]="'http://localhost:8080' + message.fileUrl" [attr.type]="message.fileType">
+                  Seu navegador não suporta áudio.
+                </audio>
+              </div>
+              <!-- Fallback para áudio sem espectrograma -->
+              <audio *ngIf="!message.spectrogram" controls class="audio-fallback-player">
+                <source [src]="'http://localhost:8080' + message.fileUrl" [type]="message.fileType">
+                Seu navegador não suporta áudio.
+              </audio>
+            </div>
+            
+            <!-- Conteúdo da mensagem -->
+            <p *ngIf="message.type === 'CHAT'" class="text-sm">{{ message.content || message.message }}</p>
+            
+                         <!-- Reações -->
+             <div *ngIf="message.reactions && message.reactions.length > 0" class="flex flex-wrap gap-1 mt-2 mb-1">
+               <button *ngFor="let reaction of message.reactions" 
+                       class="reaction-badge px-2.5 py-1 rounded-full text-xs flex items-center gap-1.5 hover:scale-110 transition-all duration-200 font-medium shadow-sm border"
+                       [ngClass]="{
+                         'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-700': message.isMine,
+                         'bg-gray-100 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600': !message.isMine
+                       }"
+                       (click)="addReaction(message.id!, reaction.emoji)">
+                 <span class="text-base">{{ reaction.emoji }}</span>
+                 <span class="min-w-[1rem] text-center">{{ reaction.count }}</span>
+               </button>
+             </div>
+            
+                        <!-- Botões de ação (hover) -->
+            <div class="message-actions absolute flex gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" 
+                 [ngClass]="message.isMine ? 'right-2 top-2' : 'left-2 top-2'">
+              <button 
+                class="p-2 rounded-full shadow-lg transition-all hover:scale-110" 
+                [ngClass]="message.isMine ? 'bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800' : 'bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800'"
+                (click)="replyToMessage(message); $event.stopPropagation()" 
+                title="Responder">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                </svg>
+              </button>
+              <div class="relative">
+                <button 
+                  class="reaction-button p-2 rounded-full shadow-lg transition-all hover:scale-110" 
+                  [ngClass]="{
+                    'bg-blue-500 text-white dark:bg-blue-600': showReactionPicker === message.id,
+                    'bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800': showReactionPicker !== message.id
+                  }"
+                  [class.active]="showReactionPicker === message.id"
+                  (click)="showReactionPickerForMessage(message.id!, $event)" 
+                  title="Reagir">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </button>
+                
+                <!-- Picker de emojis melhorado - conectado ao botão -->
+                <div *ngIf="showReactionPicker === message.id" 
+                     class="emoji-picker absolute p-3 rounded-xl shadow-2xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700"
+                     style="min-width: 360px; max-width: 420px; z-index: 9999;"
+                     [ngClass]="message.isMine ? 'right-0 top-full mt-2' : 'left-0 top-full mt-2'"
+                     (click)="$event.stopPropagation()"
+                     (mousedown)="$event.stopPropagation()">
+               <div class="flex flex-col gap-2">
+                 <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 px-1">Adicionar reação</div>
+                 <div class="grid grid-cols-12 gap-1.5 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                   <button *ngFor="let emoji of getAvailableEmojis()" 
+                           class="emoji-button p-2.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg text-xl transition-all hover:scale-125 active:scale-110 flex items-center justify-center"
+                           (click)="addReaction(message.id!, emoji); showReactionPicker = null; $event.stopPropagation()"
+                           (mousedown)="$event.preventDefault(); $event.stopPropagation()"
+                           type="button"
+                           [title]="emoji">
+                     {{ emoji }}
+                   </button>
+                 </div>
+               </div>
+                               <!-- Setinha indicando o botão -->
+                 <div class="absolute w-3 h-3 bg-white dark:bg-gray-800 border-r border-t border-gray-200 dark:border-gray-700 transform rotate-45"
+                      [ngClass]="message.isMine ? '-right-1.5 -top-1.5' : '-left-1.5 -top-1.5'"></div>
+                 </div>
+               </div>
+             </div>
+              
+              <!-- Status e timestamp (estilo WhatsApp) -->
+            <div *ngIf="message.isMine" class="text-xs mt-1 text-right flex items-center justify-end space-x-1" [ngClass]="message.type === 'AUDIO' ? 'text-white/90' : 'opacity-75'">
               <span>{{ message.timestamp | date:'HH:mm' }}</span>
-              <span *ngIf="message.status === 'sending'" class="text-blue-500">
-                <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+              <!-- Status: sending (um relógio girando) -->
+              <span *ngIf="message.status === 'sending'" class="text-white/70">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               </span>
-              <span *ngIf="message.status === 'sent'" class="text-gray-500">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <!-- Status: sent (um check branco/cinza) -->
+              <span *ngIf="message.status === 'sent'" class="text-white/70">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                 </svg>
               </span>
-              <span *ngIf="message.status === 'delivered'" class="text-blue-500">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <!-- Status: delivered (dois checks branco/cinza) -->
+              <span *ngIf="message.status === 'delivered'" class="text-white/70">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <svg class="w-4 h-4 -ml-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                 </svg>
               </span>
-              <span *ngIf="message.status === 'failed'" class="text-red-500" title="Falha ao enviar">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <!-- Status: viewed (dois checks azul claro) -->
+              <span *ngIf="message.status === 'viewed'" class="text-blue-200">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <svg class="w-4 h-4 -ml-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+              </span>
+              <!-- Status: failed (X vermelho) -->
+              <span *ngIf="message.status === 'failed'" class="text-red-300" title="Falha ao enviar">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                 </svg>
               </span>
@@ -125,26 +226,158 @@
           </div>
         </div>
         
-        <div *ngIf="message.isMine" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+        <div *ngIf="message.isMine" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 self-end" style="margin-top: auto;">
           {{ (message.senderName || message.sender).charAt(0) || '?' }}
         </div>
       </div>
     </div>
   </div>
+  
+  <!-- Usuários digitando -->
+  <div *ngIf="typingUsersArray.length > 0" class="typing-indicator px-4 py-2 text-sm italic opacity-75">
+    <span>{{ typingDisplayText }}</span>
+    <span class="typing-dots"><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+  </div>
 
   <!-- Input -->
   <div class="input-area border-t p-4">
-    <div class="flex space-x-3">
+    <!-- Preview de mensagem respondida -->
+    <div *ngIf="replyingTo" class="mb-2 p-2 rounded bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 flex items-center justify-between">
+      <div class="flex-1">
+        <div class="text-xs font-medium opacity-75">Respondendo a {{ replyingTo.senderName }}</div>
+        <div class="text-xs truncate">{{ replyingTo.content || replyingTo.message }}</div>
+      </div>
+      <button (click)="cancelReply()" class="ml-2 p-1 hover:bg-black/10 rounded">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Preview de múltiplas imagens -->
+    <div *ngIf="filePreviews.length > 0" class="mb-2 flex flex-wrap gap-2">
+      <div *ngFor="let preview of filePreviews; let i = index" class="relative inline-block">
+        <div class="relative max-w-xs">
+          <img [src]="preview.preview" alt="Preview" class="max-w-xs h-32 object-cover rounded-lg border-2 border-gray-300 dark:border-gray-600">
+          <button 
+            (click)="removeImagePreview(i)" 
+            class="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-all hover:scale-110 z-10"
+            title="Remover imagem">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <!-- Botão para adicionar mais imagens -->
+      <button 
+        (click)="addMoreImages()" 
+        class="w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        title="Adicionar mais imagens">
+        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+      </button>
+    </div>
+    
+          <!-- Preview de áudio gravado -->
+      <div *ngIf="recordedAudio" class="mb-2 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm">
+        <!-- Espectrograma gravado -->
+        <div *ngIf="recordedAudioSpectrogram" class="mb-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+          <img [src]="recordedAudioSpectrogram" alt="Espectrograma" class="w-full h-16 object-cover" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        </div>
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3 flex-1">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+              </svg>
+            </div>
+            <div class="flex-1">
+              <audio controls [src]="getAudioUrl()" class="w-full h-8 audio-preview-player">
+                Seu navegador não suporta a reprodução de áudio.
+              </audio>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-600 dark:text-gray-400 font-medium">Duração: {{ formatRecordingTime(recordingTime) }}</span>
+          <div class="flex gap-2">
+            <button (click)="sendRecordedAudio()" class="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors flex items-center gap-1 shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+              </svg>
+              Enviar
+            </button>
+            <button (click)="cancelRecording()" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-1 shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    
+    <!-- Indicador de gravação -->
+    <div *ngIf="isRecording" class="mb-2 p-3 rounded bg-red-100 dark:bg-red-900/20">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+        <span class="text-sm">Gravando... {{ formatRecordingTime(recordingTime) }}</span>
+        <button (click)="stopRecording()" class="ml-auto px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">
+          Parar
+        </button>
+      </div>
+      <!-- Container para o canvas do espectrograma -->
+      <div class="recording-indicator-container rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <canvas id="recordingSpectrogram" width="300" height="80"></canvas>
+      </div>
+    </div>
+    
+    <div class="flex space-x-2 items-end">
+      <!-- Botões de ação -->
+      <div class="flex gap-1">
+        <button (click)="fileInput.click()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Anexar arquivo">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+          </svg>
+        </button>
+        <button *ngIf="!isRecording" (click)="startRecording()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Gravar áudio">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <input 
+        #fileInput
+        id="fileInput"
+        type="file"
+        accept="image/*,audio/*"
+        multiple
+        (change)="onFileSelected($event)"
+        style="display: none;">
+      
       <input 
         [(ngModel)]="newMessage"
+        (keydown)="onTyping()"
         (keydown.enter)="sendMessage()"
         placeholder="Digite sua mensagem..."
         class="flex-1 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 transition-all">
+      
       <button 
+        *ngIf="selectedFiles.length === 0 && !selectedFile && !isRecording"
         (click)="sendMessage()"
-        [disabled]="!newMessage.trim()"
+        [disabled]="!newMessage.trim() && !replyingTo"
         class="px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed">
         Enviar
+      </button>
+      
+      <button 
+        *ngIf="(selectedFiles.length > 0 || selectedFile) && !isRecording"
+        (click)="uploadFile()"
+        class="px-6 py-2 rounded-lg font-medium transition-all bg-green-500 text-white hover:bg-green-600">
+        Enviar {{ selectedFiles.length > 0 ? selectedFiles.length + ' ' : '' }}Arquivo{{ selectedFiles.length > 1 ? 's' : '' }}
       </button>
     </div>
   </div>

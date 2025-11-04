@@ -18,9 +18,19 @@
     </div>
     
     <!-- Informações do usuário (oculto no mobile) -->
-    <span class="hidden md:block text-sm" style="color: var(--text-secondary);" *ngIf="authService.getCurrentUser()">
-      {{ authService.getCurrentUser()?.email }} <span class="font-semibold" style="color: var(--accent-color);">({{ authService.getCurrentUser()?.role }})</span>
-    </span>
+    <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors"
+         style="background: var(--bg-secondary); color: var(--text-primary);"
+         *ngIf="authService.getCurrentUser()">
+      <span class="material-icons text-base" style="color: var(--accent-color);">person</span>
+      <div class="flex flex-col">
+        <span class="text-sm font-medium leading-tight truncate max-w-[180px]" style="color: var(--text-primary);">
+          {{ authService.getCurrentUser()?.email }}
+        </span>
+        <span class="text-xs leading-tight" style="color: var(--text-secondary);">
+          ({{ authService.getCurrentUser()?.role }})
+        </span>
+      </div>
+    </div>
     
     <!-- Notificações -->
     <div class="relative">

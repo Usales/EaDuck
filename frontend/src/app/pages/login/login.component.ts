@@ -48,23 +48,28 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   onSubmit() {
+    // Validação de campos
     if (!this.email || !this.password) {
       this.showModal('error', 'Erro', 'Por favor, preencha todos os campos.');
       return;
     }
+
+    // Validação de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.email)) {
+      this.showModal('error', 'Erro', 'Por favor, insira um e-mail válido.');
+      return;
+    }
+
     this.showModal('loading', '', 'Autenticando...');
+    
     this.authService.login(this.email, this.password).subscribe({
       next: (user) => {
-        console.log('Login successful, user:', user);
-        console.log('needsNameSetup:', user.needsNameSetup);
-        console.log('user.name:', user.name);
         this.closeModal();
         // Verificar se o usuário precisa configurar o nome
         if (user.needsNameSetup) {
-          console.log('Showing name setup modal');
           this.showNameSetupModal = true;
         } else {
-          console.log('Navigating to home');
           this.router.navigate(['/home']);
         }
       },
@@ -77,8 +82,19 @@ export class LoginComponent implements OnInit, AfterViewInit {
             msg = err.error.message.toLowerCase();
           }
         }
-        if (msg.includes('inativo') || msg.includes('inativa')) {
-          this.showModal('error', 'Usuário inativo', 'Sua conta está inativa. Entre em contato com o administrador do sistema pelo e-mail compeaduck@gmail.com para ativação.');
+        
+        if (err?.status === 0) {
+          this.showModal('error', 'Erro de conexão', 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+        } else if (err?.status === 401) {
+          if (msg.includes('inativo') || msg.includes('inativa')) {
+            this.showModal('error', 'Usuário inativo', 'Sua conta está inativa. Entre em contato com o administrador do sistema pelo e-mail compeaduck@gmail.com para ativação.');
+          } else {
+            this.showModal('error', 'Erro de autenticação', 'E-mail ou senha incorretos.');
+          }
+        } else if (err?.status === 403) {
+          this.showModal('error', 'Acesso negado', 'Você não tem permissão para acessar esta conta.');
+        } else if (err?.status >= 500) {
+          this.showModal('error', 'Erro do servidor', 'Ocorreu um erro no servidor. Tente novamente mais tarde.');
         } else {
           this.showModal('error', 'Erro de autenticação', 'E-mail ou senha incorretos.');
         }

@@ -233,6 +233,65 @@
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
 }
 
+// Filtros
+.users-filters {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.users-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.users-filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.users-filter-select {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  color: var(--input-text);
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.users-filter-select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.users-filter-clear {
+  padding: 0.5rem 1rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  align-self: flex-end;
+}
+
+.users-filter-clear:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
 .users-content {
   min-height: 200px;
 }
@@ -571,6 +630,19 @@
   .users-form-actions {
     justify-content: flex-start;
   }
+
+  .users-filters {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  .users-filter-group {
+    flex: 1;
+  }
+
+  .users-filter-clear {
+    align-self: flex-end;
+  }
 }
 
 // Desktop (768px+)
@@ -606,5 +678,150 @@
   
   .users-form {
     padding: 2rem;
+  }
+}
+
+// Modal de Confirmação de Exclusão
+.users-confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay, rgba(0, 0, 0, 0.5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.users-confirm-modal-content {
+  background: var(--panel-bg);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-lg);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 28rem;
+  margin: 1rem;
+  border: 1px solid var(--border-color);
+  animation: slideUp 0.3s ease-out;
+}
+
+.users-confirm-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.users-confirm-modal-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.users-confirm-modal-icon {
+  font-size: 28px;
+  color: var(--error-color);
+}
+
+.users-confirm-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.users-confirm-modal-close {
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+  }
+}
+
+.users-confirm-modal-message {
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  
+  strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+}
+
+.users-confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.users-confirm-modal-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  .material-icons {
+    font-size: 18px;
+  }
+}
+
+.users-confirm-modal-btn-cancel {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  
+  &:hover {
+    background: var(--input-bg);
+    border-color: var(--border-color);
+  }
+}
+
+.users-confirm-modal-btn-delete {
+  color: white;
+  background: var(--error-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  &:hover {
+    background: var(--error-color);
+    filter: brightness(0.9);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

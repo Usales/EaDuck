@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -12,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './classroom-settings-modal.component.html',
   styleUrls: ['./classroom-settings-modal.component.scss']
 })
-export class ClassroomSettingsModalComponent {
+export class ClassroomSettingsModalComponent implements OnChanges {
   @Input() isVisible = false;
   @Input() classroom: any = null;
   @Output() close = new EventEmitter<void>();
@@ -30,11 +30,24 @@ export class ClassroomSettingsModalComponent {
     private authService: AuthService
   ) {}
 
-  ngOnChanges() {
+  ngOnChanges(changes: SimpleChanges): void {
+    // Quando o modal é aberto (isVisible muda para true) ou quando classroom muda
+    if (changes['isVisible'] && changes['isVisible'].currentValue === true && this.classroom) {
+      this.initializeFromClassroom();
+    }
+    if (changes['classroom'] && changes['classroom'].currentValue) {
+      this.initializeFromClassroom();
+    }
+  }
+
+  private initializeFromClassroom(): void {
     if (this.classroom) {
       this.classroomName = this.classroom.name || '';
       this.academicYear = this.classroom.academicYear || '';
-      this.isActive = this.classroom.isActive !== undefined ? this.classroom.isActive : true;
+      // Garantir que isActive seja boolean explícito
+      this.isActive = this.classroom.isActive !== undefined && this.classroom.isActive !== null 
+        ? Boolean(this.classroom.isActive) 
+        : true;
     }
   }
 
@@ -43,8 +56,16 @@ export class ClassroomSettingsModalComponent {
   }
 
   onSubmit() {
+    // Garantir que isActive seja boolean explícito
+    const isActiveValue = Boolean(this.isActive);
+
     if (!this.classroomName.trim()) {
       this.error = 'Por favor, digite o nome da sala';
+      return;
+    }
+
+    if (!this.classroom?.id) {
+      this.error = 'Erro: ID da sala não encontrado';
       return;
     }
 
@@ -54,21 +75,36 @@ export class ClassroomSettingsModalComponent {
     const updateData = {
       name: this.classroomName.trim(),
       academicYear: this.academicYear,
-      isActive: this.isActive
+      isActive: isActiveValue
     };
 
     this.http.put(`http://localhost:8080/api/classrooms/${this.classroom.id}`, updateData, {
       headers: this.getAuthHeaders()
     }).subscribe({
       next: (updatedClassroom: any) => {
+        
+        // Garantir que o isActive retornado seja boolean
+        if (updatedClassroom.isActive !== undefined && updatedClassroom.isActive !== null) {
+          updatedClassroom.isActive = Boolean(updatedClassroom.isActive);
+        }
+        
         this.isLoading = false;
+        // Emitir o evento com a sala atualizada
         this.classroomUpdated.emit(updatedClassroom);
+        // Fechar o modal
         this.close.emit();
       },
       error: (error) => {
         this.isLoading = false;
-        this.error = error.error?.message || 'Erro ao atualizar sala';
-        console.error('Erro ao atualizar sala:', error);
+        if (error?.status === 0) {
+          this.error = 'Erro de conexão. Verifique se o backend está rodando.';
+        } else if (error?.status === 403) {
+          this.error = 'Você não tem permissão para atualizar esta sala.';
+        } else if (error?.status >= 500) {
+          this.error = 'Erro interno do servidor. Tente novamente mais tarde.';
+        } else {
+          this.error = error.error?.message || 'Erro ao atualizar sala';
+        }
       }
     });
   }

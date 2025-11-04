@@ -81,7 +81,7 @@ public class UserController {
                     .name(c.getName())
                     .academicYear(c.getAcademicYear())
                     .studentCount(c.getStudents() != null ? c.getStudents().size() : 0)
-                    .teacherNames(c.getTeachers().stream().map(t -> t.getEmail()).toList())
+                    .teacherNames(c.getTeachers().stream().map(t -> t.getName() != null ? t.getName() : t.getEmail()).toList())
                     .build())
                 .toList();
             return ResponseEntity.ok(dtos);

@@ -43,7 +43,6 @@ public class SecurityConfig {
                     .requestMatchers(
                             "/api/auth/**",
                             "/api/email-confirmation/**",
-                            "/api/chat/**",
                             "/v3/api-docs/**",
                             "/swagger-ui/**",
                             "/swagger-ui.html",
@@ -62,6 +61,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/all").hasRole("ADMIN")
                 .requestMatchers("/api/users/teachers").authenticated()
                 .requestMatchers("/api/users/students").authenticated()
+                .requestMatchers("/api/chat/**").authenticated()
                 .requestMatchers("/api/notifications/**").authenticated()
                 .requestMatchers("/api/tasks/**").authenticated()
                 .requestMatchers("/api/classrooms/**").authenticated()

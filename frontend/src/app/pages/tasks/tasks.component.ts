@@ -222,7 +222,16 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   saveEdit(task: Task) {
-    if (!task.id) return;
+    if (!task.id) {
+      return;
+    }
+
+    if (!this.editTitle || !this.editTitle.trim()) {
+      this.editErrorModalMessage = 'Por favor, preencha o título da tarefa.';
+      this.showEditErrorModal = true;
+      return;
+    }
+
     let dueDate = this.editDueDate;
     if (dueDate && dueDate.length === 10) {
       dueDate = dueDate + 'T00:00:00';
@@ -244,11 +253,14 @@ export class TasksComponent implements OnInit, OnDestroy {
       error: (error) => {
         if (error && error.status === 409) {
           this.editErrorModalMessage = 'Não é possível editar esta tarefa pois já existem respostas enviadas por alunos.';
+        } else if (error?.status === 0) {
+          this.editErrorModalMessage = 'Erro de conexão. Verifique se o backend está rodando.';
+        } else if (error?.status >= 500) {
+          this.editErrorModalMessage = 'Erro interno do servidor. Tente novamente mais tarde.';
         } else {
-          this.editErrorModalMessage = 'Erro ao atualizar tarefa.';
+          this.editErrorModalMessage = 'Erro ao atualizar tarefa: ' + (error.error?.message || 'Erro desconhecido');
         }
         this.showEditErrorModal = true;
-        console.error('Erro ao atualizar tarefa:', error);
       }
     });
   }
@@ -289,11 +301,26 @@ export class TasksComponent implements OnInit, OnDestroy {
 
   createTask() {
     this.dueDateError = false;
-    if (!this.taskForm.title || !this.taskForm.classroomId) return;
+
+    if (!this.taskForm.title || !this.taskForm.title.trim()) {
+      this.loadingStatus = 'error';
+      this.showLoadingModal = true;
+      setTimeout(() => this.showLoadingModal = false, 2500);
+      return;
+    }
+
+    if (!this.taskForm.classroomId) {
+      this.loadingStatus = 'error';
+      this.showLoadingModal = true;
+      setTimeout(() => this.showLoadingModal = false, 2500);
+      return;
+    }
+
     if (!this.taskForm.dueDate) {
       this.dueDateError = true;
       return;
     }
+
     let dueDate = this.taskForm.dueDate;
     if (dueDate && dueDate.length === 10) {
       dueDate = dueDate + 'T00:00:00';
@@ -322,7 +349,6 @@ export class TasksComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.loadingStatus = 'error';
         setTimeout(() => this.showLoadingModal = false, 2500);
-        console.error('Erro ao criar tarefa:', error);
       }
     });
   }

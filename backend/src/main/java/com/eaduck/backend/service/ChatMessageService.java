@@ -2,7 +2,11 @@ package com.eaduck.backend.service;
 
 import com.eaduck.backend.model.ChatMessage;
 import com.eaduck.backend.model.ChatMessageEntity;
+import com.eaduck.backend.model.MessageReaction;
+import com.eaduck.backend.model.MessageView;
 import com.eaduck.backend.repository.ChatMessageRepository;
+import com.eaduck.backend.repository.MessageReactionRepository;
+import com.eaduck.backend.repository.MessageViewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -12,8 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 public class ChatMessageService {
     
     private final ChatMessageRepository chatMessageRepository;
+    private final MessageReactionRepository messageReactionRepository;
+    private final MessageViewRepository messageViewRepository;
     
     /**
      * Salva uma mensagem de chat
@@ -31,17 +36,30 @@ public class ChatMessageService {
         log.info("Salvando mensagem: {} de {} para sala {}", 
                 chatMessage.getContent(), chatMessage.getSender(), chatMessage.getClassroomId());
         
-        ChatMessageEntity entity = ChatMessageEntity.builder()
+        ChatMessageEntity.ChatMessageEntityBuilder builder = ChatMessageEntity.builder()
                 .senderEmail(chatMessage.getSender())
                 .senderName(chatMessage.getSenderName())
                 .senderRole(chatMessage.getSenderRole())
                 .content(chatMessage.getContent())
                 .messageType(convertMessageType(chatMessage.getType()))
                 .classroomId(chatMessage.getClassroomId() != null ? 
-                    Long.parseLong(chatMessage.getClassroomId()) : null)
-                .build();
+                    Long.parseLong(chatMessage.getClassroomId()) : null);
         
-        ChatMessageEntity saved = chatMessageRepository.save(entity);
+        // Adicionar campos de arquivo se existirem
+        if (chatMessage.getFileUrl() != null) {
+            builder.fileUrl(chatMessage.getFileUrl())
+                   .fileType(chatMessage.getFileType())
+                   .fileName(chatMessage.getFileName())
+                   .fileSize(chatMessage.getFileSize());
+        }
+        
+        // Adicionar mensagem respondida se existir
+        if (chatMessage.getRepliedToMessageId() != null) {
+            Long repliedToId = Long.parseLong(chatMessage.getRepliedToMessageId());
+            builder.repliedToMessageId(repliedToId);
+        }
+        
+        ChatMessageEntity saved = chatMessageRepository.save(builder.build());
         log.info("Mensagem salva com ID: {}", saved.getId());
         
         return saved;
@@ -158,26 +176,13 @@ public class ChatMessageService {
                 return ChatMessageEntity.MessageType.JOIN;
             case LEAVE:
                 return ChatMessageEntity.MessageType.LEAVE;
+            case IMAGE:
+                return ChatMessageEntity.MessageType.IMAGE;
+            case AUDIO:
+                return ChatMessageEntity.MessageType.AUDIO;
             default:
                 return ChatMessageEntity.MessageType.CHAT;
         }
-    }
-    
-    /**
-     * Converte ChatMessageEntity para ChatMessage
-     */
-    private ChatMessage convertToChatMessage(ChatMessageEntity entity) {
-        ChatMessage chatMessage = new ChatMessage();
-        chatMessage.setType(convertToChatMessageType(entity.getMessageType()));
-        chatMessage.setContent(entity.getContent());
-        chatMessage.setSender(entity.getSenderEmail());
-        chatMessage.setSenderName(entity.getSenderName());
-        chatMessage.setSenderRole(entity.getSenderRole());
-        chatMessage.setMessage(entity.getContent());
-        chatMessage.setTimestamp(Date.from(entity.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()));
-        chatMessage.setClassroomId(entity.getClassroomId() != null ? entity.getClassroomId().toString() : null);
-        
-        return chatMessage;
     }
     
     /**
@@ -191,8 +196,138 @@ public class ChatMessageService {
                 return ChatMessage.MessageType.JOIN;
             case LEAVE:
                 return ChatMessage.MessageType.LEAVE;
+            case IMAGE:
+                return ChatMessage.MessageType.IMAGE;
+            case AUDIO:
+                return ChatMessage.MessageType.AUDIO;
             default:
                 return ChatMessage.MessageType.CHAT;
         }
+    }
+    
+    /**
+     * Adiciona ou remove uma reação de uma mensagem
+     */
+    @Transactional
+    public boolean toggleReaction(Long messageId, String userEmail, String emoji) {
+        Optional<MessageReaction> existing = messageReactionRepository
+                .findByMessageIdAndUserEmailAndEmoji(messageId, userEmail, emoji);
+        
+        if (existing.isPresent()) {
+            // Remove reação existente
+            messageReactionRepository.delete(existing.get());
+            log.info("Reação {} removida da mensagem {} pelo usuário {}", emoji, messageId, userEmail);
+            return false; // Reação removida
+        } else {
+            // Adiciona nova reação
+            MessageReaction reaction = MessageReaction.builder()
+                    .messageId(messageId)
+                    .userEmail(userEmail)
+                    .emoji(emoji)
+                    .build();
+            messageReactionRepository.save(reaction);
+            log.info("Reação {} adicionada à mensagem {} pelo usuário {}", emoji, messageId, userEmail);
+            return true; // Reação adicionada
+        }
+    }
+    
+    /**
+     * Busca todas as reações de uma mensagem agrupadas por emoji
+     */
+    public List<ChatMessage.ReactionCount> getReactionsByMessageId(Long messageId) {
+        List<MessageReaction> reactions = messageReactionRepository.findByMessageId(messageId);
+        
+        // Agrupar por emoji
+        Map<String, List<String>> emojiMap = reactions.stream()
+                .collect(Collectors.groupingBy(
+                    MessageReaction::getEmoji,
+                    Collectors.mapping(MessageReaction::getUserEmail, Collectors.toList())
+                ));
+        
+        return emojiMap.entrySet().stream()
+                .map(entry -> new ChatMessage.ReactionCount(
+                    entry.getKey(),
+                    (long) entry.getValue().size(),
+                    entry.getValue()
+                ))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Marca mensagens como visualizadas
+     */
+    @Transactional
+    public void markMessagesAsViewed(List<Long> messageIds, String userEmail) {
+        for (Long messageId : messageIds) {
+            if (!messageViewRepository.existsByMessageIdAndUserEmail(messageId, userEmail)) {
+                MessageView view = MessageView.builder()
+                        .messageId(messageId)
+                        .userEmail(userEmail)
+                        .build();
+                messageViewRepository.save(view);
+                log.debug("Mensagem {} marcada como visualizada pelo usuário {}", messageId, userEmail);
+            }
+        }
+    }
+    
+    /**
+     * Verifica se uma mensagem foi visualizada por um usuário
+     */
+    public boolean isMessageViewed(Long messageId, String userEmail) {
+        return messageViewRepository.existsByMessageIdAndUserEmail(messageId, userEmail);
+    }
+    
+    /**
+     * Busca mensagem por ID para resposta
+     */
+    public Optional<ChatMessageEntity> findMessageById(Long messageId) {
+        return chatMessageRepository.findById(messageId);
+    }
+    
+    /**
+     * Atualiza a conversão para incluir novos campos
+     */
+    private ChatMessage convertToChatMessage(ChatMessageEntity entity) {
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setId(entity.getId().toString());
+        chatMessage.setType(convertToChatMessageType(entity.getMessageType()));
+        chatMessage.setContent(entity.getContent());
+        chatMessage.setSender(entity.getSenderEmail());
+        chatMessage.setSenderName(entity.getSenderName());
+        chatMessage.setSenderRole(entity.getSenderRole());
+        chatMessage.setMessage(entity.getContent());
+        chatMessage.setTimestamp(Date.from(entity.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()));
+        chatMessage.setClassroomId(entity.getClassroomId() != null ? entity.getClassroomId().toString() : null);
+        
+        // Campos de arquivo
+        if (entity.getFileUrl() != null) {
+            chatMessage.setFileUrl(entity.getFileUrl());
+            chatMessage.setFileType(entity.getFileType());
+            chatMessage.setFileName(entity.getFileName());
+            chatMessage.setFileSize(entity.getFileSize());
+        }
+        
+        // Mensagem respondida (sem recursão - apenas dados básicos)
+        if (entity.getRepliedToMessageId() != null) {
+            chatMessage.setRepliedToMessageId(entity.getRepliedToMessageId().toString());
+            // Buscar mensagem respondida do banco (sem recursão)
+            Optional<ChatMessageEntity> repliedEntity = findMessageById(entity.getRepliedToMessageId());
+            if (repliedEntity.isPresent()) {
+                ChatMessageEntity replied = repliedEntity.get();
+                ChatMessage repliedMsg = new ChatMessage();
+                repliedMsg.setId(replied.getId().toString());
+                repliedMsg.setContent(replied.getContent());
+                repliedMsg.setSender(replied.getSenderEmail());
+                repliedMsg.setSenderName(replied.getSenderName());
+                repliedMsg.setMessage(replied.getContent());
+                chatMessage.setRepliedToMessage(repliedMsg);
+            }
+        }
+        
+        // Buscar reações
+        List<ChatMessage.ReactionCount> reactions = getReactionsByMessageId(entity.getId());
+        chatMessage.setReactions(reactions);
+        
+        return chatMessage;
     }
 }

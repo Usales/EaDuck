@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -19,8 +20,32 @@ public class ChatMessage {
     private boolean isMine;
     private Date timestamp;
     private String classroomId;
+    private String id;
+    
+    // Campos de arquivo
+    private String fileUrl;
+    private String fileType;
+    private String fileName;
+    private Long fileSize;
+    
+    // Mensagem respondida
+    private String repliedToMessageId;
+    private ChatMessage repliedToMessage;
+    
+    // Reações e status
+    private List<ReactionCount> reactions;
+    private String status; // sent, delivered, viewed
 
     public enum MessageType {
-        CHAT, JOIN, LEAVE
+        CHAT, JOIN, LEAVE, IMAGE, AUDIO
+    }
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReactionCount {
+        private String emoji;
+        private Long count;
+        private List<String> userEmails; // Usuários que reagiram com este emoji
     }
 }

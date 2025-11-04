@@ -51,6 +51,7 @@ export class ChatHubComponent implements OnInit, OnDestroy {
   sortBy = 'name'; // name, year, students, lastMessage
   sortOrder = 'asc'; // asc, desc
   showOnlyActive = false;
+  showInactive = true; // Para ADMINS e TEACHERS, mostrar salas inativas por padrão
   
   // Opções para filtros
   availableYears: string[] = [];
@@ -73,8 +74,6 @@ export class ChatHubComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadCurrentUser();
-    this.loadClassrooms();
-    this.loadStudents();
   }
 
   ngOnDestroy() {
@@ -86,6 +85,17 @@ export class ChatHubComponent implements OnInit, OnDestroy {
       next: (user: any) => {
         this.currentUser = user;
         this.isAdmin = user?.role === 'ADMIN';
+        // Para ADMINS e TEACHERS, mostrar salas inativas por padrão
+        if (user?.role === 'ADMIN' || user?.role === 'TEACHER') {
+          this.showInactive = true;
+        } else {
+          this.showInactive = false;
+        }
+        // Carregar salas e estudantes após o usuário ser carregado
+        if (user) {
+          this.loadClassrooms();
+          this.loadStudents();
+        }
       },
       error: (error: any) => {
         console.error('Erro ao carregar usuário:', error);
@@ -231,19 +241,26 @@ export class ChatHubComponent implements OnInit, OnDestroy {
     }
 
     // Filtro por status ativo/inativo baseado no campo isActive
-    // Se for ADMIN, mostrar todas as salas
-    // Se for TEACHER, mostrar apenas salas ativas ou salas que ele criou
+    // Se for ADMIN, mostrar todas as salas (ativas e inativas) respeitando showInactive
+    // Se for TEACHER, mostrar salas ativas ou salas que ele é professor (mesmo inativas) respeitando showInactive
     // Se for STUDENT, mostrar apenas salas ativas
     if (this.currentUser?.role === 'ADMIN') {
-      // Admin vê todas as salas
+      // Admin vê todas as salas (ativas e inativas) respeitando o filtro showInactive
+      if (!this.showInactive) {
+        filtered = filtered.filter(classroom => classroom.isActive === true);
+      }
     } else if (this.currentUser?.role === 'TEACHER') {
-      // Professor vê salas ativas ou salas que ele criou (mesmo inativas)
-      filtered = filtered.filter(classroom => 
-        classroom.isActive || this.isClassroomCreator(classroom)
-      );
+      // Professor vê salas ativas OU salas onde ele é professor (mesmo inativas) respeitando showInactive
+      if (this.showInactive) {
+        filtered = filtered.filter(classroom => 
+          classroom.isActive === true || this.isClassroomTeacher(classroom)
+        );
+      } else {
+        filtered = filtered.filter(classroom => classroom.isActive === true);
+      }
     } else {
       // Estudante vê apenas salas ativas
-      filtered = filtered.filter(classroom => classroom.isActive !== false);
+      filtered = filtered.filter(classroom => classroom.isActive === true);
     }
 
     // Ordenação
@@ -285,6 +302,7 @@ export class ChatHubComponent implements OnInit, OnDestroy {
     this.selectedTeacher = '';
     this.selectedStudent = '';
     this.showOnlyActive = false;
+    this.showInactive = true; // Reset para mostrar inativas por padrão
     this.sortBy = 'name';
     this.sortOrder = 'asc';
     this.applyFilters();
@@ -311,28 +329,52 @@ export class ChatHubComponent implements OnInit, OnDestroy {
   }
 
   onClassroomUpdated(updatedClassroom: any) {
-    // Atualiza a sala na lista local
+    console.log('[CHAT-HUB] Sala atualizada recebida:', updatedClassroom);
+    
+    // Garantir que isActive seja boolean
+    const isActiveValue = updatedClassroom.isActive !== undefined && updatedClassroom.isActive !== null
+      ? Boolean(updatedClassroom.isActive)
+      : true;
+    
+    // Atualizar o objeto na lista local imediatamente
     const index = this.classrooms.findIndex(c => c.id === updatedClassroom.id);
     if (index !== -1) {
+      console.log('[CHAT-HUB] Atualizando sala no índice:', index, 'isActive:', isActiveValue);
       this.classrooms[index] = {
         ...this.classrooms[index],
-        name: updatedClassroom.name,
-        academicYear: updatedClassroom.academicYear,
-        isActive: updatedClassroom.isActive
+        name: updatedClassroom.name || this.classrooms[index].name,
+        academicYear: updatedClassroom.academicYear || this.classrooms[index].academicYear,
+        isActive: isActiveValue
       };
-      this.applyFilters(); // Reaplica os filtros
+      // Aplicar filtros novamente para atualizar a lista filtrada
+      this.applyFilters();
+      console.log('[CHAT-HUB] Sala atualizada localmente:', this.classrooms[index]);
+    } else {
+      console.warn('[CHAT-HUB] Sala não encontrada na lista local:', updatedClassroom.id);
     }
+    
+    // Recarrega a lista do servidor para garantir dados atualizados
+    // Usar setTimeout para garantir que a atualização local seja processada primeiro
+    setTimeout(() => {
+      this.loadClassrooms();
+    }, 100);
   }
 
-  private isClassroomCreator(classroom: ClassroomChat): boolean {
+  private isClassroomTeacher(classroom: ClassroomChat): boolean {
     // Verifica se o usuário atual é um dos professores da sala
     if (!this.currentUser || !classroom.teacherNames || classroom.teacherNames.length === 0) {
       return false;
     }
     
     // Verifica se o usuário atual está na lista de professores
-    return classroom.teacherNames.some(teacher => 
-      teacher === this.currentUser.name || teacher === this.currentUser.email
-    );
+    // Compara por nome ou email
+    const currentUserName = this.currentUser.name || '';
+    const currentUserEmail = this.currentUser.email || '';
+    
+    return classroom.teacherNames.some(teacher => {
+      const teacherLower = teacher.toLowerCase();
+      return teacherLower === currentUserName.toLowerCase() || 
+             teacherLower === currentUserEmail.toLowerCase();
+    });
   }
 }

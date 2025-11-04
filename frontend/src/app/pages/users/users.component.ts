@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { CommonModule } from '@angular/common';
 import { UserService, User, CreateUserRequest } from '../../services/user.service';
@@ -18,6 +18,8 @@ export class UsersComponent implements OnInit {
   users: User[] = [];
   filteredUsers: User[] = [];
   filter = '';
+  filterRole: string = 'all'; // 'all', 'ADMIN', 'STUDENT', 'TEACHER'
+  filterStatus: string = 'all'; // 'all', 'active', 'inactive'
   editUserId: number | null = null;
   editRole: string = '';
   editIsActive: boolean = false;
@@ -36,11 +38,18 @@ export class UsersComponent implements OnInit {
   modalMessage = '';
   modalType: 'success' | 'error' | 'info' | 'warning' = 'info';
 
+  // Modal de confirmação para exclusão
+  showConfirmModal = false;
+  confirmModalTitle = '';
+  confirmModalMessage = '';
+  userToDelete: User | null = null;
+
   currentUser: User | null = null;
 
   constructor(
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -60,6 +69,8 @@ export class UsersComponent implements OnInit {
           isActive: u.isActive !== undefined ? u.isActive : ((u as any).active !== undefined ? (u as any).active : false)
         }));
         this.applyFilter();
+        // Força a detecção de mudanças após atualizar a lista
+        this.cdr.detectChanges();
       },
       error: (err) => {
         if (err.status === 403) {
@@ -71,10 +82,46 @@ export class UsersComponent implements OnInit {
 
   applyFilter() {
     const f = this.filter.toLowerCase();
-    this.filteredUsers = this.users.filter(u =>
-      u.email.toLowerCase().includes(f) ||
-      u.role.toLowerCase().includes(f)
-    );
+    this.filteredUsers = this.users.filter(u => {
+      // Filtro de busca por texto (email)
+      const matchesSearch = f === '' || u.email.toLowerCase().includes(f);
+      
+      // Filtro por tipo/role
+      const matchesRole = this.filterRole === 'all' || u.role === this.filterRole;
+      
+      // Filtro por status
+      let matchesStatus = true;
+      if (this.filterStatus === 'active') {
+        matchesStatus = u.isActive === true;
+      } else if (this.filterStatus === 'inactive') {
+        matchesStatus = u.isActive === false;
+      }
+      
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+    this.cdr.detectChanges();
+  }
+
+  // Método para traduzir o role para português
+  getRoleLabel(role: string): string {
+    switch (role) {
+      case 'STUDENT':
+        return 'Estudante';
+      case 'TEACHER':
+        return 'Professor';
+      case 'ADMIN':
+        return 'Admin';
+      default:
+        return role;
+    }
+  }
+
+  // Limpar todos os filtros
+  clearFilters() {
+    this.filter = '';
+    this.filterRole = 'all';
+    this.filterStatus = 'all';
+    this.applyFilter();
   }
 
   startEdit(user: User) {
@@ -92,6 +139,11 @@ export class UsersComponent implements OnInit {
 
   saveEdit(user: User) {
     if (!this.canEditUser(user)) {
+      return;
+    }
+
+    if (!this.editRole) {
+      this.showErrorModal('Erro', 'Por favor, selecione um papel para o usuário.', 'warning');
       return;
     }
 
@@ -205,8 +257,8 @@ export class UsersComponent implements OnInit {
 
     this.userService.createUser(this.newUser).subscribe({
       next: (createdUser) => {
-        this.users.push(createdUser);
-        this.applyFilter();
+        // Recarrega a lista completa de usuários para garantir que está atualizada
+        this.loadUsers();
         this.showNewUserForm = false;
         this.resetNewUserForm();
         this.showErrorModal(
@@ -214,6 +266,8 @@ export class UsersComponent implements OnInit {
           'Usuário criado com sucesso!',
           'success'
         );
+        // Força a detecção de mudanças
+        this.cdr.detectChanges();
       },
       error: (error) => {
         this.showErrorModal(
@@ -259,25 +313,61 @@ export class UsersComponent implements OnInit {
       return;
     }
 
-    if (confirm(`Tem certeza que deseja deletar o usuário ${user.email}? Esta ação não pode ser desfeita.`)) {
-      this.userService.deleteUser(user.id).subscribe({
-        next: () => {
-          this.users = this.users.filter(u => u.id !== user.id);
-          this.applyFilter();
-          this.showErrorModal(
-            'Sucesso',
-            'Usuário deletado com sucesso!',
-            'success'
-          );
-        },
-        error: (error) => {
-          this.showErrorModal(
-            'Erro ao Deletar Usuário',
-            error.error?.message || 'Ocorreu um erro ao deletar o usuário. Por favor, tente novamente.',
-            'error'
-          );
-        }
-      });
+    // Mostrar modal de confirmação
+    this.userToDelete = user;
+    this.confirmModalTitle = 'Confirmar Exclusão';
+    this.confirmModalMessage = `Tem certeza que deseja deletar o usuário <strong>${user.email}</strong>?<br><br>Esta ação não pode ser desfeita.`;
+    this.showConfirmModal = true;
+  }
+
+  confirmDelete() {
+    if (!this.userToDelete) return;
+
+    const userId = this.userToDelete.id;
+    const userEmail = this.userToDelete.email;
+    
+    // Fechar modal de confirmação
+    this.showConfirmModal = false;
+    this.userToDelete = null;
+
+    this.userService.deleteUser(userId).subscribe({
+      next: () => {
+        this.users = this.users.filter(u => u.id !== userId);
+        this.applyFilter();
+        this.cdr.detectChanges();
+        this.showErrorModal(
+          'Sucesso',
+          `Usuário ${userEmail} deletado com sucesso!`,
+          'success'
+        );
+      },
+      error: (error) => {
+        this.showErrorModal(
+          'Erro ao Deletar Usuário',
+          error.error?.message || 'Ocorreu um erro ao deletar o usuário. Por favor, tente novamente.',
+          'error'
+        );
+      }
+    });
+  }
+
+  cancelDelete() {
+    this.showConfirmModal = false;
+    this.userToDelete = null;
+  }
+
+  // Fechar modal ao clicar no overlay
+  onConfirmModalOverlayClick(event: Event) {
+    if (event.target === event.currentTarget) {
+      this.cancelDelete();
+    }
+  }
+
+  // Fechar modal com ESC
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscapeKey(event: KeyboardEvent) {
+    if (this.showConfirmModal) {
+      this.cancelDelete();
     }
   }
 }

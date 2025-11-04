@@ -41,6 +41,25 @@ public class ChatMessageEntity {
     @Column(name = "classroom_id")
     private Long classroomId;
     
+    @Column(name = "file_url", length = 500)
+    private String fileUrl;
+    
+    @Column(name = "file_type", length = 100)
+    private String fileType;
+    
+    @Column(name = "file_name", length = 255)
+    private String fileName;
+    
+    @Column(name = "file_size")
+    private Long fileSize;
+    
+    @Column(name = "replied_to_message_id")
+    private Long repliedToMessageId;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "replied_to_message_id", insertable = false, updatable = false)
+    private ChatMessageEntity repliedToMessage;
+    
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -50,6 +69,6 @@ public class ChatMessageEntity {
     private LocalDateTime updatedAt;
     
     public enum MessageType {
-        CHAT, JOIN, LEAVE
+        CHAT, JOIN, LEAVE, IMAGE, AUDIO
     }
 }

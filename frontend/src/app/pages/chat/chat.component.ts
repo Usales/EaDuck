@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,8 +11,14 @@ import { take } from 'rxjs/operators';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
+interface MessageReaction {
+  emoji: string;
+  count: number;
+  userEmails?: string[];
+}
+
 interface ChatMessage {
-  type: 'CHAT' | 'JOIN' | 'LEAVE';
+  type: 'CHAT' | 'JOIN' | 'LEAVE' | 'IMAGE' | 'AUDIO';
   content: string;
   sender: string;
   senderName: string;
@@ -21,8 +27,24 @@ interface ChatMessage {
   isMine: boolean;
   timestamp: Date;
   classroomId?: string | null;
-  status?: 'sending' | 'sent' | 'delivered' | 'failed';
+  status?: 'sending' | 'sent' | 'delivered' | 'viewed' | 'failed';
   id?: string;
+  
+  // Campos de arquivo
+  fileUrl?: string;
+  fileType?: string;
+  fileName?: string;
+  fileSize?: number;
+  
+  // Mensagem respondida
+  repliedToMessageId?: string;
+  repliedToMessage?: ChatMessage;
+  
+  // Reações
+  reactions?: MessageReaction[];
+  
+  // Espectrograma de áudio
+  spectrogram?: string;
 }
 
 @Component({
@@ -43,11 +65,53 @@ export class ChatComponent implements OnInit, OnDestroy {
   connected: boolean = false;
   onlineUsers: number = 0;
   private subscription: Subscription = new Subscription();
+  
+  // Novos estados
+  replyingTo: ChatMessage | null = null;
+  typingUsers: Set<string> = new Set();
+  currentUserEmail: string | null = null;
+  
+  get typingUsersArray(): string[] {
+    // Filtrar o próprio usuário e retornar apenas outros usuários
+    const filtered = Array.from(this.typingUsers).filter(email => email !== this.currentUserEmail);
+    return filtered;
+  }
+  
+  get typingDisplayText(): string {
+    const typingArray = this.typingUsersArray;
+    if (typingArray.length === 0) return '';
+    if (typingArray.length === 1) return `${typingArray[0]} está digitando`;
+    if (typingArray.length === 2) return `${typingArray[0]} e ${typingArray[1]} estão digitando`;
+    if (typingArray.length <= 3) return `${typingArray[0]}, ${typingArray[1]} e ${typingArray[2]} estão digitando`;
+    return 'Várias pessoas estão digitando';
+  }
+  selectedFile: File | null = null;
+  selectedFiles: File[] = [];
+  filePreviews: { file: File; preview: string }[] = [];
+  isRecording: boolean = false;
+  mediaRecorder: MediaRecorder | null = null;
+  recordingStream: MediaStream | null = null;
+  recordedAudio: Blob | null = null;
+  recordingTime: number = 0;
+  showReactionPicker: string | null = null; // messageId
+  typingTimer: any = null;
+  emojiPickerTimer: any = null;
 
-  // Room properties
+  // Audio visualization
+  audioContext: AudioContext | null = null;
+  analyser: AnalyserNode | null = null;
+  canvasElement: HTMLCanvasElement | null = null;
+  canvasContext: CanvasRenderingContext2D | null = null;
+    animationFrameId: number | null = null;
+    recordedAudioSpectrogram: string | null = null; // Base64 image do espectrograma
+    audioPlayingStates: Map<string, boolean> = new Map(); // Estado de reprodução por messageId
+
+    // Room properties
   classroomId: string | null = null;
   classroomName: string = 'Chat Geral';
   isRoomChat: boolean = false;
+  accessError: boolean = false;
+  accessErrorMessage: string = '';
 
   // Theme properties
   currentTheme: Theme = 'auto';
@@ -64,8 +128,25 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.currentUser$ = this.authService.currentUser$;
   }
 
+  private isInitialized: boolean = false;
+
   ngOnInit(): void {
+    // Evitar inicialização múltipla
+    if (this.isInitialized) {
+      console.log('ChatComponent já inicializado, ignorando');
+      return;
+    }
+    
     console.log('ChatComponent iniciado');
+    this.isInitialized = true;
+    
+    // Obter email do usuário atual
+    this.currentUser$.pipe(take(1)).subscribe(user => {
+      if (user) {
+        this.currentUserEmail = user.email;
+      }
+    });
+    
     this.initializeTheme();
     this.loadRoomInfo();
     this.loadChatHistory();
@@ -77,10 +158,63 @@ export class ChatComponent implements OnInit, OnDestroy {
       this.classroomId = params['classroomId'] || null;
       this.classroomName = params['classroomName'] || 'Chat Geral';
       this.isRoomChat = !!this.classroomId;
+      
+      // Validar acesso à sala antes de continuar
+      if (this.isRoomChat && this.classroomId) {
+        this.validateClassroomAccess(this.classroomId);
+      }
     });
   }
 
+  private validateClassroomAccess(classroomId: string): void {
+    // Verificar se o usuário tem acesso à sala
+    this.currentUser$.pipe(take(1)).subscribe(user => {
+      if (!user) {
+        console.error('Usuário não autenticado');
+        this.showAccessError('Você precisa estar autenticado para acessar esta sala.');
+        return;
+      }
+
+      // Verificar se o usuário tem acesso à sala consultando o backend
+      this.http.get<any>(`http://localhost:8080/api/classrooms/${classroomId}`, { observe: 'response' })
+        .subscribe({
+          next: (response) => {
+            if (response.status === 200) {
+              // Usuário tem acesso
+              this.accessError = false;
+              this.accessErrorMessage = '';
+              this.cdr.markForCheck();
+            }
+          },
+          error: (error) => {
+            console.error('Erro ao validar acesso à sala:', error);
+            if (error.status === 403) {
+              this.showAccessError('Este bate-papo não existe, foi excluído ou você não tem permissão para acessá-lo! Volte para o HUB e selecione outro.');
+            } else if (error.status === 404) {
+              this.showAccessError('Este bate-papo não existe, foi excluído ou você não tem permissão para acessá-lo! Volte para o HUB e selecione outro.');
+            } else {
+              this.showAccessError('Erro ao verificar acesso à sala. Tente novamente mais tarde.');
+            }
+          }
+        });
+    });
+  }
+
+  private showAccessError(message: string): void {
+    this.accessError = true;
+    this.accessErrorMessage = message;
+    this.cdr.markForCheck();
+  }
+
+  private chatHistoryLoaded: boolean = false;
+
   private loadChatHistory(): void {
+    // Evitar carregar histórico múltiplas vezes
+    if (this.chatHistoryLoaded) {
+      console.log('Histórico já carregado, ignorando');
+      return;
+    }
+    
     console.log('Carregando histórico de mensagens...');
     
     if (this.isRoomChat && this.classroomId) {
@@ -93,11 +227,19 @@ export class ChatComponent implements OnInit, OnDestroy {
               msg.isMine = this.isMessageFromCurrentUser(msg);
               return msg;
             });
+            this.chatHistoryLoaded = true;
             this.cdr.markForCheck();
             this.scrollToBottom();
           },
           error: (error) => {
             console.error('Erro ao carregar mensagens históricas da sala:', error);
+            if (error.status === 403) {
+              this.showAccessError('Este bate-papo não existe, foi excluído ou você não tem permissão para acessá-lo! Volte para o HUB e selecione outro.');
+            } else if (error.status === 404) {
+              this.showAccessError('Este bate-papo não existe, foi excluído ou você não tem permissão para acessá-lo! Volte para o HUB e selecione outro.');
+            } else {
+              this.showAccessError('Erro ao carregar mensagens. Tente novamente mais tarde.');
+            }
           }
         });
     } else {
@@ -110,6 +252,7 @@ export class ChatComponent implements OnInit, OnDestroy {
               msg.isMine = this.isMessageFromCurrentUser(msg);
               return msg;
             });
+            this.chatHistoryLoaded = true;
             this.cdr.markForCheck();
             this.scrollToBottom();
           },
@@ -147,11 +290,28 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.isInitialized = false;
+    this.chatHistoryLoaded = false;
     this.disconnect();
     this.subscription.unsubscribe();
   }
 
   connect(): void {
+    // Evitar reconexões desnecessárias
+    if (this.connected && this.stompClient && this.stompClient.connected) {
+      console.log('Já conectado ao WebSocket, ignorando nova tentativa de conexão');
+      return;
+    }
+    
+    // Se já existe um cliente, desconectar primeiro
+    if (this.stompClient) {
+      try {
+        this.stompClient.deactivate();
+      } catch (e) {
+        console.log('Erro ao desconectar cliente anterior:', e);
+      }
+    }
+    
     console.log('Tentando conectar ao WebSocket...');
     try {
       this.stompClient = new Client({
@@ -159,6 +319,9 @@ export class ChatComponent implements OnInit, OnDestroy {
         debug: (str: string) => {
           console.log('STOMP Debug:', str);
         },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
         onConnect: (frame) => {
           console.log('Conectado ao WebSocket:', frame);
           this.connected = true;
@@ -182,6 +345,25 @@ export class ChatComponent implements OnInit, OnDestroy {
                 this.cdr.markForCheck();
               } catch (error) {
                 console.error('Erro ao processar contagem de usuários da sala:', error);
+              }
+            });
+            
+            // Assinar eventos de digitação da sala
+            this.stompClient!.subscribe(`/topic/typing.room.${this.classroomId}`, (message: any) => {
+              try {
+                const data = JSON.parse(message.body);
+                const userIdentifier = data.sender || data.senderEmail || data.userEmail;
+                // Não adicionar o próprio usuário
+                if (userIdentifier && userIdentifier !== this.currentUserEmail) {
+                  if (data.typing) {
+                    this.typingUsers.add(userIdentifier);
+                  } else {
+                    this.typingUsers.delete(userIdentifier);
+                  }
+                  this.cdr.markForCheck();
+                }
+              } catch (error) {
+                console.error('Erro ao processar evento de digitação da sala:', error);
               }
             });
 
@@ -224,6 +406,25 @@ export class ChatComponent implements OnInit, OnDestroy {
                 console.error('Erro ao processar contagem de usuários:', error);
               }
             });
+            
+            // Assinar eventos de digitação
+            this.stompClient!.subscribe('/topic/typing.public', (message: any) => {
+              try {
+                const data = JSON.parse(message.body);
+                const userIdentifier = data.sender || data.senderEmail || data.userEmail;
+                // Não adicionar o próprio usuário
+                if (userIdentifier && userIdentifier !== this.currentUserEmail) {
+                  if (data.typing) {
+                    this.typingUsers.add(userIdentifier);
+                  } else {
+                    this.typingUsers.delete(userIdentifier);
+                  }
+                  this.cdr.markForCheck();
+                }
+              } catch (error) {
+                console.error('Erro ao processar evento de digitação:', error);
+              }
+            });
 
             // Send join message
             this.currentUser$.pipe(take(1)).subscribe(user => {
@@ -247,17 +448,18 @@ export class ChatComponent implements OnInit, OnDestroy {
         onStompError: (error) => {
           console.error('Erro na conexão WebSocket:', error);
           this.connected = false;
-          // Tentar reconectar após 3 segundos
-          setTimeout(() => {
-            if (!this.connected) {
-              console.log('Tentando reconectar...');
-              this.connect();
-            }
-          }, 3000);
+          this.cdr.markForCheck();
+          // O STOMP.js já faz reconexão automática, não precisamos chamar connect() novamente
         },
         onWebSocketError: (error) => {
           console.error('Erro no WebSocket:', error);
           this.connected = false;
+          this.cdr.markForCheck();
+        },
+        onDisconnect: () => {
+          console.log('Desconectado do WebSocket');
+          this.connected = false;
+          this.cdr.markForCheck();
         }
       });
       
@@ -317,6 +519,9 @@ export class ChatComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Parar indicador de digitação ao enviar mensagem
+    this.stopTyping();
+
     // Obter usuário atual de forma síncrona
     let currentUser: User | null = null;
     this.currentUser$.pipe(take(1)).subscribe(user => {
@@ -334,6 +539,10 @@ export class ChatComponent implements OnInit, OnDestroy {
     const messageContent = this.newMessage.trim();
     const messageId = this.generateMessageId();
     
+    // Capturar replyingTo antes de limpar
+    const replyingToId = this.replyingTo?.id;
+    const replyingToMessage = this.replyingTo ? { ...this.replyingTo } : undefined;
+    
     // Criar mensagem local com status "sending" (como WhatsApp)
     const localMessage: ChatMessage = {
       type: 'CHAT',
@@ -344,7 +553,9 @@ export class ChatComponent implements OnInit, OnDestroy {
       timestamp: new Date(),
       classroomId: this.classroomId,
       status: 'sending',
-      id: messageId
+      id: messageId,
+      repliedToMessageId: replyingToId,
+      repliedToMessage: replyingToMessage
     };
     
     // Adicionar mensagem imediatamente ao array (feedback visual instantâneo)
@@ -354,9 +565,10 @@ export class ChatComponent implements OnInit, OnDestroy {
     
     // Limpar input imediatamente
     this.newMessage = '';
+    this.replyingTo = null;
 
     // Preparar mensagem para envio
-    const chatMessage = {
+    const chatMessage: any = {
       type: 'CHAT',
       content: messageContent,
       sender: user.email,
@@ -365,6 +577,11 @@ export class ChatComponent implements OnInit, OnDestroy {
       classroomId: this.classroomId,
       id: messageId
     };
+    
+    // Adicionar mensagem respondida se houver
+    if (replyingToId) {
+      chatMessage.repliedToMessageId = replyingToId;
+    }
 
     console.log('Enviando mensagem:', chatMessage);
 
@@ -450,45 +667,110 @@ export class ChatComponent implements OnInit, OnDestroy {
       message.isMine = message.sender === user.email;
     }
 
-    // Only add CHAT messages to the display, not JOIN/LEAVE messages
-    if (message.type === 'CHAT') {
+    // Only add CHAT, IMAGE, AUDIO messages to the display, not JOIN/LEAVE messages
+    if (message.type === 'CHAT' || message.type === 'IMAGE' || message.type === 'AUDIO') {
       // Verificar se a mensagem já existe para evitar duplicação
       let messageExists = false;
+      let existingMessageIndex = -1;
       
-      if (message.isMine && message.id) {
-        // Para mensagens próprias com ID, verificar por ID
-        messageExists = this.messages.some(m => m.id === message.id);
+      // Verificar se é mensagem do próprio usuário
+      const isMyMessage = message.sender === this.currentUserEmail;
+      
+      // Primeiro, tentar encontrar por ID (mais confiável)
+      if (message.id) {
+        existingMessageIndex = this.messages.findIndex(m => m.id === message.id);
+        if (existingMessageIndex !== -1) {
+          messageExists = true;
+          console.log('Mensagem encontrada por ID:', message.id);
+        }
+      }
+      
+      // Se não encontrou por ID, verificar por conteúdo, sender e timestamp (para mensagens próprias)
+      if (!messageExists && isMyMessage) {
+        // Para mensagens próprias, verificar se já existe uma mensagem com status 'sending' ou 'sent'
+        // com mesmo conteúdo, sender e timestamp próximo (dentro de 5 segundos)
+        const now = new Date(message.timestamp).getTime();
+        existingMessageIndex = this.messages.findIndex(m => {
+          if (!m.isMine || m.sender !== message.sender) return false;
+          
+          // Verificar se o conteúdo é igual
+          const contentMatch = m.content === message.content || m.content === (message.content || message.message);
+          
+          // Verificar se o timestamp está próximo (dentro de 5 segundos)
+          const timeDiff = Math.abs(new Date(m.timestamp).getTime() - now);
+          const timeMatch = timeDiff < 5000;
+          
+          // Verificar se é uma mensagem que acabou de ser enviada (status sending ou sent)
+          const recentStatus = m.status === 'sending' || m.status === 'sent';
+          
+          return contentMatch && timeMatch && recentStatus;
+        });
         
-        if (messageExists) {
-          // Atualizar status da mensagem existente
-          const existingMessageIndex = this.messages.findIndex(m => m.id === message.id);
-          if (existingMessageIndex !== -1) {
-            this.messages[existingMessageIndex].status = 'delivered';
-            this.cdr.markForCheck();
-            return;
+        if (existingMessageIndex !== -1) {
+          messageExists = true;
+          console.log('Mensagem própria encontrada por conteúdo e timestamp:', message.content);
+        }
+      }
+      
+      // Para mensagens de outros usuários, verificar por ID, conteúdo e timestamp
+      if (!messageExists && !isMyMessage) {
+        const now = new Date(message.timestamp).getTime();
+        existingMessageIndex = this.messages.findIndex(m => {
+          if (m.isMine || m.sender !== message.sender) return false;
+          
+          const contentMatch = m.content === message.content || m.content === (message.content || message.message);
+          const timeDiff = Math.abs(new Date(m.timestamp).getTime() - now);
+          const timeMatch = timeDiff < 3000;
+          
+          return contentMatch && timeMatch;
+        });
+        
+        if (existingMessageIndex !== -1) {
+          messageExists = true;
+          console.log('Mensagem de outros encontrada por conteúdo e timestamp');
+        }
+      }
+      
+      if (messageExists && existingMessageIndex !== -1) {
+        // Atualizar mensagem existente com dados do servidor (incluindo status e repliedToMessage)
+        const existingMessage = this.messages[existingMessageIndex];
+        
+        // Atualizar com o ID do servidor (mais confiável)
+        this.messages[existingMessageIndex] = {
+          ...existingMessage,
+          ...message,
+          id: message.id || existingMessage.id, // Usar ID do servidor se disponível
+          isMine: true, // Manter como mensagem própria
+          status: message.status || 'delivered', // Atualizar status do servidor
+          // Manter repliedToMessage se já existir e a nova mensagem não tiver
+          repliedToMessage: message.repliedToMessage || existingMessage.repliedToMessage,
+          repliedToMessageId: message.repliedToMessageId || existingMessage.repliedToMessageId
+        };
+        
+        // Se a mensagem tem repliedToMessageId mas não tem repliedToMessage, carregar da lista
+        if (message.repliedToMessageId && !this.messages[existingMessageIndex].repliedToMessage) {
+          const repliedTo = this.messages.find(m => m.id === message.repliedToMessageId);
+          if (repliedTo) {
+            this.messages[existingMessageIndex].repliedToMessage = repliedTo;
           }
         }
-      } else if (message.isMine && !message.id) {
-        // Para mensagens próprias sem ID (enviadas localmente), verificar se já existe
-        // uma mensagem com mesmo conteúdo e timestamp próximo
-        messageExists = this.messages.some(m => 
-          m.isMine && 
-          m.content === message.content && 
-          Math.abs(new Date(m.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000
-        );
-      } else {
-        // Para mensagens recebidas, verificar se já existe uma mensagem idêntica
-        messageExists = this.messages.some(m => 
-          !m.isMine &&
-          m.content === message.content && 
-          m.sender === message.sender && 
-          Math.abs(new Date(m.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000
-        );
+        
+        console.log('Mensagem atualizada (não duplicada):', message.id || existingMessage.id);
+        this.cdr.markForCheck();
+        return;
       }
       
       if (!messageExists) {
+        // Se a mensagem tem repliedToMessageId mas não tem repliedToMessage, carregar da lista
+        if (message.repliedToMessageId && !message.repliedToMessage) {
+          const repliedTo = this.messages.find(m => m.id === message.repliedToMessageId);
+          if (repliedTo) {
+            message.repliedToMessage = repliedTo;
+          }
+        }
+        
         // Adicionar nova mensagem
-        message.status = 'delivered';
+        message.status = message.status || 'delivered';
         this.messages.push(message);
         
         // Tocar som de notificação para mensagens recebidas
@@ -595,5 +877,682 @@ export class ChatComponent implements OnInit, OnDestroy {
   private forceViewUpdate(): void {
     this.cdr.markForCheck();
     this.cdr.detectChanges();
+  }
+  
+  // Sistema de respostas
+  replyToMessage(message: ChatMessage): void {
+    // Criar uma cópia da mensagem para evitar referências
+    this.replyingTo = {
+      ...message,
+      id: message.id,
+      content: message.content || message.message || '',
+      sender: message.sender,
+      senderName: message.senderName || message.sender
+    };
+    this.cdr.markForCheck();
+    
+    // Focar no input de mensagem
+    setTimeout(() => {
+      const input = document.querySelector('input[placeholder="Digite sua mensagem..."]') as HTMLInputElement;
+      if (input) {
+        input.focus();
+      }
+    }, 100);
+  }
+  
+  cancelReply(): void {
+    this.replyingTo = null;
+    this.cdr.markForCheck();
+  }
+  
+  // Sistema de reações
+  addReaction(messageId: string, emoji: string): void {
+    if (!this.stompClient || !this.connected) return;
+    
+    let currentUser: User | null = null;
+    this.currentUser$.pipe(take(1)).subscribe(user => {
+      currentUser = user;
+    });
+    
+    if (!currentUser) return;
+    
+    this.http.post(`http://localhost:8080/api/chat/message/${messageId}/reaction`, { emoji })
+      .subscribe({
+        next: (response: any) => {
+          // Atualizar reações na mensagem local
+          const message = this.messages.find(m => m.id === messageId);
+          if (message) {
+            message.reactions = response.reactions;
+            this.cdr.markForCheck();
+          }
+        },
+        error: (error) => {
+          console.error('Erro ao adicionar reação:', error);
+        }
+      });
+  }
+  
+  showReactionPickerForMessage(messageId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation(); // Prevenir que o clique propague para o document
+    }
+    
+    if (this.emojiPickerTimer) {
+      clearTimeout(this.emojiPickerTimer);
+      this.emojiPickerTimer = null;
+    }
+    
+    // Toggle: se já está aberto para esta mensagem, fecha; caso contrário, abre
+    this.showReactionPicker = this.showReactionPicker === messageId ? null : messageId;
+    this.cdr.markForCheck();
+  }
+  
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    // Usar setTimeout para garantir que o evento do botão seja processado primeiro
+    setTimeout(() => {
+      // Verificar se o clique foi fora do picker e fora do botão de reação
+      const target = event.target as HTMLElement;
+      
+      // Se não há picker aberto, não fazer nada
+      if (!this.showReactionPicker) {
+        return;
+      }
+      
+      // Verificar se o clique foi dentro do picker
+      const pickerElement = target.closest('.emoji-picker');
+      if (pickerElement) {
+        return; // Não fechar se o clique foi dentro do picker
+      }
+      
+      // Verificar se o clique foi no botão de reação (para toggle)
+      const reactionButton = target.closest('.reaction-button');
+      if (reactionButton) {
+        // O método showReactionPickerForMessage já lidou com o toggle
+        return;
+      }
+      
+      // Se chegou aqui, o clique foi fora do picker e fora do botão, então fechar
+      this.showReactionPicker = null;
+      this.cdr.markForCheck();
+    }, 0);
+  }
+  
+  keepEmojiPickerOpen(messageId: string): void {
+    if (this.emojiPickerTimer) {
+      clearTimeout(this.emojiPickerTimer);
+      this.emojiPickerTimer = null;
+    }
+    // Manter o picker aberto enquanto o mouse estiver sobre ele
+    this.showReactionPicker = messageId;
+  }
+  
+  closeEmojiPickerDelayed(): void {
+    // Aumentar o delay para 800ms para dar tempo de mover o mouse
+    if (this.emojiPickerTimer) {
+      clearTimeout(this.emojiPickerTimer);
+    }
+    this.emojiPickerTimer = setTimeout(() => {
+      // Verificar se o mouse ainda não está sobre o picker
+      const pickerElement = document.querySelector('.emoji-picker') as HTMLElement;
+      if (pickerElement && !pickerElement.matches(':hover')) {
+        this.showReactionPicker = null;
+        this.cdr.markForCheck();
+      }
+    }, 800);
+  }
+  
+  closeEmojiPicker(): void {
+    if (this.emojiPickerTimer) {
+      clearTimeout(this.emojiPickerTimer);
+      this.emojiPickerTimer = null;
+    }
+    this.showReactionPicker = null;
+    this.cdr.markForCheck();
+  }
+  
+  getAvailableEmojis(): string[] {
+    return [
+      '👍', '❤️', '😂', '😮', '😢', '🙏', '👏', '🔥',
+      '✅', '❌', '⭐', '💯', '🎉', '🎊', '🎈', '🎁',
+      '😍', '🤔', '😎', '😴', '😭', '😡', '🤢', '🤮',
+      '😱', '😰', '😨', '😤', '😠', '😋', '🤤', '😇',
+      '🤗', '🤝', '🙌', '👌', '✌️', '🤞', '🤘', '👏',
+      '💪', '🤳', '🙏', '💯', '🔥', '⭐', '✨', '💫',
+      '💥', '💢', '💤', '💨', '💦', '💧', '🌊', '🎯',
+      '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹',
+      '🎸', '🎺', '🎷', '🥁', '🎻', '🎲', '🎮', '🕹️'
+    ];
+  }
+  
+  // Upload de arquivos
+  onFileSelected(event: any): void {
+    const files = Array.from(event.target.files) as File[];
+    if (!files || files.length === 0) return;
+    
+    files.forEach(file => {
+      // Verificar tipo
+      const isImage = file.type.startsWith('image/');
+      const isAudio = file.type.startsWith('audio/');
+      
+      if (!isImage && !isAudio) {
+        alert(`${file.name}: Apenas imagens e áudios são permitidos`);
+        return;
+      }
+      
+      // Verificar tamanho (2GB)
+      const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
+      if (file.size > maxSize) {
+        alert(`${file.name}: Arquivo muito grande. Tamanho máximo: 2GB`);
+        return;
+      }
+      
+      if (isImage) {
+        // Adicionar à lista de imagens
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.filePreviews.push({ file, preview: e.target.result });
+          this.selectedFiles.push(file);
+          this.cdr.markForCheck();
+        };
+        reader.readAsDataURL(file);
+      } else if (isAudio) {
+        // Para áudio, usar apenas um arquivo (compatibilidade)
+        this.selectedFile = file;
+      }
+    });
+    
+    // Limpar input para permitir selecionar o mesmo arquivo novamente
+    event.target.value = '';
+  }
+  
+  removeImagePreview(index: number): void {
+    this.filePreviews.splice(index, 1);
+    this.selectedFiles.splice(index, 1);
+    this.cdr.markForCheck();
+  }
+  
+  addMoreImages(): void {
+    const fileInput = document.getElementById('fileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+  
+  uploadFile(): void {
+    // Parar indicador de digitação
+    this.stopTyping();
+    
+    // Upload de múltiplas imagens
+    if (this.selectedFiles.length > 0) {
+      this.uploadMultipleImages();
+      return;
+    }
+    
+    // Upload de arquivo único (áudio)
+    if (!this.selectedFile) return;
+    
+    const formData = new FormData();
+    formData.append('file', this.selectedFile);
+    
+    this.uploadSingleFile(formData, (response: any) => {
+      const messageContent = this.newMessage.trim() || (this.selectedFile?.name || '');
+      this.sendFileMessage(response, messageContent);
+      
+      // Limpar arquivo após envio
+      this.selectedFile = null;
+      this.newMessage = '';
+      this.replyingTo = null;
+      this.cdr.markForCheck();
+    });
+  }
+  
+  uploadMultipleImages(): void {
+    if (this.selectedFiles.length === 0) return;
+    
+    let uploadedCount = 0;
+    const totalFiles = this.selectedFiles.length;
+    
+    this.selectedFiles.forEach((file, index) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      this.uploadSingleFile(formData, (response: any) => {
+        uploadedCount++;
+        const messageContent = index === 0 ? this.newMessage.trim() : '';
+        this.sendFileMessage(response, messageContent);
+        
+        if (uploadedCount === totalFiles) {
+          // Limpar após todos os uploads
+          this.selectedFiles = [];
+          this.filePreviews = [];
+          this.newMessage = '';
+          this.replyingTo = null;
+          this.cdr.markForCheck();
+        }
+      });
+    });
+  }
+  
+  uploadSingleFile(formData: FormData, callback: (response: any) => void): void {
+    this.http.post('http://localhost:8080/api/chat/upload', formData)
+      .subscribe({
+        next: (response: any) => {
+          callback(response);
+        },
+        error: (error) => {
+          console.error('Erro ao fazer upload:', error);
+          alert('Erro ao fazer upload do arquivo');
+        }
+      });
+  }
+  
+  sendFileMessage(response: any, messageContent: string): void {
+    this.currentUser$.pipe(take(1)).subscribe(user => {
+      if (!user || !this.stompClient || !this.connected) return;
+      
+      const messageId = this.generateMessageId();
+      
+      const chatMessage: any = {
+        type: response.messageType,
+        content: messageContent || response.fileName || '',
+        sender: user.email,
+        senderName: user.name || user.email,
+        senderRole: user.role,
+        classroomId: this.classroomId,
+        id: messageId,
+        fileUrl: response.fileUrl,
+        fileType: response.fileType,
+        fileName: response.fileName,
+        fileSize: response.fileSize,
+        repliedToMessageId: this.replyingTo?.id,
+        spectrogram: response.spectrogram || undefined
+      };
+      
+      // Enviar via WebSocket em tempo real
+      if (this.isRoomChat && this.classroomId) {
+        this.stompClient.publish({
+          destination: '/app/chat.sendMessage.room',
+          body: JSON.stringify(chatMessage)
+        });
+      } else {
+        this.stompClient.publish({
+          destination: '/app/chat.sendMessage',
+          body: JSON.stringify(chatMessage)
+        });
+      }
+    });
+  }
+  
+  cancelFileUpload(): void {
+    this.selectedFile = null;
+    this.selectedFiles = [];
+    this.filePreviews = [];
+    this.cdr.markForCheck();
+  }
+  
+  // Gravação de áudio
+  async startRecording(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.recordingStream = stream;
+      this.mediaRecorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+      
+      // Configurar análise de áudio para espectrograma
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const source = this.audioContext.createMediaStreamSource(stream);
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0.8;
+      source.connect(this.analyser);
+      
+      // Inicializar canvas para espectrograma
+      setTimeout(() => {
+        this.initSpectrogramCanvas();
+        if (this.canvasElement) {
+          this.drawSpectrogram();
+        }
+      }, 100);
+      
+      this.mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+      
+      this.mediaRecorder.onstop = () => {
+        // Parar a visualização
+        if (this.animationFrameId) {
+          cancelAnimationFrame(this.animationFrameId);
+          this.animationFrameId = null;
+        }
+        
+        // Salvar espectrograma final
+        if (this.canvasElement) {
+          this.recordedAudioSpectrogram = this.canvasElement.toDataURL('image/png');
+        }
+        
+        // Só criar o áudio se houver chunks (não foi cancelado)
+        if (chunks.length > 0) {
+          this.recordedAudio = new Blob(chunks, { type: 'audio/webm' });
+        }
+        
+        // Parar o stream se ainda estiver ativo
+        if (this.recordingStream) {
+          this.recordingStream.getTracks().forEach(track => {
+            if (track.readyState === 'live') {
+              track.stop();
+            }
+          });
+          this.recordingStream = null;
+        }
+        
+        // Limpar contexto de áudio
+        if (this.audioContext) {
+          this.audioContext.close().catch(() => {});
+          this.audioContext = null;
+        }
+        this.analyser = null;
+        
+        this.isRecording = false;
+        this.recordingTime = 0;
+        this.cdr.markForCheck();
+      };
+      
+      this.mediaRecorder.start();
+      this.isRecording = true;
+      this.recordingTime = 0;
+      
+      // Timer para duração
+      const timer = setInterval(() => {
+        if (this.isRecording) {
+          this.recordingTime++;
+          this.cdr.markForCheck();
+        } else {
+          clearInterval(timer);
+        }
+      }, 1000);
+      
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Erro ao iniciar gravação:', error);
+      alert('Erro ao acessar o microfone');
+    }
+  }
+  
+  initSpectrogramCanvas(): void {
+    // Limpar canvas anterior se existir
+    const existingCanvas = document.getElementById('recordingSpectrogram');
+    if (existingCanvas) {
+      existingCanvas.remove();
+    }
+    
+    // Criar novo canvas
+    const canvas = document.createElement('canvas');
+    canvas.id = 'recordingSpectrogram';
+    canvas.width = 300;
+    canvas.height = 100;
+    canvas.style.width = '100%';
+    canvas.style.height = '100px';
+    canvas.style.display = 'block';
+    canvas.style.borderRadius = '0.5rem';
+    
+    const recordingIndicator = document.querySelector('.recording-indicator-container');
+    if (recordingIndicator) {
+      recordingIndicator.appendChild(canvas);
+      this.canvasElement = canvas;
+      this.canvasContext = canvas.getContext('2d');
+      
+      // Configurar contexto do canvas
+      if (this.canvasContext) {
+        this.canvasContext.fillStyle = 'rgb(15, 23, 42)';
+        this.canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    } else {
+      // Se não encontrar o container, tentar novamente após um pequeno delay
+      setTimeout(() => {
+        this.initSpectrogramCanvas();
+      }, 100);
+    }
+  }
+  
+  drawSpectrogram(): void {
+    if (!this.analyser || !this.canvasContext || !this.canvasElement || !this.isRecording) {
+      return;
+    }
+    
+    const bufferLength = this.analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    const draw = () => {
+      if (!this.analyser || !this.canvasContext || !this.canvasElement || !this.isRecording) {
+        return;
+      }
+      
+      this.analyser.getByteFrequencyData(dataArray);
+      
+      const width = this.canvasElement.width;
+      const height = this.canvasElement.height;
+      
+      // Limpar canvas
+      this.canvasContext.fillStyle = 'rgb(15, 23, 42)'; // Cor escura de fundo
+      this.canvasContext.fillRect(0, 0, width, height);
+      
+      const barWidth = width / bufferLength * 2.5;
+      let barHeight;
+      let x = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        barHeight = (dataArray[i] / 255) * height;
+        
+        // Cores do espectrograma (branco para áudio)
+        const r = 255;
+        const g = 255;
+        const b = 255;
+        
+        this.canvasContext.fillStyle = `rgb(${r},${g},${b})`;
+        this.canvasContext.fillRect(x, height - barHeight, barWidth, barHeight);
+        
+        x += barWidth + 1;
+      }
+      
+      this.animationFrameId = requestAnimationFrame(draw);
+    };
+    
+    draw();
+  }
+  
+  stopRecording(): void {
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+      // O stream será parado no onstop callback do MediaRecorder
+    }
+  }
+  
+  cancelRecording(): void {
+    // Parar a visualização
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    
+    // Se estiver gravando, parar a gravação
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+    }
+    
+    // Parar o stream de áudio se estiver ativo
+    if (this.recordingStream) {
+      this.recordingStream.getTracks().forEach(track => track.stop());
+      this.recordingStream = null;
+    }
+    
+    // Limpar contexto de áudio
+    if (this.audioContext) {
+      this.audioContext.close().catch(() => {});
+      this.audioContext = null;
+    }
+    this.analyser = null;
+    
+    // Limpar canvas
+    const canvas = document.getElementById('recordingSpectrogram');
+    if (canvas) {
+      canvas.remove();
+    }
+    this.canvasElement = null;
+    this.canvasContext = null;
+    
+    // Limpar tudo relacionado ao áudio
+    this.mediaRecorder = null;
+    this.isRecording = false;
+    this.recordedAudio = null;
+    this.recordedAudioSpectrogram = null;
+    this.recordingTime = 0;
+    this.cdr.markForCheck();
+  }
+  
+  async sendRecordedAudio(): Promise<void> {
+    if (!this.recordedAudio) return;
+    
+    // Parar indicador de digitação
+    this.stopTyping();
+    
+    // Converter blob para File
+    const audioFile = new File([this.recordedAudio], 'recording.webm', { type: 'audio/webm' });
+    this.selectedFile = audioFile;
+    
+    const formData = new FormData();
+    formData.append('file', audioFile);
+    
+    // Salvar espectrograma temporariamente
+    const spectrogramData = this.recordedAudioSpectrogram;
+    
+    this.uploadSingleFile(formData, (response: any) => {
+      // Incluir espectrograma na mensagem
+      response.spectrogram = spectrogramData;
+      this.sendFileMessage(response, 'Áudio');
+      
+      // Limpar áudio após envio
+      this.recordedAudio = null;
+      this.recordedAudioSpectrogram = null;
+      this.selectedFile = null;
+      
+      // Limpar canvas
+      const canvas = document.getElementById('recordingSpectrogram');
+      if (canvas) {
+        canvas.remove();
+      }
+      this.canvasElement = null;
+      this.canvasContext = null;
+      
+      this.cdr.markForCheck();
+    });
+  }
+  
+  // Sistema de digitação
+  onTyping(): void {
+    if (!this.stompClient || !this.connected) return;
+    
+    // Limpar timer anterior
+    if (this.typingTimer) {
+      clearTimeout(this.typingTimer);
+    }
+    
+    this.currentUser$.pipe(take(1)).subscribe(user => {
+      if (!user) return;
+      
+      // Enviar evento de digitação
+      this.stompClient!.publish({
+        destination: '/app/chat.typing',
+        body: JSON.stringify({
+          sender: user.email,
+          senderName: user.name || user.email,
+          classroomId: this.classroomId
+        })
+      });
+    });
+    
+    // Parar de digitar após 2 segundos sem digitação
+    this.typingTimer = setTimeout(() => {
+      this.stopTyping();
+    }, 2000);
+  }
+  
+  stopTyping(): void {
+    if (!this.stompClient || !this.connected) return;
+    
+    if (this.typingTimer) {
+      clearTimeout(this.typingTimer);
+      this.typingTimer = null;
+    }
+    
+    this.currentUser$.pipe(take(1)).subscribe(user => {
+      if (!user) return;
+      
+      this.stompClient!.publish({
+        destination: '/app/chat.stopTyping',
+        body: JSON.stringify({
+          sender: user.email,
+          classroomId: this.classroomId
+        })
+      });
+    });
+  }
+  
+  formatRecordingTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+  
+  scrollToMessage(messageId: string | undefined): void {
+    if (!messageId) return;
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  
+  getAudioUrl(): string {
+    if (!this.recordedAudio) return '';
+    return URL.createObjectURL(this.recordedAudio);
+  }
+
+  toggleAudioPlayback(messageId: string, audioUrl: string): void {
+    const audioElement = document.getElementById(`audio-${messageId}`) as HTMLAudioElement;
+    if (!audioElement) return;
+
+    const isCurrentlyPlaying = this.getAudioPlayingState(messageId);
+    
+    if (isCurrentlyPlaying) {
+      audioElement.pause();
+      this.setAudioPlayingState(messageId, false);
+    } else {
+      // Pausar todos os outros áudios
+      this.audioPlayingStates.forEach((isPlaying: boolean, id: string) => {
+        if (isPlaying) {
+          const otherAudioElement = document.getElementById(`audio-${id}`) as HTMLAudioElement;
+          if (otherAudioElement) {
+            otherAudioElement.pause();
+          }
+          this.setAudioPlayingState(id, false);
+        }
+      });
+      audioElement.play().catch(e => console.error("Erro ao tentar tocar áudio:", e));
+      this.setAudioPlayingState(messageId, true);
+    }
+  }
+
+  getAudioPlayingState(messageId: string): boolean {
+    return this.audioPlayingStates.get(messageId) || false;
+  }
+
+  setAudioPlayingState(messageId: string, isPlaying: boolean): void {
+    this.audioPlayingStates.set(messageId, isPlaying);
+    this.cdr.markForCheck();
+  }
+  
+  openImageInNewTab(fileUrl: string | undefined): void {
+    if (!fileUrl) return;
+    window.open('http://localhost:8080' + fileUrl, '_blank');
   }
 }

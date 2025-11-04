@@ -65,7 +65,7 @@
           </span>
           <select [(ngModel)]="newUser.role" class="users-form-select">
             <option value="ADMIN">Admin</option>
-            <option value="STUDENT">Aluno</option>
+            <option value="STUDENT">Estudante</option>
             <option value="TEACHER">Professor</option>
           </select>
           <span class="users-form-select-arrow">
@@ -85,13 +85,39 @@
 
   <!-- Lista de Usuários Mobile First -->
   <div class="users-list">
-    <!-- Barra de Busca -->
+    <!-- Barra de Busca e Filtros -->
     <div class="users-search">
       <div class="users-search-wrapper">
         <span class="users-search-icon">
           <span class="material-icons">search</span>
         </span>
         <input type="text" placeholder="Buscar usuários..." [(ngModel)]="filter" (input)="applyFilter()" class="users-search-input">
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="users-filters">
+      <div class="users-filter-group">
+        <label class="users-filter-label">Filtrar por Tipo:</label>
+        <select [(ngModel)]="filterRole" (change)="applyFilter()" class="users-filter-select">
+          <option value="all">Todos os tipos</option>
+          <option value="ADMIN">Admin</option>
+          <option value="STUDENT">Estudante</option>
+          <option value="TEACHER">Professor</option>
+        </select>
+      </div>
+      <div class="users-filter-group">
+        <label class="users-filter-label">Filtrar por Status:</label>
+        <select [(ngModel)]="filterStatus" (change)="applyFilter()" class="users-filter-select">
+          <option value="all">Todos os status</option>
+          <option value="active">Ativo</option>
+          <option value="inactive">Inativo</option>
+        </select>
+      </div>
+      <div class="users-filter-group">
+        <button (click)="clearFilters()" class="users-filter-clear">
+          Limpar Filtros
+        </button>
       </div>
     </div>
 
@@ -122,12 +148,12 @@
                         [class.cursor-not-allowed]="!canEditUser(user)"
                         class="users-card-select">
                   <option value="ADMIN">Admin</option>
-                  <option value="STUDENT">Aluno</option>
+                  <option value="STUDENT">Estudante</option>
                   <option value="TEACHER">Professor</option>
                 </select>
               </ng-container>
               <ng-template #viewRole>
-                <span class="users-card-value">{{ user.role }}</span>
+                <span class="users-card-value">{{ getRoleLabel(user.role) }}</span>
               </ng-template>
             </div>
             
@@ -208,11 +234,11 @@
                           [class.cursor-not-allowed]="!canEditUser(user)"
                           class="users-table-select">
                     <option value="ADMIN">Admin</option>
-                    <option value="STUDENT">Aluno</option>
+                    <option value="STUDENT">Estudante</option>
                     <option value="TEACHER">Professor</option>
                   </select>
                 </ng-container>
-                <ng-template #viewRole>{{ user.role }}</ng-template>
+                <ng-template #viewRole>{{ getRoleLabel(user.role) }}</ng-template>
               </td>
               <td class="users-table-td">
                 <ng-container *ngIf="editUserId === user.id; else viewStatus">
@@ -279,3 +305,29 @@
   [type]="modalType"
   (close)="showModal = false">
 </app-modal>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div *ngIf="showConfirmModal" class="users-confirm-modal-overlay" (click)="onConfirmModalOverlayClick($event)">
+  <div class="users-confirm-modal-content">
+    <div class="users-confirm-modal-header">
+      <div class="users-confirm-modal-title-wrapper">
+        <span class="material-icons users-confirm-modal-icon">warning</span>
+        <h2 class="users-confirm-modal-title">{{ confirmModalTitle }}</h2>
+      </div>
+      <button (click)="cancelDelete()" class="users-confirm-modal-close">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="users-confirm-modal-message" [innerHTML]="confirmModalMessage"></div>
+    <div class="users-confirm-modal-actions">
+      <button (click)="cancelDelete()" class="users-confirm-modal-btn users-confirm-modal-btn-cancel">
+        <span class="material-icons">close</span>
+        Cancelar
+      </button>
+      <button (click)="confirmDelete()" class="users-confirm-modal-btn users-confirm-modal-btn-delete">
+        <span class="material-icons">delete</span>
+        Deletar
+      </button>
+    </div>
+  </div>
+</div>

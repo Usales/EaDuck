@@ -21,6 +21,7 @@ public class ChatController {
     private final ChatMessageService chatMessageService;
     private final UserRepository userRepository;
     private final Map<String, OnlineUser> onlineUsers = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> typingUsers = new ConcurrentHashMap<>(); // classroomId -> Set of user emails
 
     public ChatController(SimpMessagingTemplate messagingTemplate, ChatMessageService chatMessageService, UserRepository userRepository) {
         this.messagingTemplate = messagingTemplate;
@@ -51,11 +52,21 @@ public class ChatController {
         
         // Salvar mensagem no banco de dados
         try {
-            chatMessageService.saveMessage(chatMessage);
+            com.eaduck.backend.model.ChatMessageEntity savedEntity = chatMessageService.saveMessage(chatMessage);
+            chatMessage.setId(savedEntity.getId().toString());
+            
+            // Carregar reações e informações completas
+            chatMessage.setReactions(chatMessageService.getReactionsByMessageId(savedEntity.getId()));
+            chatMessage.setStatus("delivered");
+            
             System.out.println("Mensagem salva no banco de dados");
         } catch (Exception e) {
             System.err.println("Erro ao salvar mensagem: " + e.getMessage());
+            chatMessage.setStatus("failed");
         }
+        
+        // Remover usuário da lista de digitação
+        stopTyping(chatMessage.getSender(), null);
         
         System.out.println("Mensagem processada e enviando para /topic/public");
         
@@ -113,11 +124,21 @@ public class ChatController {
         
         // Salvar mensagem no banco de dados
         try {
-            chatMessageService.saveMessage(chatMessage);
+            com.eaduck.backend.model.ChatMessageEntity savedEntity = chatMessageService.saveMessage(chatMessage);
+            chatMessage.setId(savedEntity.getId().toString());
+            
+            // Carregar reações e informações completas
+            chatMessage.setReactions(chatMessageService.getReactionsByMessageId(savedEntity.getId()));
+            chatMessage.setStatus("delivered");
+            
             System.out.println("Mensagem da sala salva no banco de dados");
         } catch (Exception e) {
             System.err.println("Erro ao salvar mensagem da sala: " + e.getMessage());
+            chatMessage.setStatus("failed");
         }
+        
+        // Remover usuário da lista de digitação
+        stopTyping(chatMessage.getSender(), chatMessage.getClassroomId());
         
         System.out.println("Mensagem processada e enviando para /topic/room." + chatMessage.getClassroomId());
         
@@ -183,6 +204,49 @@ public class ChatController {
         userCountData.put("classroomId", classroomId);
         
         messagingTemplate.convertAndSend("/topic/room." + classroomId + ".userCount", userCountData);
+    }
+    
+    @MessageMapping("/chat.typing")
+    public void handleTyping(@Payload Map<String, String> payload) {
+        String userEmail = payload.get("sender");
+        String senderName = payload.get("senderName");
+        String classroomId = payload.get("classroomId");
+        
+        String key = classroomId != null ? classroomId : "public";
+        typingUsers.computeIfAbsent(key, k -> ConcurrentHashMap.newKeySet()).add(userEmail);
+        
+        Map<String, Object> typingData = new HashMap<>();
+        typingData.put("userEmail", userEmail);
+        typingData.put("senderName", senderName);
+        typingData.put("typing", true);
+        typingData.put("classroomId", classroomId);
+        
+        String topic = classroomId != null ? "/topic/typing.room." + classroomId : "/topic/typing.public";
+        messagingTemplate.convertAndSend(topic, typingData);
+    }
+    
+    @MessageMapping("/chat.stopTyping")
+    public void handleStopTyping(@Payload Map<String, String> payload) {
+        String userEmail = payload.get("sender");
+        String classroomId = payload.get("classroomId");
+        
+        stopTyping(userEmail, classroomId);
+    }
+    
+    private void stopTyping(String userEmail, String classroomId) {
+        String key = classroomId != null ? classroomId : "public";
+        Set<String> users = typingUsers.get(key);
+        if (users != null) {
+            users.remove(userEmail);
+            
+            Map<String, Object> typingData = new HashMap<>();
+            typingData.put("userEmail", userEmail);
+            typingData.put("typing", false);
+            typingData.put("classroomId", classroomId);
+            
+            String topic = classroomId != null ? "/topic/typing.room." + classroomId : "/topic/typing.public";
+            messagingTemplate.convertAndSend(topic, typingData);
+        }
     }
 
     // Inner class for online user tracking
