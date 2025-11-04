@@ -42,12 +42,16 @@ export class ClassroomSettingsModalComponent implements OnChanges {
 
   private initializeFromClassroom(): void {
     if (this.classroom) {
+      console.log('[CLASSROOM-SETTINGS] Inicializando modal com dados da sala:', this.classroom);
       this.classroomName = this.classroom.name || '';
       this.academicYear = this.classroom.academicYear || '';
       // Garantir que isActive seja boolean explícito
+      const originalIsActive = this.classroom.isActive;
+      console.log('[CLASSROOM-SETTINGS] isActive original da sala:', originalIsActive, 'tipo:', typeof originalIsActive);
       this.isActive = this.classroom.isActive !== undefined && this.classroom.isActive !== null 
         ? Boolean(this.classroom.isActive) 
         : true;
+      console.log('[CLASSROOM-SETTINGS] isActive definido no componente:', this.isActive, 'tipo:', typeof this.isActive);
     }
   }
 
@@ -59,6 +63,13 @@ export class ClassroomSettingsModalComponent implements OnChanges {
     // Garantir que isActive seja boolean explícito
     const isActiveValue = Boolean(this.isActive);
 
+    console.log('[CLASSROOM-SETTINGS] ===== INICIANDO ATUALIZAÇÃO DA SALA =====');
+    console.log('[CLASSROOM-SETTINGS] Classroom ID:', this.classroom?.id);
+    console.log('[CLASSROOM-SETTINGS] Valor isActive atual no componente:', this.isActive);
+    console.log('[CLASSROOM-SETTINGS] Valor isActive atual na sala original:', this.classroom?.isActive);
+    console.log('[CLASSROOM-SETTINGS] Valor isActiveValue que será enviado:', isActiveValue);
+    console.log('[CLASSROOM-SETTINGS] Tipo de isActiveValue:', typeof isActiveValue);
+
     if (!this.classroomName.trim()) {
       this.error = 'Por favor, digite o nome da sala';
       return;
@@ -66,6 +77,7 @@ export class ClassroomSettingsModalComponent implements OnChanges {
 
     if (!this.classroom?.id) {
       this.error = 'Erro: ID da sala não encontrado';
+      console.error('[CLASSROOM-SETTINGS] ERRO: ID da sala não encontrado');
       return;
     }
 
@@ -78,14 +90,24 @@ export class ClassroomSettingsModalComponent implements OnChanges {
       isActive: isActiveValue
     };
 
+    console.log('[CLASSROOM-SETTINGS] Payload completo a ser enviado:', JSON.stringify(updateData, null, 2));
+    console.log('[CLASSROOM-SETTINGS] URL da requisição:', `http://localhost:8080/api/classrooms/${this.classroom.id}`);
+
     this.http.put(`http://localhost:8080/api/classrooms/${this.classroom.id}`, updateData, {
       headers: this.getAuthHeaders()
     }).subscribe({
       next: (updatedClassroom: any) => {
+        console.log('[CLASSROOM-SETTINGS] ===== RESPOSTA DO BACKEND RECEBIDA =====');
+        console.log('[CLASSROOM-SETTINGS] Resposta completa:', JSON.stringify(updatedClassroom, null, 2));
+        console.log('[CLASSROOM-SETTINGS] isActive retornado pelo backend:', updatedClassroom.isActive);
+        console.log('[CLASSROOM-SETTINGS] Tipo de isActive retornado:', typeof updatedClassroom.isActive);
         
         // Garantir que o isActive retornado seja boolean
         if (updatedClassroom.isActive !== undefined && updatedClassroom.isActive !== null) {
           updatedClassroom.isActive = Boolean(updatedClassroom.isActive);
+          console.log('[CLASSROOM-SETTINGS] isActive convertido para boolean:', updatedClassroom.isActive);
+        } else {
+          console.warn('[CLASSROOM-SETTINGS] ATENÇÃO: isActive não veio na resposta do backend!');
         }
         
         this.isLoading = false;
@@ -93,8 +115,15 @@ export class ClassroomSettingsModalComponent implements OnChanges {
         this.classroomUpdated.emit(updatedClassroom);
         // Fechar o modal
         this.close.emit();
+        console.log('[CLASSROOM-SETTINGS] ===== ATUALIZAÇÃO CONCLUÍDA =====');
       },
       error: (error) => {
+        console.error('[CLASSROOM-SETTINGS] ===== ERRO NA ATUALIZAÇÃO =====');
+        console.error('[CLASSROOM-SETTINGS] Status do erro:', error?.status);
+        console.error('[CLASSROOM-SETTINGS] Erro completo:', error);
+        console.error('[CLASSROOM-SETTINGS] Mensagem de erro:', error.error?.message || error.message);
+        console.error('[CLASSROOM-SETTINGS] Body do erro:', error.error);
+        
         this.isLoading = false;
         if (error?.status === 0) {
           this.error = 'Erro de conexão. Verifique se o backend está rodando.';

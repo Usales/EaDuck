@@ -168,6 +168,13 @@ export class ChatHubComponent implements OnInit, OnDestroy {
 
 
   openChat(classroom: ClassroomChat) {
+    // Verificar se a sala está inativa e se o usuário não é admin
+    // Se estiver inativa e não for admin, não permite entrar
+    if (!classroom.isActive && !this.isAdmin) {
+      console.log('[CHAT-HUB] Tentativa de acessar sala inativa bloqueada para não-admin');
+      return;
+    }
+    
     // Navegar para o chat da sala específica
     this.router.navigate(['/chat'], { 
       queryParams: { 

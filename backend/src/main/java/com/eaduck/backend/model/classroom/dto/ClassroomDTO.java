@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 @Data
@@ -20,5 +21,7 @@ public class ClassroomDTO {
     private List<Long> studentIds;
     private List<String> studentNames;
     private boolean active;
+    
+    @JsonProperty("isActive")
     private boolean isActive;
 } 

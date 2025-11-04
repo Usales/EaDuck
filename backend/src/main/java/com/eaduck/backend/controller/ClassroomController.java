@@ -91,6 +91,13 @@ public class ClassroomController {
             return ResponseEntity.status(403).build();
         }
 
+        // Verifica se a sala está inativa e se o usuário não é admin
+        // Se a sala estiver inativa e o usuário não for admin, bloqueia o acesso
+        boolean isActive = classroom.getIsActive() != null ? classroom.getIsActive() : true;
+        if (!isActive && user.getRole() != Role.ADMIN) {
+            return ResponseEntity.status(403).body(null);
+        }
+
         ClassroomDTO dto = ClassroomDTO.builder()
             .id(classroom.getId())
             .name(classroom.getName())
@@ -101,7 +108,7 @@ public class ClassroomController {
             .studentNames(classroom.getStudents().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
             .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
             .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
-            .isActive(classroom.getIsActive() != null ? classroom.getIsActive() : true)
+            .isActive(isActive)
             .build();
         return ResponseEntity.ok(dto);
     }
@@ -152,15 +159,27 @@ public class ClassroomController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
     public ResponseEntity<?> updateClassroom(@PathVariable Long id, @RequestBody ClassroomUpdateDTO updateDTO, Authentication authentication) {
+        System.out.println("========================================");
+        System.out.println("[CLASSROOM-CONTROLLER] ===== INICIANDO ATUALIZAÇÃO DA SALA =====");
+        System.out.println("[CLASSROOM-CONTROLLER] Sala ID recebido: " + id);
+        System.out.println("[CLASSROOM-CONTROLLER] DTO recebido completo: " + updateDTO);
+        System.out.println("[CLASSROOM-CONTROLLER] DTO.isActive recebido: " + updateDTO.getIsActive());
+        System.out.println("[CLASSROOM-CONTROLLER] Tipo de isActive: " + (updateDTO.getIsActive() != null ? updateDTO.getIsActive().getClass().getName() : "null"));
+        
         User user = userRepository.findByEmail(authentication.getName()).orElse(null);
         if (user == null) {
+            System.out.println("[CLASSROOM-CONTROLLER] ERRO: Usuário não encontrado");
             return ResponseEntity.badRequest().build();
         }
 
         Classroom classroom = classroomRepository.findById(id).orElse(null);
         if (classroom == null) {
+            System.out.println("[CLASSROOM-CONTROLLER] ERRO: Sala não encontrada com ID: " + id);
             return ResponseEntity.notFound().build();
         }
+
+        System.out.println("[CLASSROOM-CONTROLLER] Sala encontrada: " + classroom.getName());
+        System.out.println("[CLASSROOM-CONTROLLER] isActive ANTES da atualização: " + classroom.getIsActive());
 
         // Verifica se o usuário tem permissão para editar a sala
         boolean canEdit = false;
@@ -171,35 +190,55 @@ public class ClassroomController {
         }
 
         if (!canEdit) {
+            System.out.println("[CLASSROOM-CONTROLLER] ERRO: Usuário não tem permissão para editar");
             return ResponseEntity.status(403).body("Você não tem permissão para editar esta sala");
         }
 
         // Atualiza os campos fornecidos
         if (updateDTO.getName() != null && !updateDTO.getName().trim().isEmpty()) {
+            System.out.println("[CLASSROOM-CONTROLLER] Atualizando nome: " + updateDTO.getName());
             classroom.setName(updateDTO.getName().trim());
         }
         if (updateDTO.getAcademicYear() != null) {
+            System.out.println("[CLASSROOM-CONTROLLER] Atualizando ano acadêmico: " + updateDTO.getAcademicYear());
             classroom.setAcademicYear(updateDTO.getAcademicYear());
         }
         if (updateDTO.getIsActive() != null) {
+            System.out.println("[CLASSROOM-CONTROLLER] Atualizando isActive: " + updateDTO.getIsActive());
             classroom.setIsActive(updateDTO.getIsActive());
+            System.out.println("[CLASSROOM-CONTROLLER] isActive definido na entidade: " + classroom.getIsActive());
+        } else {
+            System.out.println("[CLASSROOM-CONTROLLER] ATENÇÃO: isActive é null no DTO, não será atualizado");
         }
 
-        classroomRepository.save(classroom);
+        System.out.println("[CLASSROOM-CONTROLLER] Salvando sala no banco de dados...");
+        Classroom savedClassroom = classroomRepository.save(classroom);
+        System.out.println("[CLASSROOM-CONTROLLER] Sala salva com sucesso");
+        System.out.println("[CLASSROOM-CONTROLLER] isActive DEPOIS de salvar: " + savedClassroom.getIsActive());
+        
+        // Verificar se realmente foi salvo no banco
+        Classroom verifyClassroom = classroomRepository.findById(id).orElse(null);
+        if (verifyClassroom != null) {
+            System.out.println("[CLASSROOM-CONTROLLER] Verificação no banco - isActive: " + verifyClassroom.getIsActive());
+        }
 
         // Retorna o DTO atualizado
         ClassroomDTO dto = ClassroomDTO.builder()
-            .id(classroom.getId())
-            .name(classroom.getName())
-            .academicYear(classroom.getAcademicYear())
-            .teacherIds(classroom.getTeachers().stream().map(User::getId).toList())
-            .teacherNames(classroom.getTeachers().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
-            .studentIds(classroom.getStudents().stream().map(User::getId).toList())
-            .studentNames(classroom.getStudents().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
-            .studentCount(classroom.getStudents() != null ? classroom.getStudents().size() : 0)
-            .active(classroom.getStudents() != null && !classroom.getStudents().isEmpty())
-            .isActive(classroom.getIsActive() != null ? classroom.getIsActive() : true)
+            .id(savedClassroom.getId())
+            .name(savedClassroom.getName())
+            .academicYear(savedClassroom.getAcademicYear())
+            .teacherIds(savedClassroom.getTeachers().stream().map(User::getId).toList())
+            .teacherNames(savedClassroom.getTeachers().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
+            .studentIds(savedClassroom.getStudents().stream().map(User::getId).toList())
+            .studentNames(savedClassroom.getStudents().stream().map(u -> u.getName() != null ? u.getName() : u.getEmail()).toList())
+            .studentCount(savedClassroom.getStudents() != null ? savedClassroom.getStudents().size() : 0)
+            .active(savedClassroom.getStudents() != null && !savedClassroom.getStudents().isEmpty())
+            .isActive(savedClassroom.getIsActive() != null ? savedClassroom.getIsActive() : true)
             .build();
+
+        System.out.println("[CLASSROOM-CONTROLLER] DTO.isActive que será retornado: " + dto.isActive());
+        System.out.println("[CLASSROOM-CONTROLLER] ===== ATUALIZAÇÃO CONCLUÍDA ======");
+        System.out.println("========================================");
 
         return ResponseEntity.ok(dto);
     }

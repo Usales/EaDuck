@@ -47,8 +47,18 @@ public class ChatController {
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
         // Manter o senderName que já foi enviado pelo frontend
-        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
-        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
+        // Usar o role enviado pelo frontend se disponível, caso contrário buscar no banco
+        if (chatMessage.getSenderRole() == null || chatMessage.getSenderRole().isEmpty()) {
+            chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
+        } else {
+            // Validar que o role do frontend corresponde ao role do banco
+            String roleFromDb = getUserRole(chatMessage.getSender());
+            if (!roleFromDb.equals(chatMessage.getSenderRole())) {
+                System.out.println("ATENÇÃO: Role do frontend (" + chatMessage.getSenderRole() + 
+                    ") não corresponde ao role do banco (" + roleFromDb + "). Usando role do banco.");
+                chatMessage.setSenderRole(roleFromDb);
+            }
+        }
         
         // Salvar mensagem no banco de dados
         try {
@@ -116,11 +126,26 @@ public class ChatController {
         System.out.println("Remetente: " + chatMessage.getSender());
         System.out.println("Nome do remetente: " + chatMessage.getSenderName());
         System.out.println("ID da Sala: " + chatMessage.getClassroomId());
+        System.out.println("Role enviado pelo frontend: " + chatMessage.getSenderRole());
         
         chatMessage.setTimestamp(new Date());
         chatMessage.setMessage(chatMessage.getContent());
         // Manter o senderName que já foi enviado pelo frontend
-        chatMessage.setSenderRole(getUserRole(chatMessage.getSender()));
+        // Usar o role enviado pelo frontend se disponível, caso contrário buscar no banco
+        if (chatMessage.getSenderRole() == null || chatMessage.getSenderRole().isEmpty()) {
+            String roleFromDb = getUserRole(chatMessage.getSender());
+            System.out.println("Role não encontrado no frontend, buscando no banco: " + roleFromDb);
+            chatMessage.setSenderRole(roleFromDb);
+        } else {
+            System.out.println("Usando role do frontend: " + chatMessage.getSenderRole());
+            // Validar que o role do frontend corresponde ao role do banco
+            String roleFromDb = getUserRole(chatMessage.getSender());
+            if (!roleFromDb.equals(chatMessage.getSenderRole())) {
+                System.out.println("ATENÇÃO: Role do frontend (" + chatMessage.getSenderRole() + 
+                    ") não corresponde ao role do banco (" + roleFromDb + "). Usando role do banco.");
+                chatMessage.setSenderRole(roleFromDb);
+            }
+        }
         
         // Salvar mensagem no banco de dados
         try {

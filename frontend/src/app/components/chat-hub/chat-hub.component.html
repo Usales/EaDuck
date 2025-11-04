@@ -425,11 +425,22 @@
                'border-gray-700': isDarkMode()
              }">
           <button 
+            *ngIf="classroom.isActive || isAdmin"
             class="w-full py-2 px-4 rounded-lg font-medium transition-all"
             [ngClass]="{
               'bg-blue-600 text-white hover:bg-blue-700': true
             }">
             Entrar na Conversa
+          </button>
+          <button 
+            *ngIf="!classroom.isActive && !isAdmin"
+            class="w-full py-2 px-4 rounded-lg font-medium transition-all cursor-not-allowed"
+            [ngClass]="{
+              'bg-gray-400 text-white': !isDarkMode(),
+              'bg-gray-600 text-gray-300': isDarkMode()
+            }"
+            disabled>
+            🔒 Conversa Inativada
           </button>
         </div>
       </div>

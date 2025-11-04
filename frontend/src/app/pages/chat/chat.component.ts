@@ -68,21 +68,26 @@ export class ChatComponent implements OnInit, OnDestroy {
   
   // Novos estados
   replyingTo: ChatMessage | null = null;
-  typingUsers: Set<string> = new Set();
+  typingUsers: Map<string, string> = new Map(); // email -> nome
   currentUserEmail: string | null = null;
   
-  get typingUsersArray(): string[] {
-    // Filtrar o próprio usuário e retornar apenas outros usuários
-    const filtered = Array.from(this.typingUsers).filter(email => email !== this.currentUserEmail);
+  get typingUsersArray(): Array<{email: string, name: string}> {
+    // Filtrar o próprio usuário e retornar apenas outros usuários com nome
+    const filtered: Array<{email: string, name: string}> = [];
+    this.typingUsers.forEach((name, email) => {
+      if (email !== this.currentUserEmail) {
+        filtered.push({ email, name });
+      }
+    });
     return filtered;
   }
   
   get typingDisplayText(): string {
     const typingArray = this.typingUsersArray;
     if (typingArray.length === 0) return '';
-    if (typingArray.length === 1) return `${typingArray[0]} está digitando`;
-    if (typingArray.length === 2) return `${typingArray[0]} e ${typingArray[1]} estão digitando`;
-    if (typingArray.length <= 3) return `${typingArray[0]}, ${typingArray[1]} e ${typingArray[2]} estão digitando`;
+    if (typingArray.length === 1) return `${typingArray[0].name} está digitando`;
+    if (typingArray.length === 2) return `${typingArray[0].name} e ${typingArray[1].name} estão digitando`;
+    if (typingArray.length <= 3) return `${typingArray[0].name}, ${typingArray[1].name} e ${typingArray[2].name} estão digitando`;
     return 'Várias pessoas estão digitando';
   }
   selectedFile: File | null = null;
@@ -180,6 +185,12 @@ export class ChatComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (response) => {
             if (response.status === 200) {
+              const classroom = response.body;
+              // Verificar se a sala está inativa e se o usuário não é admin
+              if (classroom && !classroom.isActive && user?.role !== 'ADMIN') {
+                this.showAccessError('Esta conversa está inativada. Apenas administradores podem acessar conversas inativas. Volte para o HUB e selecione outra conversa.');
+                return;
+              }
               // Usuário tem acesso
               this.accessError = false;
               this.accessErrorMessage = '';
@@ -189,7 +200,8 @@ export class ChatComponent implements OnInit, OnDestroy {
           error: (error) => {
             console.error('Erro ao validar acesso à sala:', error);
             if (error.status === 403) {
-              this.showAccessError('Este bate-papo não existe, foi excluído ou você não tem permissão para acessá-lo! Volte para o HUB e selecione outro.');
+              // Pode ser que a sala esteja inativa ou o usuário não tenha permissão
+              this.showAccessError('Esta conversa está inativada ou você não tem permissão para acessá-la. Apenas administradores podem acessar conversas inativas. Volte para o HUB e selecione outra conversa.');
             } else if (error.status === 404) {
               this.showAccessError('Este bate-papo não existe, foi excluído ou você não tem permissão para acessá-lo! Volte para o HUB e selecione outro.');
             } else {
@@ -353,10 +365,11 @@ export class ChatComponent implements OnInit, OnDestroy {
               try {
                 const data = JSON.parse(message.body);
                 const userIdentifier = data.sender || data.senderEmail || data.userEmail;
+                const userName = data.senderName || userIdentifier;
                 // Não adicionar o próprio usuário
                 if (userIdentifier && userIdentifier !== this.currentUserEmail) {
                   if (data.typing) {
-                    this.typingUsers.add(userIdentifier);
+                    this.typingUsers.set(userIdentifier, userName);
                   } else {
                     this.typingUsers.delete(userIdentifier);
                   }
@@ -364,6 +377,31 @@ export class ChatComponent implements OnInit, OnDestroy {
                 }
               } catch (error) {
                 console.error('Erro ao processar evento de digitação da sala:', error);
+              }
+            });
+            
+            // Assinar atualizações de reações em tempo real
+            this.stompClient!.subscribe(`/topic/reactions.room.${this.classroomId}`, (message: any) => {
+              try {
+                const data = JSON.parse(message.body);
+                const messageId = data.messageId?.toString();
+                const reactions = data.reactions;
+                
+                console.log('[REACTIONS] Broadcast recebido via WebSocket:', { messageId, reactions });
+                
+                if (messageId && reactions) {
+                  const messageIndex = this.messages.findIndex(m => m.id === messageId);
+                  if (messageIndex !== -1) {
+                    console.log('[REACTIONS] Atualizando mensagem no índice:', messageIndex, 'com reações:', reactions);
+                    this.messages[messageIndex].reactions = reactions;
+                    this.cdr.markForCheck();
+                    console.log('[REACTIONS] Mensagem atualizada com sucesso');
+                  } else {
+                    console.warn('[REACTIONS] Mensagem não encontrada para atualização via broadcast:', messageId);
+                  }
+                }
+              } catch (error) {
+                console.error('[REACTIONS] Erro ao processar atualização de reações:', error);
               }
             });
 
@@ -412,10 +450,11 @@ export class ChatComponent implements OnInit, OnDestroy {
               try {
                 const data = JSON.parse(message.body);
                 const userIdentifier = data.sender || data.senderEmail || data.userEmail;
+                const userName = data.senderName || userIdentifier;
                 // Não adicionar o próprio usuário
                 if (userIdentifier && userIdentifier !== this.currentUserEmail) {
                   if (data.typing) {
-                    this.typingUsers.add(userIdentifier);
+                    this.typingUsers.set(userIdentifier, userName);
                   } else {
                     this.typingUsers.delete(userIdentifier);
                   }
@@ -423,6 +462,31 @@ export class ChatComponent implements OnInit, OnDestroy {
                 }
               } catch (error) {
                 console.error('Erro ao processar evento de digitação:', error);
+              }
+            });
+            
+            // Assinar atualizações de reações em tempo real
+            this.stompClient!.subscribe('/topic/reactions.public', (message: any) => {
+              try {
+                const data = JSON.parse(message.body);
+                const messageId = data.messageId?.toString();
+                const reactions = data.reactions;
+                
+                console.log('[REACTIONS] Broadcast recebido via WebSocket (chat geral):', { messageId, reactions });
+                
+                if (messageId && reactions) {
+                  const messageIndex = this.messages.findIndex(m => m.id === messageId);
+                  if (messageIndex !== -1) {
+                    console.log('[REACTIONS] Atualizando mensagem no índice:', messageIndex, 'com reações:', reactions);
+                    this.messages[messageIndex].reactions = reactions;
+                    this.cdr.markForCheck();
+                    console.log('[REACTIONS] Mensagem atualizada com sucesso');
+                  } else {
+                    console.warn('[REACTIONS] Mensagem não encontrada para atualização via broadcast:', messageId);
+                  }
+                }
+              } catch (error) {
+                console.error('[REACTIONS] Erro ao processar atualização de reações:', error);
               }
             });
 
@@ -549,6 +613,7 @@ export class ChatComponent implements OnInit, OnDestroy {
       content: messageContent,
       sender: user.email,
       senderName: user.name || user.email,
+      senderRole: user.role, // Garantir que o role seja incluído na mensagem local
       isMine: true,
       timestamp: new Date(),
       classroomId: this.classroomId,
@@ -735,12 +800,19 @@ export class ChatComponent implements OnInit, OnDestroy {
         // Atualizar mensagem existente com dados do servidor (incluindo status e repliedToMessage)
         const existingMessage = this.messages[existingMessageIndex];
         
+        // Preservar o senderRole da mensagem local se ela existir e for uma mensagem própria
+        // Isso garante que o role correto seja mantido mesmo se o backend retornar incorreto
+        const preservedSenderRole = isMyMessage && existingMessage.senderRole 
+          ? existingMessage.senderRole 
+          : (message.senderRole || existingMessage.senderRole);
+        
         // Atualizar com o ID do servidor (mais confiável)
         this.messages[existingMessageIndex] = {
           ...existingMessage,
           ...message,
           id: message.id || existingMessage.id, // Usar ID do servidor se disponível
           isMine: true, // Manter como mensagem própria
+          senderRole: preservedSenderRole, // Preservar o role correto
           status: message.status || 'delivered', // Atualizar status do servidor
           // Manter repliedToMessage se já existir e a nova mensagem não tiver
           repliedToMessage: message.repliedToMessage || existingMessage.repliedToMessage,
@@ -907,29 +979,67 @@ export class ChatComponent implements OnInit, OnDestroy {
   
   // Sistema de reações
   addReaction(messageId: string, emoji: string): void {
-    if (!this.stompClient || !this.connected) return;
+    if (!this.stompClient || !this.connected) {
+      console.warn('[REACTIONS] WebSocket não conectado, não é possível adicionar reação');
+      return;
+    }
     
-    let currentUser: User | null = null;
     this.currentUser$.pipe(take(1)).subscribe(user => {
-      currentUser = user;
-    });
-    
-    if (!currentUser) return;
-    
-    this.http.post(`http://localhost:8080/api/chat/message/${messageId}/reaction`, { emoji })
-      .subscribe({
-        next: (response: any) => {
-          // Atualizar reações na mensagem local
-          const message = this.messages.find(m => m.id === messageId);
-          if (message) {
-            message.reactions = response.reactions;
-            this.cdr.markForCheck();
-          }
-        },
-        error: (error) => {
-          console.error('Erro ao adicionar reação:', error);
+      if (!user) {
+        console.warn('[REACTIONS] Usuário não autenticado, não é possível adicionar reação');
+        return;
+      }
+      
+      const currentUser = user as User;
+      console.log('[REACTIONS] Adicionando reação:', { messageId, emoji, user: currentUser.email });
+      
+      // Verificar estado atual antes de enviar
+      const message = this.messages.find(m => m.id === messageId);
+      if (message) {
+        const existingReaction = message.reactions?.find((r: MessageReaction) => r.emoji === emoji);
+        const userAlreadyReacted = existingReaction?.userEmails?.includes(currentUser.email) || false;
+        
+        console.log('[REACTIONS] Estado atual:', { 
+          existingReaction, 
+          userAlreadyReacted,
+          currentReactions: message.reactions,
+          userEmail: currentUser.email
+        });
+        
+        if (userAlreadyReacted) {
+          // Se já reagiu, remover (toggle)
+          console.log('[REACTIONS] Usuário já reagiu, removendo reação');
+        } else {
+          // Se não reagiu, adicionar
+          console.log('[REACTIONS] Usuário ainda não reagiu, adicionando reação');
         }
-      });
+      }
+      
+      this.http.post(`http://localhost:8080/api/chat/message/${messageId}/reaction`, { emoji })
+        .subscribe({
+          next: (response: any) => {
+            console.log('[REACTIONS] Resposta do backend:', response);
+            // Atualizar reações na mensagem local
+            const message = this.messages.find(m => m.id === messageId);
+            if (message) {
+              console.log('[REACTIONS] Reações antes da atualização:', message.reactions);
+              message.reactions = response.reactions;
+              console.log('[REACTIONS] Reações após atualização:', message.reactions);
+              this.cdr.markForCheck();
+            } else {
+              console.warn('[REACTIONS] Mensagem não encontrada para atualizar:', messageId);
+            }
+          },
+          error: (error) => {
+            console.error('[REACTIONS] Erro ao adicionar reação:', error);
+            console.error('[REACTIONS] Detalhes do erro:', {
+              status: error.status,
+              message: error.message,
+              error: error.error
+            });
+          }
+        });
+    });
   }
   
   showReactionPickerForMessage(messageId: string, event?: Event): void {

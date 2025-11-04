@@ -630,6 +630,9 @@ input:focus {
 .message-actions {
   transition: opacity 0.2s ease;
   pointer-events: auto;
+  top: 0;
+  transform: translateY(-100%);
+  margin-top: -8px;
   
   button {
     pointer-events: auto;
@@ -637,7 +640,17 @@ input:focus {
   }
 }
 
+.message-actions-right {
+  right: 0;
+}
+
+.message-actions-left {
+  left: 0;
+}
+
 .message-bubble {
+  position: relative;
+  
   &:hover .message-actions {
     opacity: 1 !important;
   }
