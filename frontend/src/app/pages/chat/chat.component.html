@@ -1,30 +1,31 @@
 <div class="chat-container h-screen flex flex-col" [attr.data-theme]="currentTheme">
   <!-- Header -->
-  <div class="chat-header p-4 flex items-center justify-between">
-    <div class="flex items-center space-x-3">
-      <div>
-        <h1 class="text-xl font-bold">{{ classroomName }}</h1>
-        <p class="text-sm opacity-75" *ngIf="isRoomChat">Sala de Aula</p>
-        <p class="text-sm opacity-75" *ngIf="!isRoomChat">Chat Geral</p>
+  <div class="chat-header p-3 md:p-4 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+    <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+      <div class="min-w-0 flex-1">
+        <h1 class="text-lg md:text-xl font-bold truncate">{{ classroomName }}</h1>
+        <p class="text-xs md:text-sm opacity-75 truncate" *ngIf="isRoomChat">Sala de Aula</p>
+        <p class="text-xs md:text-sm opacity-75 truncate" *ngIf="!isRoomChat">Chat Geral</p>
       </div>
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
         <div class="w-2 h-2 rounded-full" [ngClass]="connected ? 'bg-green-500' : 'bg-red-500'"></div>
-        <span class="text-sm">{{ connected ? 'Conectado' : 'Desconectado' }}</span>
+        <span class="text-xs md:text-sm whitespace-nowrap">{{ connected ? 'Conectado' : 'Desconectado' }}</span>
       </div>
     </div>
     
-    <div class="flex items-center space-x-4">
-      <span class="text-sm">{{ onlineUsers }} online</span>
+    <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+      <span class="text-xs md:text-sm whitespace-nowrap">{{ onlineUsers }} online</span>
       
       <!-- Back to Hub Button -->
       <button 
         (click)="goToChatHub()"
-        class="px-3 py-1 text-sm rounded-lg transition-all"
+        class="px-2 md:px-3 py-1 text-xs md:text-sm rounded-lg transition-all whitespace-nowrap"
         [ngClass]="{
           'bg-gray-200 text-gray-700 hover:bg-gray-300': !isDarkMode(),
           'bg-gray-700 text-gray-300 hover:bg-gray-600': isDarkMode()
         }">
-        ← HUB
+        <span class="hidden sm:inline">← HUB</span>
+        <span class="sm:hidden">HUB</span>
       </button>
     </div>
   </div>
@@ -336,15 +337,15 @@
       </div>
     </div>
     
-    <div class="flex space-x-2 items-end">
+    <div class="flex flex-nowrap gap-2 items-end w-full">
       <!-- Botões de ação -->
-      <div class="flex gap-1">
-        <button (click)="fileInput.click()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Anexar arquivo">
+      <div class="flex gap-1 flex-shrink-0">
+        <button (click)="fileInput.click()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-shrink-0" title="Anexar arquivo">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
           </svg>
         </button>
-        <button *ngIf="!isRecording" (click)="startRecording()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Gravar áudio">
+        <button *ngIf="!isRecording" (click)="startRecording()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-shrink-0" title="Gravar áudio">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
           </svg>
@@ -365,21 +366,22 @@
         (keydown)="onTyping()"
         (keydown.enter)="sendMessage()"
         placeholder="Digite sua mensagem..."
-        class="flex-1 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 transition-all">
+        class="flex-1 min-w-0 rounded-lg px-3 md:px-4 py-2 focus:outline-none focus:ring-2 transition-all">
       
       <button 
         *ngIf="selectedFiles.length === 0 && !selectedFile && !isRecording"
         (click)="sendMessage()"
         [disabled]="!newMessage.trim() && !replyingTo"
-        class="px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+        class="px-3 md:px-6 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap">
         Enviar
       </button>
       
       <button 
         *ngIf="(selectedFiles.length > 0 || selectedFile) && !isRecording"
         (click)="uploadFile()"
-        class="px-6 py-2 rounded-lg font-medium transition-all bg-green-500 text-white hover:bg-green-600">
-        Enviar {{ selectedFiles.length > 0 ? selectedFiles.length + ' ' : '' }}Arquivo{{ selectedFiles.length > 1 ? 's' : '' }}
+        class="px-3 md:px-6 py-2 rounded-lg font-medium transition-all bg-green-500 text-white hover:bg-green-600 flex-shrink-0 whitespace-nowrap text-xs md:text-sm">
+        <span class="hidden sm:inline">Enviar {{ selectedFiles.length > 0 ? selectedFiles.length + ' ' : '' }}Arquivo{{ selectedFiles.length > 1 ? 's' : '' }}</span>
+        <span class="sm:hidden">Enviar</span>
       </button>
     </div>
   </div>

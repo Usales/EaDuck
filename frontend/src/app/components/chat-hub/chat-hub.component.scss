@@ -1,4 +1,10 @@
 .chat-hub-container {
+  height: 100vh;
+  height: 100dvh; // Dynamic viewport height for mobile
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  
   .classroom-card {
     &:hover {
       transform: translateY(-2px);
@@ -6,10 +12,113 @@
   }
   
   .search-section {
+    flex-shrink: 0;
+    overflow-x: hidden;
+    overflow-y: visible;
+    min-height: fit-content;
+    max-height: fit-content;
+    
     input {
       &::placeholder {
         color: var(--text-secondary);
       }
+    }
+    
+    .filters-container {
+      overflow-x: hidden;
+      overflow-y: visible;
+      
+      // Em desktop, sempre mostrar
+      @media (min-width: 768px) {
+        display: block !important;
+      }
+      
+      // Em mobile, controlar visibilidade
+      @media (max-width: 767px) {
+        &.hidden {
+          display: none;
+        }
+        
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+    }
+  }
+  
+  .chat-hub-header {
+    flex-shrink: 0;
+    overflow-x: hidden;
+    min-height: fit-content;
+  }
+  
+  // Garantir que a área de conteúdo seja scrollável
+  .content-scrollable {
+    flex: 1 1 auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// Responsive design for mobile
+@media (max-width: 768px) {
+  .chat-hub-container {
+    .chat-hub-header {
+      padding: 0.5rem 0.75rem;
+      
+      h1 {
+        font-size: 1rem;
+        margin-bottom: 0.125rem;
+      }
+      
+      p {
+        font-size: 0.75rem;
+      }
+    }
+    
+    .search-section {
+      padding: 0.5rem 0.75rem;
+      max-height: none;
+      
+      // Grid de filtros responsivo
+      .grid {
+        overflow-x: visible;
+      }
+      
+      // Labels e inputs menores em mobile
+      label {
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+      }
+      
+      select, input {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+      }
+    }
+    
+    .content-scrollable {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
+
+// Extra small screens
+@media (max-width: 480px) {
+  .chat-hub-container {
+    .chat-hub-header {
+      padding: 0.5rem;
+      
+      h1 {
+        font-size: 0.9375rem;
+      }
+    }
+    
+    .search-section {
+      padding: 0.5rem;
+    }
+    
+    .content-scrollable {
+      padding-top: 0.25rem;
     }
   }
 }

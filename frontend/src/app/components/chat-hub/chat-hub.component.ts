@@ -64,6 +64,9 @@ export class ChatHubComponent implements OnInit, OnDestroy {
   // Modal de configurações
   showSettingsModal = false;
   selectedClassroom: ClassroomChat | null = null;
+  
+  // Controle de filtros colapsados em mobile
+  filtersExpanded = false;
 
   constructor(
     private http: HttpClient,
