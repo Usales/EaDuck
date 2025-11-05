@@ -456,14 +456,34 @@ export class TasksComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Erro ao fazer upload do arquivo:', file.name, error);
+          
+          // Determinar mensagem de erro
+          let errorMessage = 'Erro ao fazer upload do arquivo.';
+          if (error.status === 413 || error.status === 0) {
+            errorMessage = `O arquivo "${file.name}" é muito grande. Tamanho máximo permitido: 8MB`;
+          } else if (error.status === 400) {
+            errorMessage = `Tipo de arquivo não permitido para "${file.name}". Tipos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, GIF, WEBP, MP4, AVI, MOV, ZIP, RAR`;
+          } else if (error.status === 403) {
+            errorMessage = `Você não tem permissão para fazer upload do arquivo "${file.name}"`;
+          }
+          
+          this.fileErrors.push(errorMessage);
           this.uploadProgress[file.name] = 100;
           completedUploads++;
           
           if (completedUploads === totalFiles) {
-            this.loadingStatus = 'success';
-            this.resetForm();
-            this.loadTasks();
-            setTimeout(() => this.showLoadingModal = false, 2000);
+            if (this.fileErrors.length > 0) {
+              this.loadingStatus = 'error';
+              setTimeout(() => {
+                this.showLoadingModal = false;
+                this.fileErrors = [];
+              }, 3000);
+            } else {
+              this.loadingStatus = 'success';
+              this.resetForm();
+              this.loadTasks();
+              setTimeout(() => this.showLoadingModal = false, 2000);
+            }
           }
         }
       });
@@ -512,18 +532,34 @@ export class TasksComponent implements OnInit, OnDestroy {
           const idx = this.submissions.findIndex(s => s && s.id === updated.id);
           if (idx !== -1) {
             this.submissions[idx] = updated;
+          } else {
+            // Se não encontrou, adiciona a lista
+            this.submissions.push(updated);
           }
           
-          // Atualiza a submissão na lista filtrada
-          if (this.selectedTask) {
-            const filteredIdx = this.filteredSubmissions.findIndex(s => s.id === updated.id);
-            if (filteredIdx !== -1) {
-              this.filteredSubmissions[filteredIdx] = updated;
-            }
+          // Recarrega todas as submissões para garantir que está atualizado
+          if (this.currentUser && this.currentUser.role !== 'STUDENT') {
+            this.submissionService.getAllSubmissions().subscribe((allSubmissions: Submission[]) => {
+              const taskIds = this.tasks.map(t => t.id).filter(id => !!id) as number[];
+              this.submissions = allSubmissions.filter((sub: Submission) => 
+                taskIds.includes(sub.taskId)
+              );
+              
+              // Atualiza a lista filtrada do modal
+              if (this.selectedTask) {
+                this.filteredSubmissions = this.submissions.filter(s => s.taskId === this.selectedTask?.id);
+              }
+            });
           }
         }
         this.closeEvalModal();
         this.showEvalSuccessModal = true;
+        
+        // Atualizar o modal de submissões se estiver aberto
+        if (this.showSubmissionsModal && this.selectedTask) {
+          // Recarregar as submissões para o modal
+          this.filteredSubmissions = this.submissions.filter(s => s.taskId === this.selectedTask?.id);
+        }
       },
       error: (error) => {
         console.error('Erro ao avaliar submissão:', error);
@@ -729,5 +765,30 @@ export class TasksComponent implements OnInit, OnDestroy {
   getSubmissionsForTask(taskId: number | undefined): Submission[] {
     if (!taskId) return [];
     return this.submissions.filter(s => s.taskId === taskId);
+  }
+
+  // Obter a nota do aluno atual para uma tarefa específica
+  getMyGradeForTask(taskId: number | undefined): number | null {
+    if (!taskId || !this.currentUser) return null;
+    const mySubmission = this.submissions.find(s => 
+      s.taskId === taskId && 
+      s.studentId === this.currentUser?.id
+    );
+    return mySubmission?.grade !== undefined && mySubmission?.grade !== null ? mySubmission.grade : null;
+  }
+
+  // Verificar se a tarefa foi avaliada para o aluno atual
+  hasGradeForTask(taskId: number | undefined): boolean {
+    return this.getMyGradeForTask(taskId) !== null;
+  }
+
+  // Obter o feedback da submissão do aluno atual para uma tarefa
+  getMySubmissionFeedback(taskId: number | undefined): string | null {
+    if (!taskId || !this.currentUser) return null;
+    const mySubmission = this.submissions.find(s => 
+      s.taskId === taskId && 
+      s.studentId === this.currentUser?.id
+    );
+    return mySubmission?.feedback || null;
   }
 }
