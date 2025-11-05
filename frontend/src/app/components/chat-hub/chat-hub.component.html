@@ -67,13 +67,13 @@
         </div>
       </div>
       <div class="flex gap-2">
-        <button 
-          (click)="clearFilters()"
+      <button 
+        (click)="clearFilters()"
           class="px-3 md:px-4 py-2 rounded-lg font-medium transition-all text-sm md:text-base whitespace-nowrap flex-shrink-0"
-          [ngClass]="{
-            'bg-gray-200 text-gray-700 hover:bg-gray-300': !isDarkMode(),
-            'bg-gray-600 text-gray-300 hover:bg-gray-500': isDarkMode()
-          }">
+        [ngClass]="{
+          'bg-gray-200 text-gray-700 hover:bg-gray-300': !isDarkMode(),
+          'bg-gray-600 text-gray-300 hover:bg-gray-500': isDarkMode()
+        }">
           <span class="hidden sm:inline">🗑️ Limpar</span>
           <span class="sm:hidden">🗑️</span>
         </button>
@@ -88,7 +88,7 @@
           }">
           <span *ngIf="!filtersExpanded">⚙️ Filtros</span>
           <span *ngIf="filtersExpanded">✕ Fechar</span>
-        </button>
+      </button>
       </div>
     </div>
 
@@ -294,15 +294,15 @@
 
     <!-- Classrooms Grid -->
     <div *ngIf="!isLoading && filteredClassrooms.length > 0" class="p-2 md:p-3 lg:p-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
-      <div 
-        *ngFor="let classroom of filteredClassrooms"
-        (click)="openChat(classroom)"
-        class="classroom-card p-4 md:p-5 lg:p-6 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
-        [ngClass]="{
-          'bg-white border-gray-200 hover:border-blue-300 hover:shadow-blue-100': !isDarkMode(),
-          'bg-gray-800 border-gray-700 hover:border-blue-500 hover:shadow-blue-900': isDarkMode()
-        }">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+        <div 
+          *ngFor="let classroom of filteredClassrooms"
+          (click)="openChat(classroom)"
+          class="classroom-card p-4 md:p-5 lg:p-6 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          [ngClass]="{
+            'bg-white border-gray-200 hover:border-blue-300 hover:shadow-blue-100': !isDarkMode(),
+            'bg-gray-800 border-gray-700 hover:border-blue-500 hover:shadow-blue-900': isDarkMode()
+          }">
         
         <!-- Card Header -->
         <div class="flex items-start justify-between mb-3">
