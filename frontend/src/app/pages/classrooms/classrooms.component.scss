@@ -322,10 +322,9 @@
   color: var(--text-primary);
   word-break: break-word;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  // Removido -webkit-line-clamp para permitir que o texto ocupe o espaço necessário
+  white-space: normal;
+  overflow: visible; // Mudado de hidden para visible para evitar cortes
 }
 
 .classroom-card-input {
@@ -843,7 +842,7 @@
   }
   
   .classrooms-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr); // Reduzido de 3 para 2 colunas para dar mais espaço
     gap: 2rem;
     margin-bottom: 3rem;
   }
@@ -852,6 +851,7 @@
     padding: 2rem;
     margin-bottom: 0;
     min-height: 340px;
+    min-width: 0; // Permite que o card encolha se necessário
   }
   
   .classroom-card-header {
@@ -868,17 +868,23 @@
   
   .classroom-card-field {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start; // Mudado de center para flex-start para melhor alinhamento
     gap: 1rem;
   }
   
   .classroom-card-label {
-    min-width: 100px;
+    min-width: 120px; // Aumentado de 100px para 120px
     font-size: 0.875rem;
+    flex-shrink: 0; // Impede que o label encolha
   }
   
   .classroom-card-value {
     font-size: 1rem;
+    flex: 1; // Permite que o valor ocupe o espaço restante
+    min-width: 0; // Permite quebra de linha se necessário
+    word-break: break-word; // Quebra palavras longas
+    white-space: normal; // Permite quebra de linha
+    overflow-wrap: break-word; // Quebra palavras muito longas
   }
   
   .classroom-card-assignments {
@@ -935,13 +941,14 @@
   }
   
   .classrooms-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr); // Reduzido de 4 para 3 colunas
     gap: 2.5rem;
   }
   
   .classroom-card {
     min-height: 360px;
     padding: 2.25rem;
+    min-width: 350px; // Largura mínima para evitar cards muito estreitos
   }
   
   .classroom-card-name {
@@ -950,6 +957,10 @@
   
   .classroom-card-value {
     font-size: 1.125rem;
+  }
+  
+  .classroom-card-label {
+    min-width: 140px; // Aumentado para dar mais espaço
   }
   
   .classroom-assign-btn {
@@ -976,11 +987,16 @@
 // Extra Large Desktop (1280px+)
 @media (min-width: 1280px) {
   .classrooms-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr); // Mantém 3 colunas mesmo em telas grandes
     gap: 3rem;
   }
   
   .classroom-card {
     min-height: 380px;
+    min-width: 400px; // Largura mínima maior em telas grandes
+  }
+  
+  .classroom-card-label {
+    min-width: 150px; // Ainda mais espaço em telas muito grandes
   }
 }

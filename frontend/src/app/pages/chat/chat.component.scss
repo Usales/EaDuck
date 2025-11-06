@@ -103,13 +103,105 @@
   min-height: 0;
   max-height: calc(100vh - 140px);
   position: relative;
+  
+  // Variável CSS para o padding (usada no calc da zona de hover)
+  --messages-container-padding: 1rem;
 }
 
 .message-wrapper {
   margin-bottom: 1rem;
+  position: relative;
   
   &:last-child {
     margin-bottom: 0;
+  }
+}
+
+// Wrapper do conteúdo da mensagem
+.message-content-wrapper {
+  position: relative;
+  
+  // Quando hover no wrapper inteiro, ativar ações da mensagem
+  &:hover .message-bubble .message-actions {
+    opacity: 1 !important;
+  }
+}
+
+// Zona de hover estendida para melhorar UX das reações
+// Esta zona se estende horizontalmente até o limite do container
+.message-hover-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: auto;
+  z-index: 0;
+  
+  // Estender horizontalmente até o limite do container de mensagens
+  // Estende para a esquerda até o padding do container
+  left: calc(-1 * var(--messages-container-padding, 1rem));
+  // Estende para a direita até o limite do container
+  // Usa uma distância fixa grande para garantir que cubra toda a largura disponível
+  // Calcula a distância até a borda direita do container de mensagens
+  right: calc(-100vw + 100%);
+  margin-right: calc(-1 * var(--messages-container-padding, 1rem));
+  
+  // Quando hover na zona, ativar ações da mensagem correspondente
+  &:hover ~ .message-actions {
+    opacity: 1 !important;
+  }
+}
+
+// Quando hover no balão ou na zona de hover, ativar ações
+.message-bubble:hover .message-actions,
+.message-hover-zone:hover ~ .message-actions {
+  opacity: 1 !important;
+}
+
+// Estender área de hover do wrapper para facilitar acesso às reações
+// Esta área se estende horizontalmente mas mantém a altura do balão
+.message-content-wrapper::before {
+  content: '';
+  position: absolute;
+  // Posicionar alinhado com o topo do balão
+  // A altura será limitada pela altura do balão através do posicionamento
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--messages-container-padding, 1rem));
+  right: calc(-1 * var(--messages-container-padding, 1rem));
+  pointer-events: auto;
+  z-index: 0;
+}
+
+// Quando hover na área estendida (::before), ativar ações
+.message-content-wrapper:hover .message-bubble .message-actions {
+  opacity: 1 !important;
+}
+
+// Container de reações - posicionado abaixo do balão
+.message-reactions-container {
+  display: flex;
+  margin-top: 4px; // Espaçamento de 4px acima das reações
+  min-height: 0; // Não reserva espaço quando não há reações
+  width: 100%; // Garantir que ocupe a largura do container
+  
+  // Quando há reações, reservar espaço mínimo para evitar layout shift
+  &.has-reactions {
+    min-height: 28px; // Altura mínima para evitar layout shift
+  }
+  
+  // Alinhamento baseado na direção do balão
+  // Para mensagens próprias, alinhar à direita (mesmo alinhamento do balão)
+  &.justify-end {
+    justify-content: flex-end;
+    // Garantir que as reações fiquem alinhadas com o balão à direita
+    margin-left: auto;
+  }
+  
+  // Para mensagens de outros, alinhar à esquerda (mesmo alinhamento do balão)
+  &.justify-start {
+    justify-content: flex-start;
+    // Garantir que as reações fiquem alinhadas com o balão à esquerda
+    margin-right: auto;
   }
 }
 
@@ -667,9 +759,8 @@ input:focus {
 .message-actions {
   transition: opacity 0.2s ease;
   pointer-events: auto;
-  top: 0;
-  transform: translateY(-100%);
-  margin-top: -8px;
+  top: 50%;
+  transform: translateY(-50%);
   
   button {
     pointer-events: auto;
@@ -677,12 +768,18 @@ input:focus {
   }
 }
 
-.message-actions-right {
-  right: 0;
+// Mensagens do emissor: botões à esquerda do balão (lado externo)
+.message-actions-left {
+  right: 100%; // Posiciona ao lado esquerdo do balão
+  left: auto;
+  margin-right: 8px; // Espaçamento entre os botões e o balão
 }
 
-.message-actions-left {
-  left: 0;
+// Mensagens do recebedor: botões à direita do balão (lado externo)
+.message-actions-right {
+  left: 100%; // Posiciona ao lado direito do balão
+  right: auto;
+  margin-left: 8px; // Espaçamento entre os botões e o balão
 }
 
 .message-bubble {
@@ -761,6 +858,93 @@ audio {
 // Estilos para indicador de gravação
 .recording-indicator {
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+.recording-indicator-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100%;
+    display: block;
+  }
+  
+  @media (max-width: 375px) {
+    canvas {
+      height: 60px !important;
+    }
+  }
+}
+
+// Estilos para preview de áudio gravado
+.audio-preview-container {
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  max-width: 100%;
+  overflow: hidden;
+  
+  @media (min-width: 640px) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+  }
+  
+  .audio-preview-player {
+    min-width: 0;
+    max-width: 100%;
+    
+    &::-webkit-media-controls-panel {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+    }
+    
+    &::-webkit-media-controls-play-button {
+      background-color: rgba(59, 130, 246, 0.8);
+      border-radius: 50%;
+    }
+    
+    // Ajustes para mobile
+    @media (max-width: 640px) {
+      height: 28px;
+      
+      &::-webkit-media-controls-panel {
+        padding: 4px;
+      }
+    }
+  }
+  
+  // Ajustes específicos para iPhone SE e telas pequenas
+  @media (max-width: 375px) {
+    padding: 0.75rem;
+    
+    button {
+      font-size: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+}
+
+// Estilos para espectrograma
+.audio-spectrogram-wrapper {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  
+  .audio-spectrogram-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+  }
 }
 
 // Estilos para botões de anexo

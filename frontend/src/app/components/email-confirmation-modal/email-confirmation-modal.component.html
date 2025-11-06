@@ -142,11 +142,18 @@
             </label>
             <div class="flex space-x-2 justify-center">
               <input 
-                *ngFor="let digit of codeDigits; let i = index"
+                *ngFor="let digit of codeDigits; let i = index; trackBy: trackByIndex"
+                #codeInput
                 type="text" 
+                inputmode="numeric"
+                pattern="[0-9]*"
                 maxlength="1"
-                [value]="codeDigits[i]"
+                autocomplete="off"
+                [attr.data-index]="i"
                 (input)="onDigitInput(i, $event)"
+                (keydown)="onKeyDown(i, $event)"
+                (paste)="onPaste($event)"
+                (focus)="onInputFocus(i, $event)"
                 class="w-12 h-12 text-center text-xl font-bold border-2 rounded-lg focus:ring-2 focus:outline-none transition-all"
                 [style.background]="isCodeInvalid ? 'var(--error-bg)' : (isCodeValid ? 'var(--success-bg)' : 'var(--input-bg)')"
                 [style.color]="isCodeInvalid ? 'var(--error-color)' : (isCodeValid ? 'var(--success-color)' : 'var(--input-text)')"

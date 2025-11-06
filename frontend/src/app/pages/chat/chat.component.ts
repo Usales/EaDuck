@@ -1399,22 +1399,33 @@ export class ChatComponent implements OnInit, OnDestroy {
     // Criar novo canvas
     const canvas = document.createElement('canvas');
     canvas.id = 'recordingSpectrogram';
-    canvas.width = 300;
-    canvas.height = 100;
+    
+    // Obter largura do container
+    const recordingIndicator = document.querySelector('.recording-indicator-container');
+    const containerWidth = recordingIndicator?.clientWidth || 300;
+    
+    // Ajustar tamanho do canvas baseado na largura da tela
+    const isMobile = window.innerWidth <= 640;
+    canvas.width = isMobile ? Math.min(containerWidth, 300) : 300;
+    canvas.height = isMobile ? 60 : 80;
+    
     canvas.style.width = '100%';
-    canvas.style.height = '100px';
+    canvas.style.height = isMobile ? '60px' : '80px';
     canvas.style.display = 'block';
     canvas.style.borderRadius = '0.5rem';
+    canvas.style.maxWidth = '100%';
     
-    const recordingIndicator = document.querySelector('.recording-indicator-container');
     if (recordingIndicator) {
       recordingIndicator.appendChild(canvas);
       this.canvasElement = canvas;
       this.canvasContext = canvas.getContext('2d');
       
-      // Configurar contexto do canvas
+      // Configurar contexto do canvas com gradiente
       if (this.canvasContext) {
-        this.canvasContext.fillStyle = 'rgb(15, 23, 42)';
+        const gradient = this.canvasContext.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, 'rgb(30, 41, 59)'); // slate-800
+        gradient.addColorStop(1, 'rgb(15, 23, 42)'); // slate-900
+        this.canvasContext.fillStyle = gradient;
         this.canvasContext.fillRect(0, 0, canvas.width, canvas.height);
       }
     } else {
@@ -1443,8 +1454,11 @@ export class ChatComponent implements OnInit, OnDestroy {
       const width = this.canvasElement.width;
       const height = this.canvasElement.height;
       
-      // Limpar canvas
-      this.canvasContext.fillStyle = 'rgb(15, 23, 42)'; // Cor escura de fundo
+      // Limpar canvas com gradiente de fundo
+      const gradient = this.canvasContext.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, 'rgb(30, 41, 59)'); // slate-800
+      gradient.addColorStop(1, 'rgb(15, 23, 42)'); // slate-900
+      this.canvasContext.fillStyle = gradient;
       this.canvasContext.fillRect(0, 0, width, height);
       
       const barWidth = width / bufferLength * 2.5;
@@ -1454,12 +1468,19 @@ export class ChatComponent implements OnInit, OnDestroy {
       for (let i = 0; i < bufferLength; i++) {
         barHeight = (dataArray[i] / 255) * height;
         
-        // Cores do espectrograma (branco para áudio)
-        const r = 255;
-        const g = 255;
-        const b = 255;
+        // Cores vibrantes do espectrograma (gradiente azul-roxo)
+        const intensity = dataArray[i] / 255;
+        const r = Math.floor(99 + (156 * intensity)); // 99-255 (azul para branco)
+        const g = Math.floor(102 + (153 * intensity)); // 102-255
+        const b = Math.floor(241 + (14 * intensity)); // 241-255
         
-        this.canvasContext.fillStyle = `rgb(${r},${g},${b})`;
+        // Criar gradiente vertical para cada barra
+        const barGradient = this.canvasContext.createLinearGradient(x, height - barHeight, x, height);
+        barGradient.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
+        barGradient.addColorStop(0.5, `rgb(${Math.floor(r * 0.8)}, ${Math.floor(g * 0.8)}, ${Math.floor(b * 0.8)})`);
+        barGradient.addColorStop(1, `rgb(${Math.floor(r * 0.6)}, ${Math.floor(g * 0.6)}, ${Math.floor(b * 0.6)})`);
+        
+        this.canvasContext.fillStyle = barGradient;
         this.canvasContext.fillRect(x, height - barHeight, barWidth, barHeight);
         
         x += barWidth + 1;
