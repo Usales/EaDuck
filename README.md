@@ -118,7 +118,8 @@ Desenvolvido com paixão por:
 
 - **Gabriel Henriques Sales**  
 - **Pedro Augusto dos Santos Andrade**  
-- **Aleardo Cartocci Branquinho Senna**  
+- **Aleardo Cartocci Branquinho Senna**
+- **Lucas Ribeiro**
 - **Orientadora**: Thielle Cathia de Paula dos Santos  
 
 Agradecemos aos professores da FATESG e a todos que apoiaram essa jornada! 🙌
