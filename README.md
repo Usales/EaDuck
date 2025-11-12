@@ -56,12 +56,61 @@ A EaDuck oferece um conjunto robusto de recursos para atender às necessidades e
 
 Construímos a EaDuck com ferramentas modernas para garantir desempenho, escalabilidade e usabilidade:
 
-| **Camada** | **Tecnologia** | **Finalidade** |
-|------------|----------------|----------------|
-| Front-end | Angular, TypeScript, TailwindCSS, SCSS | Interface dinâmica e responsiva |
-| Back-end | Java (Spring Boot) | Lógica de negócios e APIs |
-| Banco de Dados | PostgreSQL | Armazenamento relacional de dados |
-| Design | Figma | Prototipagem de interfaces intuitivas |
+### Front-end 💻
+
+| **Tecnologia** | **Versão** | **Finalidade** |
+|----------------|------------|----------------|
+| Angular | 18.2.0 | Framework para construção da interface |
+| TypeScript | 5.5.2 | Linguagem de programação tipada |
+| TailwindCSS | 3.4.17 | Framework CSS utilitário para estilização |
+| SCSS | - | Pré-processador CSS |
+| Bootstrap | 5.3.6 | Framework CSS complementar |
+| RxJS | 7.8.1 | Programação reativa e gerenciamento de estado |
+| ApexCharts | 4.7.0 | Biblioteca para criação de gráficos e dashboards |
+| STOMP.js / SockJS | 7.0.0 / 1.6.1 | Comunicação WebSocket para chat em tempo real |
+| PostCSS | 8.5.5 | Processamento de CSS |
+| Autoprefixer | 10.4.21 | Adição automática de prefixos CSS |
+
+### Back-end ⚙️
+
+| **Tecnologia** | **Versão** | **Finalidade** |
+|----------------|------------|----------------|
+| Java | 17 | Linguagem de programação |
+| Spring Boot | 3.4.0 | Framework para desenvolvimento de APIs REST |
+| Spring Data JPA | - | Abstração para acesso a dados |
+| Spring Security | - | Autenticação e autorização |
+| Spring OAuth2 Client | - | Integração com login Google |
+| Spring WebSocket | - | Comunicação em tempo real |
+| Spring Mail | - | Envio de e-mails |
+| JWT (jjwt) | 0.11.5 | Autenticação baseada em tokens |
+| ModelMapper | 3.1.1 | Mapeamento de objetos |
+| Flyway | - | Versionamento e migração de banco de dados |
+| Lombok | - | Redução de boilerplate |
+| Redis | - | Cache e armazenamento em memória |
+| SpringDoc OpenAPI | 1.6.4 | Documentação automática da API (Swagger) |
+| Maven | - | Gerenciamento de dependências e build |
+
+### Banco de Dados 🗄️
+
+| **Tecnologia** | **Finalidade** |
+|----------------|----------------|
+| PostgreSQL | Banco de dados relacional principal (produção) |
+| H2 | Banco de dados em memória (desenvolvimento/testes) |
+
+### DevOps & Deploy 🚀
+
+| **Tecnologia** | **Finalidade** |
+|----------------|----------------|
+| Docker | Containerização da aplicação |
+| Nginx | Servidor web e proxy reverso |
+| Netlify | Deploy do front-end |
+| Maven Wrapper | Build independente de ambiente |
+
+### Design & Prototipagem 🎨
+
+| **Tecnologia** | **Finalidade** |
+|----------------|----------------|
+| Figma | Prototipagem de interfaces intuitivas |
 
 ## Equipe 💪
 
