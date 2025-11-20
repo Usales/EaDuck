@@ -542,15 +542,15 @@ public class UserController {
                 
                 UnitValue[] studentColumnWidths = {
                     UnitValue.createPointValue(20),   // ID
-                    UnitValue.createPointValue(80),   // E-MAIL
-                    UnitValue.createPointValue(80),   // NOME COMPLETO
+                    UnitValue.createPointValue(60),   // E-MAIL (reduzido)
+                    UnitValue.createPointValue(100),  // NOME COMPLETO (aumentado)
                     UnitValue.createPointValue(60),   // CPF
                     UnitValue.createPointValue(50),   // DATA NASC.
-                    UnitValue.createPointValue(60),   // NOME MÃE
-                    UnitValue.createPointValue(60),   // NOME PAI
+                    UnitValue.createPointValue(90),   // NOME MÃE (aumentado)
+                    UnitValue.createPointValue(90),   // NOME PAI (aumentado)
                     UnitValue.createPointValue(65),   // TELEFONE
-                    UnitValue.createPointValue(100), // ENDEREÇO
-                    UnitValue.createPointValue(35),  // STATUS
+                    UnitValue.createPointValue(120),  // ENDEREÇO (aumentado)
+                    UnitValue.createPointValue(35),   // STATUS
                 };
                 Table studentTable = new Table(studentColumnWidths);
                 studentTable.setWidth(UnitValue.createPercentValue(100));
@@ -572,26 +572,26 @@ public class UserController {
                     studentTable.addCell(new Cell().add(new Paragraph(String.valueOf(user.getId()))).setFontSize(6).setPadding(3));
                     
                     String email = user.getEmail() != null ? user.getEmail() : "-";
-                    if (!email.equals("-") && email.length() > 30) {
-                        email = email.substring(0, 27) + "...";
+                    if (!email.equals("-") && email.length() > 25) {
+                        email = email.substring(0, 22) + "...";
                     }
                     studentTable.addCell(new Cell().add(new Paragraph(email)).setFontSize(6).setPadding(3));
                     
-                    String nomeCompleto = user.getNomeCompleto() != null ? (user.getNomeCompleto().length() > 20 ? user.getNomeCompleto().substring(0, 20) + "..." : user.getNomeCompleto()) : "-";
+                    String nomeCompleto = user.getNomeCompleto() != null ? (user.getNomeCompleto().length() > 28 ? user.getNomeCompleto().substring(0, 28) + "..." : user.getNomeCompleto()) : "-";
                     studentTable.addCell(new Cell().add(new Paragraph(nomeCompleto)).setFontSize(6).setPadding(3));
                     
                     studentTable.addCell(new Cell().add(new Paragraph(user.getCpf() != null ? user.getCpf() : "-")).setFontSize(6).setPadding(3));
                     studentTable.addCell(new Cell().add(new Paragraph(user.getDataNascimento() != null ? user.getDataNascimento() : "-")).setFontSize(6).setPadding(3));
                     
-                    String nomeMae = user.getNomeMae() != null ? (user.getNomeMae().length() > 15 ? user.getNomeMae().substring(0, 15) + "..." : user.getNomeMae()) : "-";
+                    String nomeMae = user.getNomeMae() != null ? (user.getNomeMae().length() > 25 ? user.getNomeMae().substring(0, 25) + "..." : user.getNomeMae()) : "-";
                     studentTable.addCell(new Cell().add(new Paragraph(nomeMae)).setFontSize(6).setPadding(3));
                     
-                    String nomePai = user.getNomePai() != null ? (user.getNomePai().length() > 15 ? user.getNomePai().substring(0, 15) + "..." : user.getNomePai()) : "-";
+                    String nomePai = user.getNomePai() != null ? (user.getNomePai().length() > 25 ? user.getNomePai().substring(0, 25) + "..." : user.getNomePai()) : "-";
                     studentTable.addCell(new Cell().add(new Paragraph(nomePai)).setFontSize(6).setPadding(3));
                     
                     studentTable.addCell(new Cell().add(new Paragraph(user.getTelefone() != null ? user.getTelefone() : "-")).setFontSize(6).setPadding(3));
                     
-                    String endereco = user.getEndereco() != null ? (user.getEndereco().length() > 25 ? user.getEndereco().substring(0, 25) + "..." : user.getEndereco()) : "-";
+                    String endereco = user.getEndereco() != null ? (user.getEndereco().length() > 30 ? user.getEndereco().substring(0, 30) + "..." : user.getEndereco()) : "-";
                     studentTable.addCell(new Cell().add(new Paragraph(endereco)).setFontSize(6).setPadding(3));
                     
                     String statusLabel = user.isActive() ? "Ativo" : "Inativo";
@@ -612,11 +612,10 @@ public class UserController {
                 
                 UnitValue[] nonStudentColumnWidths = {
                     UnitValue.createPointValue(20),   // ID
-                    UnitValue.createPointValue(70),   // E-MAIL
-                    UnitValue.createPointValue(40),   // APELIDO
-                    UnitValue.createPointValue(70),   // NOME COMPLETO
+                    UnitValue.createPointValue(55),   // E-MAIL (reduzido)
+                    UnitValue.createPointValue(100),  // NOME COMPLETO (aumentado)
                     UnitValue.createPointValue(55),   // CPF
-                    UnitValue.createPointValue(85),   // ENDEREÇO
+                    UnitValue.createPointValue(120),  // ENDEREÇO (aumentado)
                     UnitValue.createPointValue(70),   // TITULAÇÃO
                     UnitValue.createPointValue(35),   // TIPO
                     UnitValue.createPointValue(30)    // STATUS
@@ -624,10 +623,9 @@ public class UserController {
                 Table nonStudentTable = new Table(nonStudentColumnWidths);
                 nonStudentTable.setWidth(UnitValue.createPercentValue(100));
                 
-                // Cabeçalho da tabela de professores/admins
+                // Cabeçalho da tabela de professores/admins (sem APELIDO)
                 nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("ID").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
                 nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
-                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("APELIDO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
                 nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("NOME COMPLETO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
                 nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("CPF").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
                 nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("ENDEREÇO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
@@ -635,25 +633,22 @@ public class UserController {
                 nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("TIPO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
                 nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
 
-                // Dados dos professores e admins
+                // Dados dos professores e admins (sem APELIDO)
                 for (User user : nonStudents) {
                     nonStudentTable.addCell(new Cell().add(new Paragraph(String.valueOf(user.getId()))).setFontSize(6).setPadding(3));
                     
                     String email = user.getEmail() != null ? user.getEmail() : "-";
-                    if (!email.equals("-") && email.length() > 30) {
-                        email = email.substring(0, 27) + "...";
+                    if (!email.equals("-") && email.length() > 22) {
+                        email = email.substring(0, 19) + "...";
                     }
                     nonStudentTable.addCell(new Cell().add(new Paragraph(email)).setFontSize(6).setPadding(3));
                     
-                    String apelido = user.getName() != null ? (user.getName().length() > 12 ? user.getName().substring(0, 12) + "..." : user.getName()) : "-";
-                    nonStudentTable.addCell(new Cell().add(new Paragraph(apelido)).setFontSize(6).setPadding(3));
-                    
-                    String nomeCompleto = user.getNomeCompleto() != null ? (user.getNomeCompleto().length() > 18 ? user.getNomeCompleto().substring(0, 18) + "..." : user.getNomeCompleto()) : "-";
+                    String nomeCompleto = user.getNomeCompleto() != null ? (user.getNomeCompleto().length() > 28 ? user.getNomeCompleto().substring(0, 28) + "..." : user.getNomeCompleto()) : "-";
                     nonStudentTable.addCell(new Cell().add(new Paragraph(nomeCompleto)).setFontSize(6).setPadding(3));
                     
                     nonStudentTable.addCell(new Cell().add(new Paragraph(user.getCpf() != null ? user.getCpf() : "-")).setFontSize(6).setPadding(3));
                     
-                    String endereco = user.getEndereco() != null ? (user.getEndereco().length() > 20 ? user.getEndereco().substring(0, 20) + "..." : user.getEndereco()) : "-";
+                    String endereco = user.getEndereco() != null ? (user.getEndereco().length() > 30 ? user.getEndereco().substring(0, 30) + "..." : user.getEndereco()) : "-";
                     nonStudentTable.addCell(new Cell().add(new Paragraph(endereco)).setFontSize(6).setPadding(3));
                     
                     String titulacao = user.getTitulacao() != null ? (user.getTitulacao().length() > 18 ? user.getTitulacao().substring(0, 18) + "..." : user.getTitulacao()) : "-";
