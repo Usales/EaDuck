@@ -26,6 +26,10 @@ O EaDuck nasceu para resolver desafios reais na educação, como a comunicação
 - **Relatórios e dashboards**: visão clara do desempenho acadêmico e engajamento.
 - **Bate-papo integrado**: comunicação instantânea entre usuários da plataforma.
 - **Login simplificado**: autenticação via Google para acesso rápido e seguro.
+- **Busca inteligente**: autocomplete em tempo real para localizar alunos e professores rapidamente.
+- **Exportação de dados**: geração de PDFs completos com informações de salas, alunos e professores.
+- **Boletim de notas**: PDF individual com notas por disciplina, médias e resultado final (Aprovado/Reprovado/Em andamento).
+- **Perfis personalizados**: coleta e edição de dados específicos por perfil (ADMIN, TEACHER, STUDENT).
 
 ## Funcionalidades Principais ✨
 
@@ -39,18 +43,27 @@ A EaDuck oferece um conjunto robusto de recursos para atender às necessidades e
 | Login com Google | Autenticação simplificada via conta Google. | Alta |
 | Registro de Notas | Professores registram notas, frequência e observações. | Alta |
 | Materiais Didáticos | Publicação e acesso a arquivos, links e vídeos. | Alta |
+| Setup Inicial de Perfil | Coleta de dados pessoais obrigatórios no primeiro acesso (nome, CPF, endereço, etc.). | Alta |
+| Configurações de Perfil | Edição de dados pessoais na tela de configurações. | Alta |
+| Busca Inteligente | Campo de busca com autocomplete para alunos e professores nas salas. | Alta |
+| Exportação de Dados | Geração de PDFs com dados completos das salas (alunos, professores, administradores). | Alta |
+| Boletim de Notas | Geração de PDF individual com notas por disciplina, médias e resultado final. | Alta |
 | Relatórios | Geração de relatórios acadêmicos e financeiros. | Média |
 | Segurança de Dados | Criptografia de senhas e conformidade com LGPD. | Alta |
 
 ## Fluxo de Uso 🧭
 
 1. **Login**: Usuários acessam a plataforma conforme seu perfil (aluno, professor, admin).
-2. **Gestão de Usuários**: Admins cadastram e gerenciam contas.
-3. **Criação de Salas e Tarefas**: Professores e admins criam turmas e atividades.
-4. **Submissão de Tarefas**: Alunos enviam arquivos e comentários para avaliação.
-5. **Avaliação**: Professores corrigem e atribuem notas e feedbacks.
-6. **Notificações**: Todos recebem alertas sobre eventos, prazos e mensagens.
-7. **Acesso a Materiais**: Alunos e professores compartilham e baixam documentos.
+2. **Setup de Perfil**: Usuários preenchem dados obrigatórios no primeiro acesso (nome, CPF, endereço, etc.).
+3. **Gestão de Usuários**: Admins cadastram e gerenciam contas.
+4. **Criação de Salas e Tarefas**: Professores e admins criam turmas e atividades.
+5. **Atribuição de Alunos/Professores**: Busca inteligente com autocomplete para adicionar usuários às salas.
+6. **Submissão de Tarefas**: Alunos enviam arquivos e comentários para avaliação.
+7. **Avaliação**: Professores corrigem e atribuem notas e feedbacks.
+8. **Notificações**: Todos recebem alertas sobre eventos, prazos e mensagens.
+9. **Acesso a Materiais**: Alunos e professores compartilham e baixam documentos.
+10. **Exportação de Relatórios**: Geração de PDFs com dados das salas e boletins de notas individuais.
+11. **Configurações**: Edição de dados pessoais na tela de configurações.
 
 ## Tecnologias Utilizadas 🛠️
 
@@ -88,6 +101,7 @@ Construímos a EaDuck com ferramentas modernas para garantir desempenho, escalab
 | Lombok | - | Redução de boilerplate |
 | Redis | - | Cache e armazenamento em memória |
 | SpringDoc OpenAPI | 1.6.4 | Documentação automática da API (Swagger) |
+| iTextPDF | 8.0.5 | Geração de documentos PDF (relatórios e boletins) |
 | Maven | - | Gerenciamento de dependências e build |
 
 ### Banco de Dados 🗄️
@@ -353,6 +367,114 @@ WEB: /tasks
 
 ##### Ambiente de homologação:
 WEB: /notifications
+
+---
+
+### 11. Setup Inicial de Perfil
+
+##### Condicionais
+* Estar logado no sistema
+* Não ter preenchido os dados obrigatórios do perfil
+
+##### Casos de teste
+* DADO que estou logado pela primeira vez
+* E o sistema identifica que faltam dados obrigatórios
+* Quando o modal de setup aparece
+* E preencho os campos obrigatórios conforme meu perfil:
+  * ADMIN: Nome Completo, CPF, Endereço
+  * TEACHER: Nome Completo, CPF, Endereço, Titulação
+  * STUDENT: Apelido, Nome Completo, CPF, Data de Nascimento, Nome da Mãe, Nome do Pai, Telefone, Endereço
+* E clico em salvar
+* Então o sistema salva os dados e não exibe mais o modal
+
+##### Ambiente de homologação:
+WEB: /login ou /register (redirecionamento automático)
+
+---
+
+### 12. Edição de Perfil (Configurações)
+
+##### Condicionais
+* Estar logado no sistema
+* Ter preenchido os dados iniciais do perfil
+
+##### Casos de teste
+* DADO que estou logado
+* E acesso a tela de configurações
+* E visualizo meus dados pessoais editáveis
+* Quando modifico algum campo
+* E clico em "Salvar Dados"
+* Então o sistema atualiza os dados e exibe mensagem de sucesso
+
+##### Ambiente de homologação:
+WEB: /settings
+
+---
+
+### 13. Busca de Alunos e Professores (Salas)
+
+##### Condicionais
+* Estar logado como administrador ou professor
+* Ter acesso a uma sala de aula
+
+##### Casos de teste
+* DADO que estou logado como administrador ou professor
+* E acesso a tela de salas
+* E clico em "Alunos" ou "Professores" em uma sala
+* Quando começo a digitar no campo de busca
+* Então o sistema exibe sugestões em tempo real com nome completo e email
+* E ao clicar em uma sugestão, o usuário é adicionado à sala
+
+##### Ambiente de homologação:
+WEB: /classrooms
+
+---
+
+### 14. Exportação de Dados da Sala (Dados PDF)
+
+##### Condicionais
+* Estar logado como administrador ou professor
+* Ter acesso a uma sala de aula
+
+##### Casos de teste
+* DADO que estou logado como administrador ou professor
+* E acesso a tela de salas
+* E clico em "Dados PDF" em uma sala
+* Quando o PDF é gerado
+* Então o sistema faz o download de um PDF contendo:
+  * Informações gerais da sala (Nome, Ano Letivo)
+  * Dados completos de todos os alunos (ID, Email, Nome Completo, CPF, Data de Nascimento, Nome da Mãe, Nome do Pai, Telefone, Endereço, Status, Matrícula, Curso, Ano Letivo, Resultado Final)
+  * Dados completos de todos os professores (ID, Email, Nome Completo, CPF, Endereço, Titulação, Tipo, Status)
+  * Dados completos de todos os administradores (ID, Email, Nome Completo, CPF, Endereço, Titulação, Tipo, Status)
+
+##### Ambiente de homologação:
+WEB: /classrooms
+
+---
+
+### 15. Exportação de Boletim de Notas (Notas PDF)
+
+##### Condicionais
+* Estar logado como administrador ou professor
+* Ter acesso a uma sala de aula
+* Ter alunos com notas registradas na sala
+
+##### Casos de teste
+* DADO que estou logado como administrador ou professor
+* E acesso a tela de salas
+* E clico em "Notas PDF" em uma sala
+* Quando o modal de seleção de aluno aparece
+* E seleciono um aluno
+* Então o sistema gera e faz o download de um PDF contendo:
+  * Cabeçalho com nome da instituição
+  * Título: "Boletim de Notas – [Nome do Aluno]"
+  * Informações do aluno (Nome Completo, Matrícula, CPF, Curso, Ano Letivo)
+  * Tabela com notas por disciplina (Disciplina, Nota 1, Nota 2, Nota 3, Média Final)
+  * Resultado Final (Em andamento/Aprovado/Reprovado)
+  * Rodapé com data de geração
+
+##### Ambiente de homologação:
+WEB: /classrooms
 
 ---
 
