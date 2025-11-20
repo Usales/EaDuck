@@ -116,4 +116,10 @@ export class ClassroomService {
       responseType: 'blob'
     });
   }
+
+  exportStudentGradesToPdf(classroomId: number, studentId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${classroomId}/students/${studentId}/grades/pdf`, {
+      responseType: 'blob'
+    });
+  }
 } 

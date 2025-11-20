@@ -124,16 +124,24 @@
               Cancelar
             </button>
           </ng-container>
-          <ng-template #editDeleteBtns>
-            <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="startEdit(classroom)" class="classroom-action-btn classroom-action-edit">
-              <span class="material-icons">edit</span>
-              Editar
-            </button>
-            <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="deleteClassroom(classroom)" class="classroom-action-btn classroom-action-delete">
-              <span class="material-icons">delete</span>
-              Excluir
-            </button>
-          </ng-template>
+           <ng-template #editDeleteBtns>
+             <button *ngIf="isAdminOrTeacher" (click)="exportClassroomUsersToPdf(classroom)" class="classroom-action-btn classroom-action-pdf">
+               <span class="material-icons">picture_as_pdf</span>
+               Dados PDF
+             </button>
+             <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="startEdit(classroom)" class="classroom-action-btn classroom-action-edit">
+               <span class="material-icons">edit</span>
+               Editar
+             </button>
+             <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="deleteClassroom(classroom)" class="classroom-action-btn classroom-action-delete">
+               <span class="material-icons">delete</span>
+               Excluir
+             </button>
+             <button *ngIf="isAdminOrTeacher" (click)="openNotasPdfModal(classroom)" class="classroom-action-btn classroom-action-pdf">
+               <span class="material-icons">description</span>
+               Notas PDF
+             </button>
+           </ng-template>
         </div>
         <!-- Atribuição de Professores -->
         <div *ngIf="assignClassroomId === classroom.id && assignMode === 'teacher'" class="classroom-assignment">
@@ -145,20 +153,39 @@
             </div>
             <div *ngIf="selectedTeacherIds.length > 0" class="classroom-assignment-tags">
               <span *ngFor="let id of selectedTeacherIds" class="classroom-assignment-tag classroom-assignment-tag-teacher">
-                {{ getTeacherEmailById(id) }}
+                {{ getTeacherNameById(id) }}
                 <button (click)="removeTeacherFromSelection(id)" class="classroom-assignment-tag-remove">&times;</button>
               </span>
             </div>
           </div>
 
           <div class="classroom-assignment-search">
-            <input type="text" [(ngModel)]="searchTeacher" (input)="filterTeachers()" placeholder="Buscar professor..." class="classroom-assignment-input" />
+            <input 
+              #teacherSearchInput
+              type="text" 
+              [(ngModel)]="searchTeacher" 
+              (input)="filterTeachers()" 
+              (focus)="filterTeachers()"
+              placeholder="Digite o nome completo ou email do professor..." 
+              class="classroom-assignment-input"
+              autocomplete="off"
+            />
           </div>
 
-          <div *ngIf="filteredTeachers.length && searchTeacher" class="classroom-assignment-results">
+          <div *ngIf="searchTeacher && searchTeacher.length > 0 && filteredTeachers.length > 0" class="classroom-assignment-results">
             <div *ngFor="let teacher of filteredTeachers" (click)="addTeacherToSelection(teacher)" class="classroom-assignment-item">
-              {{ teacher.email }}
+              <div class="classroom-assignment-item-name">{{ teacher.nomeCompleto || teacher.name || teacher.email }}</div>
+              <div class="classroom-assignment-item-email" *ngIf="teacher.nomeCompleto || teacher.name">{{ teacher.email }}</div>
             </div>
+          </div>
+          <div *ngIf="searchTeacher && searchTeacher.length > 0 && filteredTeachers.length === 0 && teachers.length > 0" class="classroom-assignment-empty">
+            Nenhum professor encontrado
+          </div>
+          <div *ngIf="(!searchTeacher || searchTeacher.length === 0) && teachers.length > 0" class="classroom-assignment-empty">
+            Digite o nome completo ou email para buscar professores
+          </div>
+          <div *ngIf="teachers.length === 0" class="classroom-assignment-empty">
+            Carregando professores...
           </div>
 
           <div class="classroom-assignment-actions">
@@ -183,20 +210,39 @@
             </div>
             <div *ngIf="selectedStudentIds.length > 0" class="classroom-assignment-tags">
               <span *ngFor="let id of selectedStudentIds" class="classroom-assignment-tag classroom-assignment-tag-student">
-                {{ getStudentEmailById(id) }}
+                {{ getStudentNameById(id) }}
                 <button (click)="removeStudentFromSelection(id)" class="classroom-assignment-tag-remove">&times;</button>
               </span>
             </div>
           </div>
 
           <div class="classroom-assignment-search">
-            <input type="text" [(ngModel)]="searchStudent" (input)="filterStudents()" placeholder="Buscar aluno..." class="classroom-assignment-input" />
+            <input 
+              #studentSearchInput
+              type="text" 
+              [(ngModel)]="searchStudent" 
+              (input)="filterStudents()" 
+              (focus)="filterStudents()"
+              placeholder="Digite o nome completo ou email do aluno..." 
+              class="classroom-assignment-input"
+              autocomplete="off"
+            />
           </div>
 
-          <div *ngIf="filteredStudents.length && searchStudent" class="classroom-assignment-results">
+          <div *ngIf="searchStudent && searchStudent.length > 0 && filteredStudents.length > 0" class="classroom-assignment-results">
             <div *ngFor="let student of filteredStudents" (click)="addStudentToSelection(student)" class="classroom-assignment-item">
-              {{ student.email }}
+              <div class="classroom-assignment-item-name">{{ student.nomeCompleto || student.name || student.email }}</div>
+              <div class="classroom-assignment-item-email" *ngIf="student.nomeCompleto || student.name">{{ student.email }}</div>
             </div>
+          </div>
+          <div *ngIf="searchStudent && searchStudent.length > 0 && filteredStudents.length === 0 && students.length > 0" class="classroom-assignment-empty">
+            Nenhum aluno encontrado
+          </div>
+          <div *ngIf="(!searchStudent || searchStudent.length === 0) && students.length > 0" class="classroom-assignment-empty">
+            Digite o nome completo ou email para buscar alunos
+          </div>
+          <div *ngIf="students.length === 0" class="classroom-assignment-empty">
+            Carregando alunos...
           </div>
 
           <div class="classroom-assignment-actions">
@@ -209,6 +255,31 @@
               Cancelar
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Seleção de Aluno - Notas PDF -->
+  <div *ngIf="showNotasPdfModal" class="modal-overlay" (click)="closeNotasPdfModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Selecionar Aluno para Gerar Notas PDF</h3>
+        <button (click)="closeNotasPdfModal()" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="notasPdfClassroom && notasPdfClassroom.students && notasPdfClassroom.students.length > 0">
+          <div class="student-list">
+            <div *ngFor="let student of notasPdfClassroom.students" 
+                 (click)="exportStudentGradesToPdf(notasPdfClassroom.id, student.id)" 
+                 class="student-item">
+              <div class="student-name">{{ student.nomeCompleto || student.name || student.email }}</div>
+              <div class="student-email" *ngIf="student.nomeCompleto || student.name">{{ student.email }}</div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!notasPdfClassroom || !notasPdfClassroom.students || notasPdfClassroom.students.length === 0" class="empty-state">
+          Nenhum aluno encontrado nesta sala.
         </div>
       </div>
     </div>

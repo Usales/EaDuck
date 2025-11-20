@@ -4,6 +4,8 @@ import com.eaduck.backend.model.classroom.Classroom;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.ClassroomRepository;
 import com.eaduck.backend.repository.UserRepository;
+import com.eaduck.backend.repository.SubmissionRepository;
+import com.eaduck.backend.model.submission.Submission;
 import com.eaduck.backend.model.classroom.dto.ClassroomDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomCreateDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomUpdateDTO;
@@ -26,12 +28,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +50,9 @@ public class ClassroomController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SubmissionRepository submissionRepository;
 
 
     @GetMapping
@@ -280,6 +287,215 @@ public class ClassroomController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{classroomId}/students/{studentId}/grades/pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<?> exportStudentGradesToPdf(
+            @PathVariable Long classroomId,
+            @PathVariable Long studentId,
+            Authentication authentication) {
+        try {
+            User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (currentUser == null) {
+                return ResponseEntity.status(403).build();
+            }
+
+            Classroom classroom = classroomRepository.findById(classroomId).orElse(null);
+            if (classroom == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Verifica se o usuário tem acesso à sala
+            boolean hasAccess = false;
+            if (currentUser.getRole() == Role.ADMIN) {
+                hasAccess = true;
+            } else if (currentUser.getRole() == Role.TEACHER) {
+                hasAccess = classroom.getTeachers().contains(currentUser);
+            }
+
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+
+            User student = userRepository.findById(studentId).orElse(null);
+            if (student == null || student.getRole() != Role.STUDENT) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Verifica se o aluno está na sala
+            if (!classroom.getStudents().contains(student)) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // Buscar todas as tasks da sala
+            List<com.eaduck.backend.model.task.Task> tasks = new ArrayList<>(classroom.getTasks());
+            
+            // Agrupar tasks por título (disciplina) - assumindo que tasks com mesmo título são da mesma disciplina
+            java.util.Map<String, java.util.List<Submission>> submissionsByDisciplina = new java.util.HashMap<>();
+            java.util.Map<String, String> disciplinaNames = new java.util.HashMap<>();
+            
+            for (com.eaduck.backend.model.task.Task task : tasks) {
+                String disciplinaName = task.getTitle();
+                Submission submission = submissionRepository.findByTaskIdAndStudentId(task.getId(), studentId);
+                if (submission != null && submission.getGrade() != null) {
+                    submissionsByDisciplina.computeIfAbsent(disciplinaName, k -> new java.util.ArrayList<>()).add(submission);
+                    disciplinaNames.put(disciplinaName, disciplinaName);
+                }
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf, PageSize.A4);
+
+            // Cabeçalho com nome da instituição
+            Paragraph institution = new Paragraph("EaDuck - Sistema de Ensino")
+                    .setFontSize(16)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(10);
+            document.add(institution);
+
+            // Título
+            String studentName = student.getNomeCompleto() != null ? student.getNomeCompleto() : 
+                                (student.getName() != null ? student.getName() : student.getEmail());
+            Paragraph title = new Paragraph("Boletim de Notas – " + studentName)
+                    .setFontSize(14)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(title);
+
+            // Informações do aluno
+            Paragraph studentInfo = new Paragraph()
+                    .setFontSize(10)
+                    .setMarginBottom(15);
+            studentInfo.add(new Paragraph("Nome Completo: " + (student.getNomeCompleto() != null ? student.getNomeCompleto() : "-")));
+            studentInfo.add(new Paragraph("Matrícula: " + student.getId()));
+            studentInfo.add(new Paragraph("CPF: " + (student.getCpf() != null ? student.getCpf() : "-")));
+            studentInfo.add(new Paragraph("Curso: " + (classroom.getName() != null ? classroom.getName() : "-")));
+            studentInfo.add(new Paragraph("Ano Letivo: " + (classroom.getAcademicYear() != null ? classroom.getAcademicYear() : "-")));
+            document.add(studentInfo);
+
+            // Tabela de notas por disciplina
+            if (!submissionsByDisciplina.isEmpty()) {
+                UnitValue[] columnWidths = {
+                    UnitValue.createPointValue(120),  // Disciplina
+                    UnitValue.createPointValue(50),    // Nota 1
+                    UnitValue.createPointValue(50),    // Nota 2
+                    UnitValue.createPointValue(50),    // Nota 3
+                    UnitValue.createPointValue(60)     // Média Final
+                };
+                Table gradesTable = new Table(columnWidths);
+                gradesTable.setWidth(UnitValue.createPercentValue(100));
+
+                // Cabeçalho
+                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Disciplina").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
+                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Nota 1").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
+                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Nota 2").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
+                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Nota 3").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
+                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Média Final").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
+
+                // Dados das disciplinas
+                double totalMedia = 0.0;
+                int countDisciplinas = 0;
+
+                for (java.util.Map.Entry<String, java.util.List<Submission>> entry : submissionsByDisciplina.entrySet()) {
+                    String disciplinaName = entry.getKey();
+                    java.util.List<Submission> submissions = entry.getValue();
+                    
+                    // Ordenar submissions por data de avaliação (mais recente primeiro) ou por ID
+                    submissions.sort((s1, s2) -> {
+                        if (s1.getEvaluatedAt() != null && s2.getEvaluatedAt() != null) {
+                            return s2.getEvaluatedAt().compareTo(s1.getEvaluatedAt());
+                        }
+                        return Long.compare(s2.getId(), s1.getId());
+                    });
+                    
+                    // Pegar as 3 primeiras notas
+                    Double nota1 = null, nota2 = null, nota3 = null;
+                    for (int i = 0; i < Math.min(3, submissions.size()); i++) {
+                        if (i == 0) nota1 = submissions.get(i).getGrade();
+                        else if (i == 1) nota2 = submissions.get(i).getGrade();
+                        else if (i == 2) nota3 = submissions.get(i).getGrade();
+                    }
+
+                    // Calcular média da disciplina
+                    double sum = 0.0;
+                    int count = 0;
+                    for (Submission sub : submissions) {
+                        if (sub.getGrade() != null) {
+                            sum += sub.getGrade();
+                            count++;
+                        }
+                    }
+                    Double mediaDisciplina = count > 0 ? sum / count : null;
+
+                    if (mediaDisciplina != null) {
+                        totalMedia += mediaDisciplina;
+                        countDisciplinas++;
+                    }
+
+                    // Adicionar linha na tabela
+                    String disciplinaDisplay = disciplinaName != null ? (disciplinaName.length() > 30 ? disciplinaName.substring(0, 27) + "..." : disciplinaName) : "-";
+                    gradesTable.addCell(new Cell().add(new Paragraph(disciplinaDisplay)).setFontSize(8).setPadding(5));
+                    gradesTable.addCell(new Cell().add(new Paragraph(nota1 != null ? String.format("%.2f", nota1) : "-")).setFontSize(8).setPadding(5));
+                    gradesTable.addCell(new Cell().add(new Paragraph(nota2 != null ? String.format("%.2f", nota2) : "-")).setFontSize(8).setPadding(5));
+                    gradesTable.addCell(new Cell().add(new Paragraph(nota3 != null ? String.format("%.2f", nota3) : "-")).setFontSize(8).setPadding(5));
+                    gradesTable.addCell(new Cell().add(new Paragraph(mediaDisciplina != null ? String.format("%.2f", mediaDisciplina) : "-")).setFontSize(8).setPadding(5));
+                }
+
+                document.add(gradesTable);
+                document.add(new Paragraph(" ").setMarginBottom(10));
+
+                // Resultado Final
+                Double mediaFinal = countDisciplinas > 0 ? totalMedia / countDisciplinas : null;
+                String resultadoFinal = getStudentFinalResult(mediaFinal);
+
+                Paragraph resultado = new Paragraph()
+                        .setFontSize(12)
+                        .setBold()
+                        .setMarginTop(15);
+                resultado.add(new Paragraph("Média Final: " + (mediaFinal != null ? String.format("%.2f", mediaFinal) : "-")));
+                resultado.add(new Paragraph("Resultado Final: " + resultadoFinal));
+                document.add(resultado);
+            } else {
+                // Sem notas
+                Paragraph semNotas = new Paragraph("Nenhuma nota registrada para este aluno.")
+                        .setFontSize(10)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setMarginTop(20);
+                document.add(semNotas);
+                
+                Paragraph resultado = new Paragraph()
+                        .setFontSize(12)
+                        .setBold()
+                        .setMarginTop(15);
+                resultado.add(new Paragraph("Resultado Final: Em andamento"));
+                document.add(resultado);
+            }
+
+            // Rodapé com data de geração
+            Paragraph footer = new Paragraph("Data de geração: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
+                    .setFontSize(8)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginTop(30);
+            document.add(footer);
+
+            document.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            String filename = "notas_" + studentName.replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Erro ao gerar PDF de notas do aluno: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Erro ao gerar PDF: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/{id}/students/{studentId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
     public ResponseEntity<?> addStudentToClassroom(@PathVariable Long id, @PathVariable Long studentId, Authentication authentication) {
@@ -487,6 +703,56 @@ public class ClassroomController {
         return ResponseEntity.ok(dtos);
     }
 
+    /**
+     * Calcula a média final de um aluno na sala
+     */
+    private Double calculateStudentFinalAverage(User student, Classroom classroom) {
+        // Buscar todas as tasks da sala
+        List<com.eaduck.backend.model.task.Task> tasks = new ArrayList<>(classroom.getTasks());
+        
+        if (tasks.isEmpty()) {
+            return null; // Sem notas = Em andamento
+        }
+        
+        // Buscar todas as submissions do aluno nas tasks desta sala
+        List<Submission> submissions = new ArrayList<>();
+        for (com.eaduck.backend.model.task.Task task : tasks) {
+            Submission submission = submissionRepository.findByTaskIdAndStudentId(task.getId(), student.getId());
+            if (submission != null && submission.getGrade() != null) {
+                submissions.add(submission);
+            }
+        }
+        
+        if (submissions.isEmpty()) {
+            return null; // Sem notas = Em andamento
+        }
+        
+        // Calcular média das notas
+        double sum = 0.0;
+        int count = 0;
+        for (Submission submission : submissions) {
+            if (submission.getGrade() != null) {
+                sum += submission.getGrade();
+                count++;
+            }
+        }
+        
+        return count > 0 ? sum / count : null;
+    }
+    
+    /**
+     * Determina o resultado final do aluno
+     */
+    private String getStudentFinalResult(Double mediaFinal) {
+        if (mediaFinal == null) {
+            return "Em andamento";
+        } else if (mediaFinal >= 6.0) {
+            return "Aprovado";
+        } else {
+            return "Reprovado";
+        }
+    }
+
     @GetMapping("/{id}/export/pdf")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<?> exportClassroomUsersToPdf(@PathVariable Long id, Authentication authentication) {
@@ -507,37 +773,35 @@ public class ClassroomController {
             if (currentUser.getRole() == Role.ADMIN) {
                 hasAccess = true;
             } else if (currentUser.getRole() == Role.TEACHER) {
-                hasAccess = currentUser.getClassroomsAsTeacher().contains(classroom);
+                hasAccess = classroom.getTeachers().contains(currentUser);
             }
 
             if (!hasAccess) {
                 return ResponseEntity.status(403).build();
             }
 
-            // Coleta todos os usuários da sala (professores e alunos)
-            List<User> allUsers = new ArrayList<>();
-            allUsers.addAll(classroom.getTeachers());
-            allUsers.addAll(classroom.getStudents());
-
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+            Document document = new Document(pdf, PageSize.A4.rotate());
 
-            // Título
-            Paragraph title = new Paragraph("Relatório de Usuários - " + classroom.getName())
+            // ========== 1. INFORMAÇÕES GERAIS DA SALA ==========
+            Paragraph title = new Paragraph("Relatório de Dados da Sala - EaDuck")
                     .setFontSize(18)
                     .setBold()
                     .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginBottom(10);
+                    .setMarginBottom(20);
             document.add(title);
 
-            // Informações da sala
-            Paragraph classroomInfo = new Paragraph("Ano Letivo: " + classroom.getAcademicYear())
+            Paragraph classroomName = new Paragraph("Nome da Turma (Curso): " + (classroom.getName() != null ? classroom.getName() : "-"))
                     .setFontSize(12)
-                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(5);
+            document.add(classroomName);
+
+            Paragraph academicYear = new Paragraph("Ano Letivo: " + (classroom.getAcademicYear() != null ? classroom.getAcademicYear() : "-"))
+                    .setFontSize(12)
                     .setMarginBottom(20);
-            document.add(classroomInfo);
+            document.add(academicYear);
 
             // Data de geração
             Paragraph date = new Paragraph("Data de geração: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
@@ -546,45 +810,231 @@ public class ClassroomController {
                     .setMarginBottom(20);
             document.add(date);
 
-            // Tabela
-            float[] columnWidths = {1, 3, 2, 2};
-            Table table = new Table(columnWidths);
-            
-            // Cabeçalho da tabela
-            table.addHeaderCell(new Cell().add(new Paragraph("ID").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
-            table.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
-            table.addHeaderCell(new Cell().add(new Paragraph("TIPO").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
-            table.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+            // ========== 2. DADOS DOS ALUNOS ==========
+            List<User> students = new ArrayList<>(classroom.getStudents());
+            if (!students.isEmpty()) {
+                Paragraph studentsTitle = new Paragraph("DADOS DOS ALUNOS")
+                        .setFontSize(14)
+                        .setBold()
+                        .setMarginBottom(10);
+                document.add(studentsTitle);
 
-            // Dados dos usuários
-            for (User user : allUsers) {
-                table.addCell(new Cell().add(new Paragraph(String.valueOf(user.getId()))));
-                table.addCell(new Cell().add(new Paragraph(user.getEmail())));
-                
-                String roleLabel = switch (user.getRole()) {
-                    case ADMIN -> "Admin";
-                    case TEACHER -> "Professor";
-                    case STUDENT -> "Estudante";
-                    default -> user.getRole().toString();
+                UnitValue[] studentColumnWidths = {
+                    UnitValue.createPointValue(15),   // ID
+                    UnitValue.createPointValue(50),    // E-MAIL
+                    UnitValue.createPointValue(80),   // NOME COMPLETO
+                    UnitValue.createPointValue(50),    // CPF
+                    UnitValue.createPointValue(40),    // DATA NASC.
+                    UnitValue.createPointValue(70),    // NOME MÃE
+                    UnitValue.createPointValue(70),    // NOME PAI
+                    UnitValue.createPointValue(55),    // TELEFONE
+                    UnitValue.createPointValue(90),    // ENDEREÇO
+                    UnitValue.createPointValue(30),    // STATUS
+                    UnitValue.createPointValue(40),    // MATRÍCULA
+                    UnitValue.createPointValue(60),    // CURSO
+                    UnitValue.createPointValue(40),    // ANO LETIVO
+                    UnitValue.createPointValue(50)     // RESULTADO FINAL
                 };
-                table.addCell(new Cell().add(new Paragraph(roleLabel)));
-                
-                String statusLabel = user.isActive() ? "Ativo" : "Inativo";
-                table.addCell(new Cell().add(new Paragraph(statusLabel)));
+                Table studentTable = new Table(studentColumnWidths);
+                studentTable.setWidth(UnitValue.createPercentValue(100));
+
+                // Cabeçalho
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("ID").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("NOME COMPLETO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("CPF").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("DATA NASC.").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("NOME MÃE").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("NOME PAI").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("TELEFONE").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("ENDEREÇO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("MATRÍCULA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("CURSO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("ANO LETIVO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("RESULTADO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+
+                // Dados dos alunos
+                for (User student : students) {
+                    studentTable.addCell(new Cell().add(new Paragraph(String.valueOf(student.getId()))).setFontSize(6).setPadding(3));
+                    
+                    String email = student.getEmail() != null ? (student.getEmail().length() > 20 ? student.getEmail().substring(0, 17) + "..." : student.getEmail()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(email)).setFontSize(6).setPadding(3));
+                    
+                    String nomeCompleto = student.getNomeCompleto() != null ? (student.getNomeCompleto().length() > 25 ? student.getNomeCompleto().substring(0, 22) + "..." : student.getNomeCompleto()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(nomeCompleto)).setFontSize(6).setPadding(3));
+                    
+                    studentTable.addCell(new Cell().add(new Paragraph(student.getCpf() != null ? student.getCpf() : "-")).setFontSize(6).setPadding(3));
+                    studentTable.addCell(new Cell().add(new Paragraph(student.getDataNascimento() != null ? student.getDataNascimento() : "-")).setFontSize(6).setPadding(3));
+                    
+                    String nomeMae = student.getNomeMae() != null ? (student.getNomeMae().length() > 22 ? student.getNomeMae().substring(0, 19) + "..." : student.getNomeMae()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(nomeMae)).setFontSize(6).setPadding(3));
+                    
+                    String nomePai = student.getNomePai() != null ? (student.getNomePai().length() > 22 ? student.getNomePai().substring(0, 19) + "..." : student.getNomePai()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(nomePai)).setFontSize(6).setPadding(3));
+                    
+                    studentTable.addCell(new Cell().add(new Paragraph(student.getTelefone() != null ? student.getTelefone() : "-")).setFontSize(6).setPadding(3));
+                    
+                    String endereco = student.getEndereco() != null ? (student.getEndereco().length() > 28 ? student.getEndereco().substring(0, 25) + "..." : student.getEndereco()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(endereco)).setFontSize(6).setPadding(3));
+                    
+                    String statusLabel = student.isActive() ? "Ativo" : "Inativo";
+                    studentTable.addCell(new Cell().add(new Paragraph(statusLabel)).setFontSize(6).setPadding(3));
+                    
+                    // Matrícula (usando ID como matrícula)
+                    studentTable.addCell(new Cell().add(new Paragraph(String.valueOf(student.getId()))).setFontSize(6).setPadding(3));
+                    
+                    // Curso (Nome da Turma)
+                    String curso = classroom.getName() != null ? (classroom.getName().length() > 18 ? classroom.getName().substring(0, 15) + "..." : classroom.getName()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(curso)).setFontSize(6).setPadding(3));
+                    
+                    // Ano Letivo
+                    studentTable.addCell(new Cell().add(new Paragraph(classroom.getAcademicYear() != null ? classroom.getAcademicYear() : "-")).setFontSize(6).setPadding(3));
+                    
+                    // Resultado Final
+                    Double mediaFinal = calculateStudentFinalAverage(student, classroom);
+                    String resultadoFinal = getStudentFinalResult(mediaFinal);
+                    studentTable.addCell(new Cell().add(new Paragraph(resultadoFinal)).setFontSize(6).setPadding(3));
+                }
+
+                document.add(studentTable);
+                document.add(new Paragraph(" ").setMarginBottom(15));
             }
 
-            document.add(table);
+            // ========== 3. DADOS DOS PROFESSORES ==========
+            List<User> teachers = new ArrayList<>(classroom.getTeachers().stream()
+                    .filter(t -> t.getRole() == Role.TEACHER)
+                    .toList());
+            if (!teachers.isEmpty()) {
+                Paragraph teachersTitle = new Paragraph("DADOS DOS PROFESSORES")
+                        .setFontSize(14)
+                        .setBold()
+                        .setMarginBottom(10);
+                document.add(teachersTitle);
+
+                UnitValue[] teacherColumnWidths = {
+                    UnitValue.createPointValue(15),   // ID
+                    UnitValue.createPointValue(50),    // E-MAIL
+                    UnitValue.createPointValue(80),    // NOME COMPLETO
+                    UnitValue.createPointValue(50),    // CPF
+                    UnitValue.createPointValue(90),    // ENDEREÇO
+                    UnitValue.createPointValue(70),    // TITULAÇÃO
+                    UnitValue.createPointValue(50),    // TIPO
+                    UnitValue.createPointValue(30)     // STATUS
+                };
+                Table teacherTable = new Table(teacherColumnWidths);
+                teacherTable.setWidth(UnitValue.createPercentValue(100));
+
+                // Cabeçalho
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("ID").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("NOME COMPLETO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("CPF").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("ENDEREÇO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("TITULAÇÃO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("TIPO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                teacherTable.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+
+                // Dados dos professores
+                for (User teacher : teachers) {
+                    teacherTable.addCell(new Cell().add(new Paragraph(String.valueOf(teacher.getId()))).setFontSize(6).setPadding(3));
+                    
+                    String email = teacher.getEmail() != null ? (teacher.getEmail().length() > 20 ? teacher.getEmail().substring(0, 17) + "..." : teacher.getEmail()) : "-";
+                    teacherTable.addCell(new Cell().add(new Paragraph(email)).setFontSize(6).setPadding(3));
+                    
+                    String nomeCompleto = teacher.getNomeCompleto() != null ? (teacher.getNomeCompleto().length() > 25 ? teacher.getNomeCompleto().substring(0, 22) + "..." : teacher.getNomeCompleto()) : "-";
+                    teacherTable.addCell(new Cell().add(new Paragraph(nomeCompleto)).setFontSize(6).setPadding(3));
+                    
+                    teacherTable.addCell(new Cell().add(new Paragraph(teacher.getCpf() != null ? teacher.getCpf() : "-")).setFontSize(6).setPadding(3));
+                    
+                    String endereco = teacher.getEndereco() != null ? (teacher.getEndereco().length() > 28 ? teacher.getEndereco().substring(0, 25) + "..." : teacher.getEndereco()) : "-";
+                    teacherTable.addCell(new Cell().add(new Paragraph(endereco)).setFontSize(6).setPadding(3));
+                    
+                    String titulacao = teacher.getTitulacao() != null ? (teacher.getTitulacao().length() > 22 ? teacher.getTitulacao().substring(0, 19) + "..." : teacher.getTitulacao()) : "-";
+                    teacherTable.addCell(new Cell().add(new Paragraph(titulacao)).setFontSize(6).setPadding(3));
+                    
+                    teacherTable.addCell(new Cell().add(new Paragraph("Professor")).setFontSize(6).setPadding(3));
+                    
+                    String statusLabel = teacher.isActive() ? "Ativo" : "Inativo";
+                    teacherTable.addCell(new Cell().add(new Paragraph(statusLabel)).setFontSize(6).setPadding(3));
+                }
+
+                document.add(teacherTable);
+                document.add(new Paragraph(" ").setMarginBottom(15));
+            }
+
+            // ========== 4. DADOS DOS ADMINISTRADORES ==========
+            List<User> admins = new ArrayList<>(classroom.getTeachers().stream()
+                    .filter(t -> t.getRole() == Role.ADMIN)
+                    .toList());
+            if (!admins.isEmpty()) {
+                Paragraph adminsTitle = new Paragraph("DADOS DOS ADMINISTRADORES")
+                        .setFontSize(14)
+                        .setBold()
+                        .setMarginBottom(10);
+                document.add(adminsTitle);
+
+                UnitValue[] adminColumnWidths = {
+                    UnitValue.createPointValue(15),   // ID
+                    UnitValue.createPointValue(50),    // E-MAIL
+                    UnitValue.createPointValue(80),    // NOME COMPLETO
+                    UnitValue.createPointValue(50),    // CPF
+                    UnitValue.createPointValue(90),    // ENDEREÇO
+                    UnitValue.createPointValue(70),    // TITULAÇÃO
+                    UnitValue.createPointValue(50),    // TIPO
+                    UnitValue.createPointValue(30)     // STATUS
+                };
+                Table adminTable = new Table(adminColumnWidths);
+                adminTable.setWidth(UnitValue.createPercentValue(100));
+
+                // Cabeçalho
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("ID").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("NOME COMPLETO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("CPF").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("ENDEREÇO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("TITULAÇÃO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("TIPO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                adminTable.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+
+                // Dados dos administradores
+                for (User admin : admins) {
+                    adminTable.addCell(new Cell().add(new Paragraph(String.valueOf(admin.getId()))).setFontSize(6).setPadding(3));
+                    
+                    String email = admin.getEmail() != null ? (admin.getEmail().length() > 20 ? admin.getEmail().substring(0, 17) + "..." : admin.getEmail()) : "-";
+                    adminTable.addCell(new Cell().add(new Paragraph(email)).setFontSize(6).setPadding(3));
+                    
+                    String nomeCompleto = admin.getNomeCompleto() != null ? (admin.getNomeCompleto().length() > 25 ? admin.getNomeCompleto().substring(0, 22) + "..." : admin.getNomeCompleto()) : "-";
+                    adminTable.addCell(new Cell().add(new Paragraph(nomeCompleto)).setFontSize(6).setPadding(3));
+                    
+                    adminTable.addCell(new Cell().add(new Paragraph(admin.getCpf() != null ? admin.getCpf() : "-")).setFontSize(6).setPadding(3));
+                    
+                    String endereco = admin.getEndereco() != null ? (admin.getEndereco().length() > 28 ? admin.getEndereco().substring(0, 25) + "..." : admin.getEndereco()) : "-";
+                    adminTable.addCell(new Cell().add(new Paragraph(endereco)).setFontSize(6).setPadding(3));
+                    
+                    String titulacao = admin.getTitulacao() != null ? (admin.getTitulacao().length() > 22 ? admin.getTitulacao().substring(0, 19) + "..." : admin.getTitulacao()) : "-";
+                    adminTable.addCell(new Cell().add(new Paragraph(titulacao)).setFontSize(6).setPadding(3));
+                    
+                    adminTable.addCell(new Cell().add(new Paragraph("Administrador")).setFontSize(6).setPadding(3));
+                    
+                    String statusLabel = admin.isActive() ? "Ativo" : "Inativo";
+                    adminTable.addCell(new Cell().add(new Paragraph(statusLabel)).setFontSize(6).setPadding(3));
+                }
+
+                document.add(adminTable);
+            }
+
             document.close();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
-            String filename = "usuarios_sala_" + classroom.getName().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
+            String filename = "dados_sala_" + classroom.getName().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
             headers.setContentDispositionFormData("attachment", filename);
             headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
 
             return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
         } catch (Exception e) {
-            logger.error("Erro ao gerar PDF de usuários da sala: {}", e.getMessage(), e);
+            logger.error("Erro ao gerar PDF de dados da sala: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Erro ao gerar PDF: " + e.getMessage());
         }
     }

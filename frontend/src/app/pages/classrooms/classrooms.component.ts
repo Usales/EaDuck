@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { CommonModule } from '@angular/common';
 import { ClassroomService, Classroom } from '../../services/classroom.service';
@@ -40,6 +40,12 @@ export class ClassroomsComponent implements OnInit {
   searchStudent = '';
   filteredStudents: User[] = [];
   assignMode: 'teacher' | 'student' | null = null;
+
+  showNotasPdfModal = false;
+  notasPdfClassroom: Classroom | null = null;
+
+  @ViewChild('teacherSearchInput') teacherSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('studentSearchInput') studentSearchInput?: ElementRef<HTMLInputElement>;
 
   constructor(private classroomService: ClassroomService, private authService: AuthService, private userService: UserService) {
     this.currentUser$ = this.authService.currentUser$;
@@ -264,6 +270,12 @@ export class ClassroomsComponent implements OnInit {
         // Aguardar um pouco para garantir que os professores foram carregados
         setTimeout(() => {
           this.filteredTeachers = this.teachers.filter(t => !this.selectedTeacherIds.includes(t.id));
+          // Focar no campo de busca
+          setTimeout(() => {
+            if (this.teacherSearchInput) {
+              this.teacherSearchInput.nativeElement.focus();
+            }
+          }, 50);
         }, 100);
       },
       error: (err) => {
@@ -295,6 +307,12 @@ export class ClassroomsComponent implements OnInit {
         // Aguardar um pouco para garantir que os alunos foram carregados
         setTimeout(() => {
           this.filteredStudents = this.students.filter(s => !this.selectedStudentIds.includes(s.id));
+          // Focar no campo de busca
+          setTimeout(() => {
+            if (this.studentSearchInput) {
+              this.studentSearchInput.nativeElement.focus();
+            }
+          }, 50);
         }, 100);
       },
       error: (err) => {
@@ -315,8 +333,13 @@ export class ClassroomsComponent implements OnInit {
       return;
     }
     const search = this.searchTeacher ? this.searchTeacher.toLowerCase().trim() : '';
+    // Só mostrar resultados se houver pelo menos um caractere digitado
+    if (!search || search.length === 0) {
+      this.filteredTeachers = [];
+      return;
+    }
     this.filteredTeachers = this.teachers.filter(t => {
-      const matchesSearch = !search || 
+      const matchesSearch = 
         (t.email && t.email.toLowerCase().includes(search)) || 
         (t.name && t.name.toLowerCase().includes(search)) ||
         (t.nomeCompleto && t.nomeCompleto.toLowerCase().includes(search));
@@ -331,8 +354,13 @@ export class ClassroomsComponent implements OnInit {
       return;
     }
     const search = this.searchStudent ? this.searchStudent.toLowerCase().trim() : '';
+    // Só mostrar resultados se houver pelo menos um caractere digitado
+    if (!search || search.length === 0) {
+      this.filteredStudents = [];
+      return;
+    }
     this.filteredStudents = this.students.filter(s => {
-      const matchesSearch = !search || 
+      const matchesSearch = 
         (s.email && s.email.toLowerCase().includes(search)) || 
         (s.name && s.name.toLowerCase().includes(search)) ||
         (s.nomeCompleto && s.nomeCompleto.toLowerCase().includes(search));
@@ -519,9 +547,25 @@ export class ClassroomsComponent implements OnInit {
     return teacher ? teacher.email : '';
   }
 
+  getTeacherNameById(id: number): string {
+    const teacher = this.teachers.find(t => t.id === id);
+    if (teacher) {
+      return teacher.nomeCompleto || teacher.name || teacher.email;
+    }
+    return '';
+  }
+
   getStudentEmailById(id: number): string {
     const student = this.students.find(s => s.id === id);
     return student ? student.email : '';
+  }
+
+  getStudentNameById(id: number): string {
+    const student = this.students.find(s => s.id === id);
+    if (student) {
+      return student.nomeCompleto || student.name || student.email;
+    }
+    return '';
   }
 
   getTeacherColor(index: number): string {
@@ -541,7 +585,7 @@ export class ClassroomsComponent implements OnInit {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        const filename = `usuarios_sala_${classroom.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        const filename = `dados_sala_${classroom.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         link.download = filename;
         document.body.appendChild(link);
         link.click();
@@ -551,6 +595,72 @@ export class ClassroomsComponent implements OnInit {
       error: (error) => {
         console.error('Erro ao gerar PDF:', error);
         alert('Erro ao gerar PDF: ' + (error.error?.message || 'Erro desconhecido'));
+      }
+    });
+  }
+
+  openNotasPdfModal(classroom: Classroom) {
+    // Carregar dados completos da sala com alunos
+    this.classroomService.getClassroomById(classroom.id).subscribe({
+      next: (fullClassroom) => {
+        // Buscar dados completos dos alunos
+        if (fullClassroom.studentIds && fullClassroom.studentIds.length > 0) {
+          // Carregar lista completa de alunos e filtrar pelos IDs da sala
+          this.userService.getStudents().subscribe({
+            next: (allStudents) => {
+              const classroomStudents = allStudents.filter(s => 
+                fullClassroom.studentIds?.includes(s.id)
+              );
+              this.notasPdfClassroom = {
+                ...fullClassroom,
+                students: classroomStudents
+              };
+              this.showNotasPdfModal = true;
+            },
+            error: (error) => {
+              console.error('Erro ao carregar alunos:', error);
+              alert('Erro ao carregar dados dos alunos');
+            }
+          });
+        } else {
+          this.notasPdfClassroom = {
+            ...fullClassroom,
+            students: []
+          };
+          this.showNotasPdfModal = true;
+        }
+      },
+      error: (error) => {
+        console.error('Erro ao carregar dados da sala:', error);
+        alert('Erro ao carregar dados da sala');
+      }
+    });
+  }
+
+  closeNotasPdfModal() {
+    this.showNotasPdfModal = false;
+    this.notasPdfClassroom = null;
+  }
+
+  exportStudentGradesToPdf(classroomId: number, studentId: number) {
+    this.classroomService.exportStudentGradesToPdf(classroomId, studentId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const student = this.notasPdfClassroom?.students?.find(s => s.id === studentId);
+        const studentName = student?.nomeCompleto || student?.name || 'aluno';
+        const filename = `notas_${studentName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        this.closeNotasPdfModal();
+      },
+      error: (error) => {
+        console.error('Erro ao gerar PDF de notas:', error);
+        alert('Erro ao gerar PDF de notas: ' + (error.error?.message || 'Erro desconhecido'));
       }
     });
   }

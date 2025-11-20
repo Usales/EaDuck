@@ -205,13 +205,14 @@
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   margin-bottom: 0;
   display: flex;
   flex-direction: column;
   min-height: 280px;
   width: 100%;
   pointer-events: auto;
+  box-sizing: border-box;
 }
 
 .classroom-card:hover {
@@ -435,6 +436,8 @@
   border-top: 1px solid var(--border-color);
   width: 100%;
   pointer-events: auto;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .classroom-action-btn {
@@ -448,10 +451,10 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  flex: 1;
+  flex: 1 1 auto;
   justify-content: center;
-  min-width: 80px;
-  max-width: 150px;
+  min-width: 100px;
+  max-width: 100%;
   text-transform: uppercase;
   letter-spacing: 0.025em;
   white-space: nowrap;
@@ -460,6 +463,7 @@
   pointer-events: auto;
   position: relative;
   z-index: 10;
+  box-sizing: border-box;
 }
 
 .classroom-action-save {
@@ -496,6 +500,15 @@
 
 .classroom-action-delete:hover {
   background: #dc2626;
+}
+
+.classroom-action-pdf {
+  background: #dc2626;
+  color: white;
+}
+
+.classroom-action-pdf:hover {
+  background: #b91c1c;
 }
 
 // Seção de atribuição
@@ -599,9 +612,8 @@
 }
 
 .classroom-assignment-item {
-  padding: 0.5rem;
+  padding: 0.75rem;
   cursor: pointer;
-  font-size: 0.75rem;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-color);
   transition: background-color 0.2s ease;
@@ -613,6 +625,18 @@
 
 .classroom-assignment-item:last-child {
   border-bottom: none;
+}
+
+.classroom-assignment-item-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.classroom-assignment-item-email {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 .classroom-assignment-actions {
@@ -750,12 +774,13 @@
   .classroom-card-actions {
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
   .classroom-action-btn {
-    min-width: 100px;
-    max-width: 150px;
-    flex: 1;
+    min-width: calc(50% - 0.25rem);
+    max-width: calc(50% - 0.25rem);
+    flex: 1 1 calc(50% - 0.25rem);
   }
 }
 
@@ -824,12 +849,14 @@
   }
   
   .classroom-card-actions {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
   .classroom-action-btn {
-    min-width: 120px;
-    max-width: 150px;
+    min-width: calc(33.333% - 0.334rem);
+    max-width: calc(33.333% - 0.334rem);
+    flex: 1 1 calc(33.333% - 0.334rem);
   }
 }
 
@@ -901,14 +928,14 @@
   
   .classroom-card-actions {
     gap: 0.75rem;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     margin-top: auto;
   }
   
   .classroom-action-btn {
-    flex: 1;
-    min-width: 120px;
-    max-width: 150px;
+    flex: 1 1 auto;
+    min-width: calc(33.333% - 0.5rem);
+    max-width: calc(33.333% - 0.5rem);
   }
   
   .classroom-assignment {
@@ -950,6 +977,117 @@
     padding: 2.25rem;
     min-width: 350px; // Largura mínima para evitar cards muito estreitos
   }
+}
+
+// Modal para Notas PDF
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--bg-primary);
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+}
+
+.modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.student-item {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-secondary);
+
+  &:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.student-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.student-email {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
   
   .classroom-card-name {
     font-size: 1.375rem;
