@@ -67,9 +67,22 @@ export class LoginComponent implements OnInit, AfterViewInit {
       next: (user) => {
         this.closeModal();
         // Verificar se o usuário precisa configurar o nome
+        // O backend já verifica se ADMIN tem nomeCompleto, CPF e endereço preenchidos
         if (user.needsNameSetup) {
+          this.currentUserRole = user.role || 'STUDENT';
           this.showNameSetupModal = true;
         } else {
+          // Se não precisa mais configurar, garantir que o cache está atualizado
+          if (user.role === 'ADMIN' && user.nomeCompleto && user.cpf && user.endereco) {
+            localStorage.setItem('adminDataFilled', 'true');
+          }
+          if (user.role === 'TEACHER' && user.nomeCompleto && user.cpf && user.endereco && user.titulacao) {
+            localStorage.setItem('teacherDataFilled', 'true');
+          }
+          if (user.role === 'STUDENT' && user.name && user.nomeCompleto && user.cpf && 
+              user.dataNascimento && user.nomeMae && user.nomePai && user.telefone && user.endereco) {
+            localStorage.setItem('studentDataFilled', 'true');
+          }
           this.router.navigate(['/home']);
         }
       },
@@ -117,11 +130,26 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.showPassword = !this.showPassword;
   }
 
+  currentUserRole: string = 'STUDENT';
+
   onNameSet(name: string) {
     this.showNameSetupModal = false;
     // Atualizar o usuário atual com o novo nome
     this.authService.getProfile().subscribe(user => {
       this.authService.setCurrentUser(user);
+      // Se for ADMIN e já preencheu os dados, garantir que o cache está salvo
+      if (user.role === 'ADMIN' && user.nomeCompleto && user.cpf && user.endereco) {
+        localStorage.setItem('adminDataFilled', 'true');
+      }
+      // Se for TEACHER e já preencheu os dados, garantir que o cache está salvo
+      if (user.role === 'TEACHER' && user.nomeCompleto && user.cpf && user.endereco && user.titulacao) {
+        localStorage.setItem('teacherDataFilled', 'true');
+      }
+      // Se for STUDENT e já preencheu os dados, garantir que o cache está salvo
+      if (user.role === 'STUDENT' && user.name && user.nomeCompleto && user.cpf && 
+          user.dataNascimento && user.nomeMae && user.nomePai && user.telefone && user.endereco) {
+        localStorage.setItem('studentDataFilled', 'true');
+      }
       this.router.navigate(['/home']);
     });
   }

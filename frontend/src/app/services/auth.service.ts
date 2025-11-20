@@ -314,11 +314,35 @@ export class AuthService {
         name: response.name, // Manter null se for null
         role: response.role,
         isActive: response.isActive,
-        needsNameSetup: response.needsNameSetup
+        needsNameSetup: response.needsNameSetup,
+        nomeCompleto: response.nomeCompleto,
+        cpf: response.cpf,
+        endereco: response.endereco,
+        titulacao: response.titulacao,
+        dataNascimento: response.dataNascimento,
+        nomeMae: response.nomeMae,
+        nomePai: response.nomePai,
+        telefone: response.telefone
       })),
       tap(user => {
         // Definir o usuário atual após obter os dados completos
         this.setCurrentUser(user);
+        
+        // Se for ADMIN e já tiver preenchido os dados, salvar em cache
+        if (user.role === 'ADMIN' && user.nomeCompleto && user.cpf && user.endereco) {
+          localStorage.setItem('adminDataFilled', 'true');
+        }
+        
+        // Se for TEACHER e já tiver preenchido os dados, salvar em cache
+        if (user.role === 'TEACHER' && user.nomeCompleto && user.cpf && user.endereco && user.titulacao) {
+          localStorage.setItem('teacherDataFilled', 'true');
+        }
+        
+        // Se for STUDENT e já tiver preenchido os dados, salvar em cache
+        if (user.role === 'STUDENT' && user.name && user.nomeCompleto && user.cpf && 
+            user.dataNascimento && user.nomeMae && user.nomePai && user.telefone && user.endereco) {
+          localStorage.setItem('studentDataFilled', 'true');
+        }
       }),
       tap({
         error: (error) => console.error('Erro ao carregar perfil:', error)
@@ -328,6 +352,22 @@ export class AuthService {
 
   updateUserName(name: string): Observable<any> {
     return this.http.put('http://localhost:8080/api/users/me/name', { name }, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  updateUserData(userData: {
+    name?: string;
+    nomeCompleto: string;
+    cpf: string;
+    dataNascimento?: string;
+    nomeMae?: string;
+    nomePai?: string;
+    telefone?: string;
+    endereco: string;
+    titulacao?: string;
+  }): Observable<any> {
+    return this.http.put('http://localhost:8080/api/users/me/name', userData, {
       headers: this.getAuthHeaders()
     });
   }

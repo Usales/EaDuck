@@ -1,6 +1,6 @@
-<div *ngIf="isVisible" class="fixed inset-0 z-50 flex items-center justify-center" 
+<div *ngIf="isVisible" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" 
      [style.background-color]="'var(--modal-overlay)'">
-  <div class="rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+  <div class="rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6 my-8"
        [style.background-color]="'var(--panel-bg)'"
        [style.color]="'var(--text-primary)'"
        [style.border]="'1px solid var(--border-color)'">
@@ -8,39 +8,238 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-xl font-semibold" [style.color]="'var(--text-primary)'">
-        Configuração Inicial
+        Configuração Inicial do Perfil
       </h2>
     </div>
 
     <!-- Content -->
     <div class="mb-6">
       <p class="text-sm mb-4" [style.color]="'var(--text-secondary)'">
-        Para continuar usando o sistema, precisamos que você defina seu nome.
+        <span *ngIf="isAdmin">Para continuar usando o sistema, precisamos que você preencha seus dados de administrador.</span>
+        <span *ngIf="!isAdmin">Para continuar usando o sistema, precisamos que você preencha seus dados pessoais.</span>
       </p>
       
-      <div class="space-y-4">
-        <div>
-          <label for="userName" class="block text-sm font-medium mb-2" 
+      <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        <!-- Apelido/Nickname (apenas para alunos) -->
+        <div *ngIf="isStudent && !isAdmin">
+          <label for="nickname" class="block text-sm font-medium mb-2" 
                  [style.color]="'var(--text-primary)'">
-            Seu Nome
+            Apelido/Nickname <span class="text-red-500">*</span>
           </label>
           <input
-            id="userName"
+            id="nickname"
             type="text"
-            [(ngModel)]="userName"
-            (keypress)="onKeyPress($event)"
+            [(ngModel)]="nickname"
+            placeholder="Digite seu apelido"
+            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+            [style.border-color]="'var(--border-color)'"
+            [style.background-color]="'var(--input-bg)'"
+            [style.color]="'var(--text-primary)'"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        <!-- Nome Completo -->
+        <div>
+          <label for="nomeCompleto" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            Nome Completo <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="nomeCompleto"
+            type="text"
+            [(ngModel)]="nomeCompleto"
             placeholder="Digite seu nome completo"
             class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
             [style.border-color]="'var(--border-color)'"
             [style.background-color]="'var(--input-bg)'"
             [style.color]="'var(--text-primary)'"
-            [style.focus-ring-color]="'var(--primary-color)'"
             [disabled]="isLoading"
           />
         </div>
 
+        <!-- CPF -->
+        <div>
+          <label for="cpf" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            CPF <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="cpf"
+            type="text"
+            [(ngModel)]="cpf"
+            (input)="formatCPF($event)"
+            placeholder="000.000.000-00"
+            maxlength="14"
+            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+            [style.border-color]="'var(--border-color)'"
+            [style.background-color]="'var(--input-bg)'"
+            [style.color]="'var(--text-primary)'"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        <!-- Data de Nascimento (apenas para alunos) -->
+        <div *ngIf="isStudent && !isAdmin">
+          <label for="dataNascimento" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            Data de Nascimento <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="dataNascimento"
+            type="text"
+            [(ngModel)]="dataNascimento"
+            (input)="formatDate($event)"
+            placeholder="dd-mm-aaaa"
+            maxlength="10"
+            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+            [style.border-color]="'var(--border-color)'"
+            [style.background-color]="'var(--input-bg)'"
+            [style.color]="'var(--text-primary)'"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        <!-- Nome da Mãe (apenas para alunos) -->
+        <div *ngIf="isStudent && !isAdmin">
+          <label for="nomeMae" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            Nome da Mãe <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="nomeMae"
+            type="text"
+            [(ngModel)]="nomeMae"
+            placeholder="Digite o nome completo da sua mãe"
+            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+            [style.border-color]="'var(--border-color)'"
+            [style.background-color]="'var(--input-bg)'"
+            [style.color]="'var(--text-primary)'"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        <!-- Nome do Pai (apenas para alunos) -->
+        <div *ngIf="isStudent && !isAdmin">
+          <label for="nomePai" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            Nome do Pai <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="nomePai"
+            type="text"
+            [(ngModel)]="nomePai"
+            placeholder="Digite o nome completo do seu pai"
+            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+            [style.border-color]="'var(--border-color)'"
+            [style.background-color]="'var(--input-bg)'"
+            [style.color]="'var(--text-primary)'"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        <!-- Telefone (apenas para alunos) -->
+        <div *ngIf="isStudent && !isAdmin">
+          <label for="telefone" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            Telefone de Contato <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="telefone"
+            type="text"
+            [(ngModel)]="telefone"
+            (input)="formatPhone($event)"
+            placeholder="(00) 00000-0000"
+            maxlength="15"
+            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+            [style.border-color]="'var(--border-color)'"
+            [style.background-color]="'var(--input-bg)'"
+            [style.color]="'var(--text-primary)'"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        <!-- Titulação (apenas para professores) -->
+        <div *ngIf="isTeacher && !isAdmin">
+          <label for="titulacao" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            Titulação <span class="text-red-500">*</span>
+          </label>
+          <div class="space-y-2">
+            <div class="flex gap-2">
+              <input
+                id="titulacao"
+                type="text"
+                [(ngModel)]="titulacao"
+                (keydown.enter)="addTitulacao($event)"
+                placeholder="Ex: Mestre em Educação, Doutor em Matemática"
+                class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                [style.border-color]="'var(--border-color)'"
+                [style.background-color]="'var(--input-bg)'"
+                [style.color]="'var(--text-primary)'"
+                [disabled]="isLoading"
+              />
+              <button
+                type="button"
+                (click)="addTitulacao($event)"
+                [disabled]="isLoading"
+                class="px-4 py-2 rounded-lg font-medium transition-all"
+                [ngClass]="{
+                  'opacity-50 cursor-not-allowed': isLoading || !titulacao || !titulacao.trim(),
+                  'hover:opacity-90': !isLoading && titulacao && titulacao.trim()
+                }"
+                [style.background-color]="(isLoading || !titulacao || !titulacao.trim()) ? 'var(--bg-secondary)' : 'var(--primary-color)'"
+                [style.color]="'var(--primary-text)'"
+                [style.cursor]="(isLoading || !titulacao || !titulacao.trim()) ? 'not-allowed' : 'pointer'"
+              >
+                Adicionar
+              </button>
+            </div>
+            <div *ngIf="titulacoes.length > 0" class="space-y-1">
+              <div *ngFor="let tit of titulacoes; let i = index" 
+                   class="flex items-center justify-between p-2 rounded-lg"
+                   [style.background-color]="'var(--bg-secondary)'">
+                <span [style.color]="'var(--text-primary)'">{{ tit }}</span>
+                <button
+                  type="button"
+                  (click)="removeTitulacao(i, $event)"
+                  [disabled]="isLoading"
+                  class="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                  [style.cursor]="isLoading ? 'not-allowed' : 'pointer'"
+                >
+                  <span class="material-icons text-sm">close</span>
+                </button>
+              </div>
+            </div>
+            <p class="text-xs" [style.color]="'var(--text-secondary)'">
+              Adicione uma ou mais titulações. Pressione Enter ou clique em "Adicionar" para incluir.
+            </p>
+          </div>
+        </div>
+
+        <!-- Endereço -->
+        <div>
+          <label for="endereco" class="block text-sm font-medium mb-2" 
+                 [style.color]="'var(--text-primary)'">
+            Endereço <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            id="endereco"
+            [(ngModel)]="endereco"
+            placeholder="Digite seu endereço completo"
+            rows="3"
+            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-none"
+            [style.border-color]="'var(--border-color)'"
+            [style.background-color]="'var(--input-bg)'"
+            [style.color]="'var(--text-primary)'"
+            [disabled]="isLoading"
+          ></textarea>
+        </div>
+
         <!-- Error Message -->
-        <div *ngIf="error" class="text-sm" [style.color]="'var(--error-color)'">
+        <div *ngIf="error" class="text-sm p-3 rounded-lg" 
+             [style.background-color]="'var(--error-bg)'"
+             [style.color]="'var(--error-color)'">
           {{ error }}
         </div>
       </div>
@@ -51,13 +250,13 @@
       <button
         type="button"
         (click)="onSubmit()"
-        [disabled]="isLoading || !userName.trim()"
+        [disabled]="isLoading"
         class="flex-1 px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         [style.background-color]="'var(--primary-color)'"
         [style.color]="'var(--primary-text)'"
         [style.border]="'1px solid var(--primary-color)'"
       >
-        <span *ngIf="!isLoading">Continuar</span>
+        <span *ngIf="!isLoading">Salvar e Continuar</span>
         <span *ngIf="isLoading" class="flex items-center justify-center">
           <div class="animate-spin rounded-full h-4 w-4 border-b-2 mr-2"
                [style.border-color]="'var(--primary-text)'"></div>
@@ -71,8 +270,9 @@
          [style.background-color]="'var(--info-bg)'"
          [style.color]="'var(--info-text)'">
       <p class="text-xs">
-        <strong>Nota:</strong> Este nome será usado em todo o sistema. 
-        Você poderá alterá-lo posteriormente nas configurações do perfil.
+        <strong>Nota:</strong> Todos os campos marcados com <span class="text-red-500">*</span> são obrigatórios. 
+        Você poderá alterá-los posteriormente nas configurações do perfil.
+        <span *ngIf="isTeacher"><br>Para professores: adicione todas as suas titulações separadamente.</span>
       </p>
     </div>
   </div>

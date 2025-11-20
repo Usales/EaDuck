@@ -136,6 +136,61 @@
   }
 }
 
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+
+  &:hover:not(:disabled) {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+  }
+}
+
+.space-y-1 {
+  > * + * {
+    margin-top: 0.25rem;
+  }
+}
+
+.space-y-2 {
+  > * + * {
+    margin-top: 0.5rem;
+  }
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.p-2 {
+  padding: 0.5rem;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.text-red-500 {
+  color: #ef4444;
+}
+
 .notification-options {
   display: flex;
   flex-direction: column;
@@ -244,18 +299,47 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--hover-bg);
+    background: var(--bg-primary);
+    border-color: var(--accent-color);
   }
 
   input[type="radio"] {
     display: none;
 
-    &:checked + .theme-option-content {
-      color: var(--primary-color);
+    &:checked ~ .theme-option-content {
+      color: var(--accent-color);
+      
+      .material-icons {
+        color: var(--accent-color);
+      }
     }
-
-    &:checked {
-      background: var(--primary-color);
+  }
+  
+  // Estilo quando o radio está checked
+  &.theme-selected {
+    background: var(--accent-bg);
+    border-color: var(--accent-color);
+    
+    .theme-option-content {
+      color: var(--accent-color);
+      
+      .material-icons {
+        color: var(--accent-color);
+      }
+    }
+  }
+  
+  // Fallback para navegadores que suportam :has
+  &:has(input[type="radio"]:checked) {
+    background: var(--accent-bg);
+    border-color: var(--accent-color);
+    
+    .theme-option-content {
+      color: var(--accent-color);
+      
+      .material-icons {
+        color: var(--accent-color);
+      }
     }
   }
 }
@@ -266,7 +350,12 @@
   gap: 0.75rem;
   font-weight: 500;
   color: var(--text-primary);
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  
+  .material-icons {
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+  }
 }
 
 .alert {

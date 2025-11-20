@@ -25,48 +25,341 @@
           </h2>
         </div>
         <div class="settings-card-body">
-          <div class="form-group">
-            <label for="userName" class="form-label">Nome Completo</label>
-            <input
-              type="text"
-              id="userName"
-              [(ngModel)]="nameForm.name"
-              class="form-input"
-              placeholder="Digite seu nome completo"
-              [disabled]="isUpdatingName"
-            />
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Email</label>
-            <input
-              type="email"
-              [value]="currentUser?.email || ''"
-              class="form-input"
-              disabled
-            />
-            <small class="form-help">O email não pode ser alterado</small>
+          <!-- Campos para Administradores -->
+          <div *ngIf="isAdmin">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input
+                type="email"
+                [value]="currentUser?.email || ''"
+                class="form-input"
+                disabled
+              />
+              <small class="form-help">O email não pode ser alterado</small>
+            </div>
+
+            <div class="form-group">
+              <label for="adminNomeCompleto" class="form-label">Nome Completo <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="adminNomeCompleto"
+                [(ngModel)]="adminForm.nomeCompleto"
+                class="form-input"
+                placeholder="Digite seu nome completo"
+                [disabled]="isUpdatingAdminData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="adminCPF" class="form-label">CPF <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="adminCPF"
+                [(ngModel)]="adminForm.cpf"
+                (input)="formatCPFAdmin($event)"
+                class="form-input"
+                placeholder="000.000.000-00"
+                maxlength="14"
+                [disabled]="isUpdatingAdminData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="adminEndereco" class="form-label">Endereço <span class="text-red-500">*</span></label>
+              <textarea
+                id="adminEndereco"
+                [(ngModel)]="adminForm.endereco"
+                class="form-input"
+                placeholder="Digite seu endereço completo"
+                rows="3"
+                [disabled]="isUpdatingAdminData"
+              ></textarea>
+            </div>
+
+            <button
+              (click)="updateAdminData()"
+              [disabled]="isUpdatingAdminData || !adminForm.nomeCompleto.trim() || !adminForm.cpf.trim() || !adminForm.endereco.trim()"
+              class="btn btn-primary"
+            >
+              <span *ngIf="!isUpdatingAdminData" class="material-icons">save</span>
+              <span *ngIf="isUpdatingAdminData" class="material-icons spin">refresh</span>
+              {{ isUpdatingAdminData ? 'Salvando...' : 'Salvar Dados' }}
+            </button>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Função</label>
-            <input
-              type="text"
-              [value]="currentUser?.role || ''"
-              class="form-input"
-              disabled
-            />
+          <!-- Campos para Professores -->
+          <div *ngIf="isTeacher">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input
+                type="email"
+                [value]="currentUser?.email || ''"
+                class="form-input"
+                disabled
+              />
+              <small class="form-help">O email não pode ser alterado</small>
+            </div>
+
+            <div class="form-group">
+              <label for="teacherNomeCompleto" class="form-label">Nome Completo <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="teacherNomeCompleto"
+                [(ngModel)]="teacherForm.nomeCompleto"
+                class="form-input"
+                placeholder="Digite seu nome completo"
+                [disabled]="isUpdatingTeacherData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="teacherCPF" class="form-label">CPF <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="teacherCPF"
+                [(ngModel)]="teacherForm.cpf"
+                (input)="formatCPF($event)"
+                class="form-input"
+                placeholder="000.000.000-00"
+                maxlength="14"
+                [disabled]="isUpdatingTeacherData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="teacherEndereco" class="form-label">Endereço <span class="text-red-500">*</span></label>
+              <textarea
+                id="teacherEndereco"
+                [(ngModel)]="teacherForm.endereco"
+                class="form-input"
+                placeholder="Digite seu endereço completo"
+                rows="3"
+                [disabled]="isUpdatingTeacherData"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="teacherTitulacao" class="form-label">Titulação <span class="text-red-500">*</span></label>
+              <div class="space-y-2">
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    id="teacherTitulacao"
+                    [(ngModel)]="teacherForm.titulacao"
+                    (keydown.enter)="$event.preventDefault(); addTitulacao()"
+                    class="form-input flex-1"
+                    placeholder="Ex: Mestre em Educação, Doutor em Matemática"
+                    [disabled]="isUpdatingTeacherData"
+                  />
+                  <button
+                    type="button"
+                    (click)="addTitulacao()"
+                    [disabled]="isUpdatingTeacherData || !teacherForm.titulacao || !teacherForm.titulacao.trim()"
+                    class="btn btn-secondary"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+                <div *ngIf="teacherForm.titulacoes.length > 0" class="space-y-1">
+                  <div *ngFor="let tit of teacherForm.titulacoes; let i = index" 
+                       class="flex items-center justify-between p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                    <span>{{ tit }}</span>
+                    <button
+                      type="button"
+                      (click)="removeTitulacao(i)"
+                      [disabled]="isUpdatingTeacherData"
+                      class="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                    >
+                      <span class="material-icons text-sm">close</span>
+                    </button>
+                  </div>
+                </div>
+                <small class="form-help">Adicione uma ou mais titulações. Pressione Enter ou clique em "Adicionar" para incluir.</small>
+              </div>
+            </div>
+
+            <button
+              (click)="updateTeacherData()"
+              [disabled]="isUpdatingTeacherData || !teacherForm.nomeCompleto.trim() || !teacherForm.cpf.trim() || !teacherForm.endereco.trim() || teacherForm.titulacoes.length === 0"
+              class="btn btn-primary"
+            >
+              <span *ngIf="!isUpdatingTeacherData" class="material-icons">save</span>
+              <span *ngIf="isUpdatingTeacherData" class="material-icons spin">refresh</span>
+              {{ isUpdatingTeacherData ? 'Salvando...' : 'Salvar Dados' }}
+            </button>
           </div>
 
-          <button
-            (click)="updateName()"
-            [disabled]="isUpdatingName || !nameForm.name.trim()"
-            class="btn btn-primary"
-          >
-            <span *ngIf="!isUpdatingName" class="material-icons">save</span>
-            <span *ngIf="isUpdatingName" class="material-icons spin">refresh</span>
-            {{ isUpdatingName ? 'Salvando...' : 'Salvar Nome' }}
-          </button>
+          <!-- Campos para Estudantes -->
+          <div *ngIf="isStudent">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input
+                type="email"
+                [value]="currentUser?.email || ''"
+                class="form-input"
+                disabled
+              />
+              <small class="form-help">O email não pode ser alterado</small>
+            </div>
+
+            <div class="form-group">
+              <label for="studentName" class="form-label">Apelido/Nickname <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="studentName"
+                [(ngModel)]="studentForm.name"
+                class="form-input"
+                placeholder="Digite seu apelido"
+                [disabled]="isUpdatingStudentData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="studentNomeCompleto" class="form-label">Nome Completo <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="studentNomeCompleto"
+                [(ngModel)]="studentForm.nomeCompleto"
+                class="form-input"
+                placeholder="Digite seu nome completo"
+                [disabled]="isUpdatingStudentData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="studentCPF" class="form-label">CPF <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="studentCPF"
+                [(ngModel)]="studentForm.cpf"
+                (input)="formatCPFStudent($event)"
+                class="form-input"
+                placeholder="000.000.000-00"
+                maxlength="14"
+                [disabled]="isUpdatingStudentData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="studentDataNascimento" class="form-label">Data de Nascimento <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="studentDataNascimento"
+                [(ngModel)]="studentForm.dataNascimento"
+                (input)="formatDate($event)"
+                class="form-input"
+                placeholder="dd-mm-aaaa"
+                maxlength="10"
+                [disabled]="isUpdatingStudentData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="studentNomeMae" class="form-label">Nome da Mãe <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="studentNomeMae"
+                [(ngModel)]="studentForm.nomeMae"
+                class="form-input"
+                placeholder="Digite o nome completo da sua mãe"
+                [disabled]="isUpdatingStudentData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="studentNomePai" class="form-label">Nome do Pai <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="studentNomePai"
+                [(ngModel)]="studentForm.nomePai"
+                class="form-input"
+                placeholder="Digite o nome completo do seu pai"
+                [disabled]="isUpdatingStudentData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="studentTelefone" class="form-label">Telefone de Contato <span class="text-red-500">*</span></label>
+              <input
+                type="text"
+                id="studentTelefone"
+                [(ngModel)]="studentForm.telefone"
+                (input)="formatPhone($event)"
+                class="form-input"
+                placeholder="(00) 00000-0000"
+                maxlength="15"
+                [disabled]="isUpdatingStudentData"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="studentEndereco" class="form-label">Endereço <span class="text-red-500">*</span></label>
+              <textarea
+                id="studentEndereco"
+                [(ngModel)]="studentForm.endereco"
+                class="form-input"
+                placeholder="Digite seu endereço completo"
+                rows="3"
+                [disabled]="isUpdatingStudentData"
+              ></textarea>
+            </div>
+
+            <button
+              (click)="updateStudentData()"
+              [disabled]="isUpdatingStudentData || !studentForm.name.trim() || !studentForm.nomeCompleto.trim() || !studentForm.cpf.trim() || !studentForm.dataNascimento.trim() || !studentForm.nomeMae.trim() || !studentForm.nomePai.trim() || !studentForm.telefone.trim() || !studentForm.endereco.trim()"
+              class="btn btn-primary"
+            >
+              <span *ngIf="!isUpdatingStudentData" class="material-icons">save</span>
+              <span *ngIf="isUpdatingStudentData" class="material-icons spin">refresh</span>
+              {{ isUpdatingStudentData ? 'Salvando...' : 'Salvar Dados' }}
+            </button>
+          </div>
+
+          <!-- Campos para outros usuários (não professores, não admins e não estudantes) -->
+          <div *ngIf="!isTeacher && !isAdmin && !isStudent">
+            <div class="form-group">
+              <label for="userName" class="form-label">Nome Completo</label>
+              <input
+                type="text"
+                id="userName"
+                [(ngModel)]="nameForm.name"
+                class="form-input"
+                placeholder="Digite seu nome completo"
+                [disabled]="isUpdatingName"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input
+                type="email"
+                [value]="currentUser?.email || ''"
+                class="form-input"
+                disabled
+              />
+              <small class="form-help">O email não pode ser alterado</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Função</label>
+              <input
+                type="text"
+                [value]="currentUser?.role || ''"
+                class="form-input"
+                disabled
+              />
+            </div>
+
+            <button
+              (click)="updateName()"
+              [disabled]="isUpdatingName || !nameForm.name.trim()"
+              class="btn btn-primary"
+            >
+              <span *ngIf="!isUpdatingName" class="material-icons">save</span>
+              <span *ngIf="isUpdatingName" class="material-icons spin">refresh</span>
+              {{ isUpdatingName ? 'Salvando...' : 'Salvar Nome' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -229,8 +522,14 @@
         <div class="settings-card-body">
           <div class="theme-options">
             <div class="theme-option">
-              <label class="theme-option-label">
-                <input type="radio" name="theme" value="light" />
+              <label class="theme-option-label" [class.theme-selected]="currentTheme === 'light'">
+                <input 
+                  type="radio" 
+                  name="theme" 
+                  value="light" 
+                  [checked]="currentTheme === 'light'"
+                  (change)="setTheme('light')"
+                />
                 <div class="theme-option-content">
                   <span class="material-icons">light_mode</span>
                   <span>Tema Claro</span>
@@ -238,8 +537,14 @@
               </label>
             </div>
             <div class="theme-option">
-              <label class="theme-option-label">
-                <input type="radio" name="theme" value="dark" />
+              <label class="theme-option-label" [class.theme-selected]="currentTheme === 'dark'">
+                <input 
+                  type="radio" 
+                  name="theme" 
+                  value="dark" 
+                  [checked]="currentTheme === 'dark'"
+                  (change)="setTheme('dark')"
+                />
                 <div class="theme-option-content">
                   <span class="material-icons">dark_mode</span>
                   <span>Tema Escuro</span>
@@ -247,8 +552,14 @@
               </label>
             </div>
             <div class="theme-option">
-              <label class="theme-option-label">
-                <input type="radio" name="theme" value="auto" checked />
+              <label class="theme-option-label" [class.theme-selected]="currentTheme === 'auto'">
+                <input 
+                  type="radio" 
+                  name="theme" 
+                  value="auto" 
+                  [checked]="currentTheme === 'auto'"
+                  (change)="setTheme('auto')"
+                />
                 <div class="theme-option-content">
                   <span class="material-icons">auto_mode</span>
                   <span>Automático</span>

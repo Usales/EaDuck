@@ -45,6 +45,8 @@ export class RegisterComponent implements OnInit, AfterViewInit {
   showPassword = false;
   showConfirmPassword = false;
 
+  currentUserRole: string = 'STUDENT';
+
   constructor(private router: Router, private authService: AuthService) {}
 
   ngOnInit() {
@@ -206,17 +208,20 @@ export class RegisterComponent implements OnInit, AfterViewInit {
         this.emailConfirmationVisible = false;
         
         // Definir o usuário atual com o papel correto retornado pelo backend
+        const userRole = response.role || 'STUDENT';
         const user: User = {
           id: parseInt(response.userId, 10),
           email: this.email,
           name: 'Usuário Anônimo',
-          role: response.role || 'STUDENT',
+          role: userRole,
           isActive: true,
           needsNameSetup: true
         };
+        this.currentUserRole = userRole;
         this.authService.setCurrentUser(user);
         
         // Após o registro, mostrar o modal de configuração de nome
+        // O backend já verifica se ADMIN tem nomeCompleto, CPF e endereço preenchidos
         this.showNameSetupModal = true;
       },
       error: (err) => {

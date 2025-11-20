@@ -4,6 +4,7 @@ import com.eaduck.backend.model.enums.Role;
 import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.model.auth.dto.UserRegisterDTO;
+import com.eaduck.backend.model.auth.dto.ResponseMessage;
 import com.eaduck.backend.model.user.dto.UserDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomSimpleDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.io.ByteArrayOutputStream;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 
 @RestController
 @RequestMapping("/api/users")
@@ -36,6 +51,15 @@ public class UserController {
         return UserDTO.builder()
             .id(user.getId())
             .email(user.getEmail())
+            .name(user.getName())
+            .nomeCompleto(user.getNomeCompleto())
+            .cpf(user.getCpf())
+            .dataNascimento(user.getDataNascimento())
+            .nomeMae(user.getNomeMae())
+            .nomePai(user.getNomePai())
+            .telefone(user.getTelefone())
+            .endereco(user.getEndereco())
+            .titulacao(user.getTitulacao())
             .role(user.getRole())
             .isActive(user.isActive())
             .build();
@@ -47,11 +71,11 @@ public class UserController {
         try {
             if (request.getEmail() == null || request.getPassword() == null || 
                 request.getEmail().isEmpty() || request.getPassword().isEmpty()) {
-                return ResponseEntity.badRequest().body("E-mail e senha são obrigatórios.");
+                return ResponseEntity.badRequest().body(new ResponseMessage("E-mail e senha são obrigatórios."));
             }
             
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                return ResponseEntity.badRequest().body("E-mail já cadastrado.");
+                return ResponseEntity.badRequest().body(new ResponseMessage("E-mail já cadastrado."));
             }
 
             User user = User.builder()
@@ -60,12 +84,22 @@ public class UserController {
                     .role(request.getRole() != null ? request.getRole() : Role.STUDENT)
                     .isActive(true)
                     .name(null) // Deixar nome como null para forçar setup no primeiro login
+                    .nomeCompleto(null)
+                    .cpf(null)
+                    .dataNascimento(null)
+                    .nomeMae(null)
+                    .nomePai(null)
+                    .telefone(null)
+                    .endereco(null)
+                    .titulacao(null)
                     .build();
 
             user = userRepository.save(user);
+            logger.info("Usuário criado com sucesso: {}", user.getEmail());
             return ResponseEntity.ok(toDTO(user));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Erro ao criar usuário: " + e.getMessage());
+            logger.error("Erro ao criar usuário: ", e);
+            return ResponseEntity.badRequest().body(new ResponseMessage("Erro ao criar usuário: " + e.getMessage()));
         }
     }
 
@@ -152,6 +186,34 @@ public class UserController {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+            
+            // Para ADMIN, verificar se nomeCompleto, CPF e endereço estão preenchidos
+            // Para TEACHER, verificar se nomeCompleto, CPF, endereço e titulação estão preenchidos
+            boolean needsNameSetup;
+            if (user.getRole() == Role.ADMIN) {
+                needsNameSetup = user.getNomeCompleto() == null || user.getNomeCompleto().trim().isEmpty() ||
+                                 user.getCpf() == null || user.getCpf().trim().isEmpty() ||
+                                 user.getEndereco() == null || user.getEndereco().trim().isEmpty();
+            } else if (user.getRole() == Role.TEACHER) {
+                needsNameSetup = user.getNomeCompleto() == null || user.getNomeCompleto().trim().isEmpty() ||
+                                 user.getCpf() == null || user.getCpf().trim().isEmpty() ||
+                                 user.getEndereco() == null || user.getEndereco().trim().isEmpty() ||
+                                 user.getTitulacao() == null || user.getTitulacao().trim().isEmpty();
+            } else if (user.getRole() == Role.STUDENT) {
+                // Para STUDENT, verificar todos os campos obrigatórios
+                needsNameSetup = user.getName() == null || user.getName().trim().isEmpty() ||
+                                 user.getNomeCompleto() == null || user.getNomeCompleto().trim().isEmpty() ||
+                                 user.getCpf() == null || user.getCpf().trim().isEmpty() ||
+                                 user.getDataNascimento() == null || user.getDataNascimento().trim().isEmpty() ||
+                                 user.getNomeMae() == null || user.getNomeMae().trim().isEmpty() ||
+                                 user.getNomePai() == null || user.getNomePai().trim().isEmpty() ||
+                                 user.getTelefone() == null || user.getTelefone().trim().isEmpty() ||
+                                 user.getEndereco() == null || user.getEndereco().trim().isEmpty();
+            } else {
+                // Para outros tipos de usuários, verificar apenas o nome
+                needsNameSetup = user.getName() == null || user.getName().trim().isEmpty();
+            }
+            
             // Retornar apenas dados essenciais
             return ResponseEntity.ok(new java.util.HashMap<>() {{
                 put("id", user.getId());
@@ -159,7 +221,15 @@ public class UserController {
                 put("name", user.getName());
                 put("role", user.getRole());
                 put("isActive", user.isActive());
-                put("needsNameSetup", user.getName() == null || user.getName().trim().isEmpty());
+                put("needsNameSetup", needsNameSetup);
+                put("nomeCompleto", user.getNomeCompleto());
+                put("cpf", user.getCpf());
+                put("endereco", user.getEndereco());
+                put("titulacao", user.getTitulacao());
+                put("dataNascimento", user.getDataNascimento());
+                put("nomeMae", user.getNomeMae());
+                put("nomePai", user.getNomePai());
+                put("telefone", user.getTelefone());
             }});
         }
         return ResponseEntity.notFound().build();
@@ -168,7 +238,7 @@ public class UserController {
     @PutMapping("/me/name")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateUserName(@RequestBody Map<String, String> request, Authentication authentication) {
-        logger.info("=== UPDATE USER NAME ENDPOINT CALLED ===");
+        logger.info("=== UPDATE USER DATA ENDPOINT CALLED ===");
         logger.info("Request body: {}", request);
         String email = authentication.getName();
         logger.info("User email: {}", email);
@@ -178,16 +248,69 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
         
+        User user = userOpt.get();
+        
+        // Atualizar nickname/apelido (name)
         String newName = request.get("name");
-        if (newName == null || newName.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Nome é obrigatório"));
+        if (newName != null && !newName.trim().isEmpty()) {
+            user.setName(newName.trim());
         }
         
-        User user = userOpt.get();
-        user.setName(newName.trim());
+        // Atualizar nome completo
+        String nomeCompleto = request.get("nomeCompleto");
+        if (nomeCompleto != null && !nomeCompleto.trim().isEmpty()) {
+            user.setNomeCompleto(nomeCompleto.trim());
+        }
+        
+        // Atualizar CPF
+        String cpf = request.get("cpf");
+        if (cpf != null && !cpf.trim().isEmpty()) {
+            user.setCpf(cpf.trim());
+        }
+        
+        // Atualizar data de nascimento
+        String dataNascimento = request.get("dataNascimento");
+        if (dataNascimento != null && !dataNascimento.trim().isEmpty()) {
+            user.setDataNascimento(dataNascimento.trim());
+        }
+        
+        // Atualizar nome da mãe
+        String nomeMae = request.get("nomeMae");
+        if (nomeMae != null && !nomeMae.trim().isEmpty()) {
+            user.setNomeMae(nomeMae.trim());
+        }
+        
+        // Atualizar nome do pai
+        String nomePai = request.get("nomePai");
+        if (nomePai != null && !nomePai.trim().isEmpty()) {
+            user.setNomePai(nomePai.trim());
+        }
+        
+        // Atualizar telefone
+        String telefone = request.get("telefone");
+        if (telefone != null && !telefone.trim().isEmpty()) {
+            user.setTelefone(telefone.trim());
+        }
+        
+        // Atualizar endereço
+        String endereco = request.get("endereco");
+        if (endereco != null && !endereco.trim().isEmpty()) {
+            user.setEndereco(endereco.trim());
+        }
+        
+        // Atualizar titulação (para professores)
+        String titulacao = request.get("titulacao");
+        if (titulacao != null && !titulacao.trim().isEmpty()) {
+            user.setTitulacao(titulacao.trim());
+        }
+        
         userRepository.save(user);
         
-        return ResponseEntity.ok(Map.of("message", "Nome atualizado com sucesso", "name", user.getName()));
+        return ResponseEntity.ok(Map.of(
+            "message", "Dados atualizados com sucesso",
+            "name", user.getName() != null ? user.getName() : "",
+            "nomeCompleto", user.getNomeCompleto() != null ? user.getNomeCompleto() : ""
+        ));
     }
 
     @PutMapping("/{id}/status")
@@ -274,12 +397,7 @@ public class UserController {
         try {
             List<User> teachers = userRepository.findByRole(Role.TEACHER);
             List<UserDTO> teacherDTOs = teachers.stream()
-                .map(user -> UserDTO.builder()
-                    .id(user.getId())
-                    .email(user.getEmail())
-                    .role(user.getRole())
-                    .isActive(user.isActive())
-                    .build())
+                .map(this::toDTO)
                 .collect(java.util.stream.Collectors.toList());
             
             return ResponseEntity.ok(teacherDTOs);
@@ -296,13 +414,7 @@ public class UserController {
         try {
             List<User> students = userRepository.findByRole(Role.STUDENT);
             List<UserDTO> studentDTOs = students.stream()
-                .map(user -> UserDTO.builder()
-                    .id(user.getId())
-                    .email(user.getEmail())
-                    .name(user.getName())
-                    .role(user.getRole())
-                    .isActive(user.isActive())
-                    .build())
+                .map(this::toDTO)
                 .collect(Collectors.toList());
             
             return ResponseEntity.ok(studentDTOs);
@@ -386,6 +498,192 @@ public class UserController {
         } catch (Exception e) {
             logger.error("Erro ao atualizar configurações de notificação: {}", e.getMessage());
             return ResponseEntity.status(500).body("Erro interno do servidor");
+        }
+    }
+
+    @GetMapping("/export/pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<?> exportUsersToPdf() {
+        try {
+            List<User> users = userRepository.findAll();
+            
+            // Separar usuários por tipo
+            List<User> students = users.stream().filter(u -> u.getRole() == Role.STUDENT).collect(java.util.stream.Collectors.toList());
+            List<User> nonStudents = users.stream().filter(u -> u.getRole() != Role.STUDENT).collect(java.util.stream.Collectors.toList());
+            
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            // Configurar página em modo landscape (horizontal)
+            Document document = new Document(pdf, PageSize.A4.rotate());
+
+            // Título
+            Paragraph title = new Paragraph("Relatório de Usuários - EaDuck")
+                    .setFontSize(18)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(title);
+
+            // Data de geração
+            Paragraph date = new Paragraph("Data de geração: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
+                    .setFontSize(10)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(date);
+
+            // Tabela para ALUNOS (sem APELIDO e TITULAÇÃO)
+            if (!students.isEmpty()) {
+                Paragraph studentsTitle = new Paragraph("ALUNOS")
+                        .setFontSize(14)
+                        .setBold()
+                        .setMarginBottom(10);
+                document.add(studentsTitle);
+                
+                UnitValue[] studentColumnWidths = {
+                    UnitValue.createPointValue(20),   // ID
+                    UnitValue.createPointValue(80),   // E-MAIL
+                    UnitValue.createPointValue(80),   // NOME COMPLETO
+                    UnitValue.createPointValue(60),   // CPF
+                    UnitValue.createPointValue(50),   // DATA NASC.
+                    UnitValue.createPointValue(60),   // NOME MÃE
+                    UnitValue.createPointValue(60),   // NOME PAI
+                    UnitValue.createPointValue(65),   // TELEFONE
+                    UnitValue.createPointValue(100), // ENDEREÇO
+                    UnitValue.createPointValue(35),  // STATUS
+                };
+                Table studentTable = new Table(studentColumnWidths);
+                studentTable.setWidth(UnitValue.createPercentValue(100));
+                
+                // Cabeçalho da tabela de alunos
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("ID").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("NOME COMPLETO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("CPF").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("DATA NASC.").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("NOME MÃE").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("NOME PAI").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("TELEFONE").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("ENDEREÇO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                studentTable.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+
+                // Dados dos alunos
+                for (User user : students) {
+                    studentTable.addCell(new Cell().add(new Paragraph(String.valueOf(user.getId()))).setFontSize(6).setPadding(3));
+                    
+                    String email = user.getEmail() != null ? user.getEmail() : "-";
+                    if (!email.equals("-") && email.length() > 30) {
+                        email = email.substring(0, 27) + "...";
+                    }
+                    studentTable.addCell(new Cell().add(new Paragraph(email)).setFontSize(6).setPadding(3));
+                    
+                    String nomeCompleto = user.getNomeCompleto() != null ? (user.getNomeCompleto().length() > 20 ? user.getNomeCompleto().substring(0, 20) + "..." : user.getNomeCompleto()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(nomeCompleto)).setFontSize(6).setPadding(3));
+                    
+                    studentTable.addCell(new Cell().add(new Paragraph(user.getCpf() != null ? user.getCpf() : "-")).setFontSize(6).setPadding(3));
+                    studentTable.addCell(new Cell().add(new Paragraph(user.getDataNascimento() != null ? user.getDataNascimento() : "-")).setFontSize(6).setPadding(3));
+                    
+                    String nomeMae = user.getNomeMae() != null ? (user.getNomeMae().length() > 15 ? user.getNomeMae().substring(0, 15) + "..." : user.getNomeMae()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(nomeMae)).setFontSize(6).setPadding(3));
+                    
+                    String nomePai = user.getNomePai() != null ? (user.getNomePai().length() > 15 ? user.getNomePai().substring(0, 15) + "..." : user.getNomePai()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(nomePai)).setFontSize(6).setPadding(3));
+                    
+                    studentTable.addCell(new Cell().add(new Paragraph(user.getTelefone() != null ? user.getTelefone() : "-")).setFontSize(6).setPadding(3));
+                    
+                    String endereco = user.getEndereco() != null ? (user.getEndereco().length() > 25 ? user.getEndereco().substring(0, 25) + "..." : user.getEndereco()) : "-";
+                    studentTable.addCell(new Cell().add(new Paragraph(endereco)).setFontSize(6).setPadding(3));
+                    
+                    String statusLabel = user.isActive() ? "Ativo" : "Inativo";
+                    studentTable.addCell(new Cell().add(new Paragraph(statusLabel)).setFontSize(6).setPadding(3));
+                }
+
+                document.add(studentTable);
+                document.add(new Paragraph(" ").setMarginBottom(15)); // Espaço entre tabelas
+            }
+
+            // Tabela para PROFESSORES e ADMINS (com APELIDO e TITULAÇÃO)
+            if (!nonStudents.isEmpty()) {
+                Paragraph nonStudentsTitle = new Paragraph("PROFESSORES E ADMINISTRADORES")
+                        .setFontSize(14)
+                        .setBold()
+                        .setMarginBottom(10);
+                document.add(nonStudentsTitle);
+                
+                UnitValue[] nonStudentColumnWidths = {
+                    UnitValue.createPointValue(20),   // ID
+                    UnitValue.createPointValue(70),   // E-MAIL
+                    UnitValue.createPointValue(40),   // APELIDO
+                    UnitValue.createPointValue(70),   // NOME COMPLETO
+                    UnitValue.createPointValue(55),   // CPF
+                    UnitValue.createPointValue(85),   // ENDEREÇO
+                    UnitValue.createPointValue(70),   // TITULAÇÃO
+                    UnitValue.createPointValue(35),   // TIPO
+                    UnitValue.createPointValue(30)    // STATUS
+                };
+                Table nonStudentTable = new Table(nonStudentColumnWidths);
+                nonStudentTable.setWidth(UnitValue.createPercentValue(100));
+                
+                // Cabeçalho da tabela de professores/admins
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("ID").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("APELIDO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("NOME COMPLETO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("CPF").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("ENDEREÇO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("TITULAÇÃO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("TIPO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+                nonStudentTable.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+
+                // Dados dos professores e admins
+                for (User user : nonStudents) {
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(String.valueOf(user.getId()))).setFontSize(6).setPadding(3));
+                    
+                    String email = user.getEmail() != null ? user.getEmail() : "-";
+                    if (!email.equals("-") && email.length() > 30) {
+                        email = email.substring(0, 27) + "...";
+                    }
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(email)).setFontSize(6).setPadding(3));
+                    
+                    String apelido = user.getName() != null ? (user.getName().length() > 12 ? user.getName().substring(0, 12) + "..." : user.getName()) : "-";
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(apelido)).setFontSize(6).setPadding(3));
+                    
+                    String nomeCompleto = user.getNomeCompleto() != null ? (user.getNomeCompleto().length() > 18 ? user.getNomeCompleto().substring(0, 18) + "..." : user.getNomeCompleto()) : "-";
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(nomeCompleto)).setFontSize(6).setPadding(3));
+                    
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(user.getCpf() != null ? user.getCpf() : "-")).setFontSize(6).setPadding(3));
+                    
+                    String endereco = user.getEndereco() != null ? (user.getEndereco().length() > 20 ? user.getEndereco().substring(0, 20) + "..." : user.getEndereco()) : "-";
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(endereco)).setFontSize(6).setPadding(3));
+                    
+                    String titulacao = user.getTitulacao() != null ? (user.getTitulacao().length() > 18 ? user.getTitulacao().substring(0, 18) + "..." : user.getTitulacao()) : "-";
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(titulacao)).setFontSize(6).setPadding(3));
+                    
+                    String roleLabel = switch (user.getRole()) {
+                        case ADMIN -> "Admin";
+                        case TEACHER -> "Prof.";
+                        default -> user.getRole().toString();
+                    };
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(roleLabel)).setFontSize(6).setPadding(3));
+                    
+                    String statusLabel = user.isActive() ? "Ativo" : "Inativo";
+                    nonStudentTable.addCell(new Cell().add(new Paragraph(statusLabel)).setFontSize(6).setPadding(3));
+                }
+
+                document.add(nonStudentTable);
+            }
+
+            document.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "usuarios_eaduck.pdf");
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Erro ao gerar PDF de usuários: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Erro ao gerar PDF: " + e.getMessage());
         }
     }
 }
