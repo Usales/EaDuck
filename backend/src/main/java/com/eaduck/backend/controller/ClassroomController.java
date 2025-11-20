@@ -20,10 +20,26 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.io.ByteArrayOutputStream;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.layout.properties.TextAlignment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/classrooms")
 public class ClassroomController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClassroomController.class);
 
     @Autowired
     private ClassroomRepository classroomRepository;
@@ -141,6 +157,17 @@ public class ClassroomController {
         }
 
         Classroom saved = classroomRepository.save(classroom);
+        
+        // Se for professor, garantir que o relacionamento está atualizado
+        if (user.getRole() == Role.TEACHER) {
+            // Recarregar o usuário para garantir que o relacionamento está atualizado
+            User updatedUser = userRepository.findById(user.getId()).orElse(null);
+            if (updatedUser != null) {
+                // Forçar o carregamento do relacionamento
+                updatedUser.getClassroomsAsTeacher().size(); // Isso força o carregamento lazy
+            }
+        }
+        
         ClassroomDTO response = ClassroomDTO.builder()
             .id(saved.getId())
             .name(saved.getName())
@@ -258,20 +285,26 @@ public class ClassroomController {
     public ResponseEntity<?> addStudentToClassroom(@PathVariable Long id, @PathVariable Long studentId, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElse(null);
         if (user == null) {
+            logger.warn("Usuário não encontrado ao tentar adicionar aluno à sala");
             return ResponseEntity.badRequest().build();
         }
 
         Classroom classroom = classroomRepository.findById(id).orElse(null);
         if (classroom == null) {
+            logger.warn("Sala não encontrada: {}", id);
             return ResponseEntity.notFound().build();
         }
 
         // Verifica se o professor tem acesso à sala
         if (user.getRole() == Role.TEACHER) {
-            boolean hasAccess = user.getClassroomsAsTeacher().contains(classroom);
+            // Verificar se o professor está na lista de professores da sala
+            // Isso é mais confiável do que verificar o relacionamento inverso
+            boolean hasAccess = classroom.getTeachers().contains(user);
+            logger.info("Professor {} tentando adicionar aluno à sala {}. Tem acesso: {}", user.getEmail(), id, hasAccess);
             if (!hasAccess) {
+                logger.warn("Professor {} não tem acesso à sala {}", user.getEmail(), id);
                 return ResponseEntity.status(403).build();
-        }
+            }
         }
 
         User student = userRepository.findById(studentId).orElse(null);
@@ -279,8 +312,14 @@ public class ClassroomController {
             return ResponseEntity.badRequest().build();
         }
 
+        // Verificar se o aluno já está na sala
+        if (classroom.getStudents().contains(student)) {
+            return ResponseEntity.ok().build(); // Já está na sala, retorna sucesso
+        }
+
         classroom.getStudents().add(student);
         classroomRepository.save(classroom);
+        logger.info("Aluno {} adicionado à sala {}", studentId, id);
         return ResponseEntity.ok().build();
     }
 
@@ -299,8 +338,12 @@ public class ClassroomController {
 
         // Verifica se o professor tem acesso à sala
         if (user.getRole() == Role.TEACHER) {
-            boolean hasAccess = user.getClassroomsAsTeacher().contains(classroom);
+            // Verificar se o professor está na lista de professores da sala
+            // Isso é mais confiável do que verificar o relacionamento inverso
+            boolean hasAccess = classroom.getTeachers().contains(user);
+            logger.info("Professor {} tentando remover aluno da sala {}. Tem acesso: {}", user.getEmail(), id, hasAccess);
             if (!hasAccess) {
+                logger.warn("Professor {} não tem acesso à sala {}", user.getEmail(), id);
                 return ResponseEntity.status(403).build();
             }
         }
@@ -358,8 +401,14 @@ public class ClassroomController {
             return ResponseEntity.badRequest().build();
         }
 
+        // Verificar se o professor já está na sala
+        if (classroom.getTeachers().contains(teacher)) {
+            return ResponseEntity.ok().build(); // Já está na sala, retorna sucesso
+        }
+
         classroom.getTeachers().add(teacher);
         classroomRepository.save(classroom);
+        logger.info("Professor {} adicionado à sala {}", teacherId, id);
         return ResponseEntity.ok().build();
     }
 
@@ -436,5 +485,107 @@ public class ClassroomController {
             .build()).toList();
 
         return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/{id}/export/pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<?> exportClassroomUsersToPdf(@PathVariable Long id, Authentication authentication) {
+        try {
+            Optional<Classroom> classroomOpt = classroomRepository.findById(id);
+            if (classroomOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Classroom classroom = classroomOpt.get();
+            User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (currentUser == null) {
+                return ResponseEntity.status(403).build();
+            }
+
+            // Verifica se o usuário tem acesso à sala
+            boolean hasAccess = false;
+            if (currentUser.getRole() == Role.ADMIN) {
+                hasAccess = true;
+            } else if (currentUser.getRole() == Role.TEACHER) {
+                hasAccess = currentUser.getClassroomsAsTeacher().contains(classroom);
+            }
+
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+
+            // Coleta todos os usuários da sala (professores e alunos)
+            List<User> allUsers = new ArrayList<>();
+            allUsers.addAll(classroom.getTeachers());
+            allUsers.addAll(classroom.getStudents());
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+
+            // Título
+            Paragraph title = new Paragraph("Relatório de Usuários - " + classroom.getName())
+                    .setFontSize(18)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(10);
+            document.add(title);
+
+            // Informações da sala
+            Paragraph classroomInfo = new Paragraph("Ano Letivo: " + classroom.getAcademicYear())
+                    .setFontSize(12)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(classroomInfo);
+
+            // Data de geração
+            Paragraph date = new Paragraph("Data de geração: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
+                    .setFontSize(10)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(date);
+
+            // Tabela
+            float[] columnWidths = {1, 3, 2, 2};
+            Table table = new Table(columnWidths);
+            
+            // Cabeçalho da tabela
+            table.addHeaderCell(new Cell().add(new Paragraph("ID").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+            table.addHeaderCell(new Cell().add(new Paragraph("E-MAIL").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+            table.addHeaderCell(new Cell().add(new Paragraph("TIPO").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+            table.addHeaderCell(new Cell().add(new Paragraph("STATUS").setBold()).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+
+            // Dados dos usuários
+            for (User user : allUsers) {
+                table.addCell(new Cell().add(new Paragraph(String.valueOf(user.getId()))));
+                table.addCell(new Cell().add(new Paragraph(user.getEmail())));
+                
+                String roleLabel = switch (user.getRole()) {
+                    case ADMIN -> "Admin";
+                    case TEACHER -> "Professor";
+                    case STUDENT -> "Estudante";
+                    default -> user.getRole().toString();
+                };
+                table.addCell(new Cell().add(new Paragraph(roleLabel)));
+                
+                String statusLabel = user.isActive() ? "Ativo" : "Inativo";
+                table.addCell(new Cell().add(new Paragraph(statusLabel)));
+            }
+
+            document.add(table);
+            document.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            String filename = "usuarios_sala_" + classroom.getName().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Erro ao gerar PDF de usuários da sala: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Erro ao gerar PDF: " + e.getMessage());
+        }
     }
 }

@@ -86,7 +86,7 @@ export class ClassroomService {
   }
 
   removeStudent(classroomId: number, studentId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${classroomId}/remove-student/${studentId}`);
+    return this.http.delete(`${this.apiUrl}/${classroomId}/students/${studentId}`);
   }
 
   getClassroomById(id: number): Observable<Classroom> {
@@ -111,5 +111,9 @@ export class ClassroomService {
     );
   }
 
-  // Métodos para adicionar/remover alunos e atribuir professor podem ser adicionados aqui
+  exportClassroomUsersToPdf(classroomId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${classroomId}/export/pdf`, {
+      responseType: 'blob'
+    });
+  }
 } 

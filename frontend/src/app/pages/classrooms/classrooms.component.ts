@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ClassroomService, Classroom } from '../../services/classroom.service';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { User } from '../../services/user.service';
 import { UserService } from '../../services/user.service';
 
@@ -206,41 +206,139 @@ export class ClassroomsComponent implements OnInit {
   }
 
   loadTeachers() {
-    this.userService.getTeachers().subscribe(teachers => {
-      this.teachers = teachers;
+    this.userService.getTeachers().subscribe({
+      next: (teachers) => {
+        this.teachers = teachers;
+        // Atualizar filtro se o modal estiver aberto
+        if (this.assignMode === 'teacher') {
+          // Filtrar professores que não estão selecionados
+          this.filteredTeachers = this.teachers.filter(t => !this.selectedTeacherIds.includes(t.id));
+        } else {
+          // Se o modal não estiver aberto, apenas inicializar
+          this.filteredTeachers = this.teachers;
+        }
+      },
+      error: (err) => {
+        console.error('Erro ao carregar professores:', err);
+        this.teachers = [];
+        this.filteredTeachers = [];
+      }
     });
   }
 
   loadStudents() {
-    this.userService.getStudents().subscribe(students => {
-      this.students = students;
+    this.userService.getStudents().subscribe({
+      next: (students) => {
+        this.students = students;
+        // Atualizar filtro se o modal estiver aberto
+        if (this.assignMode === 'student') {
+          // Filtrar alunos que não estão selecionados
+          this.filteredStudents = this.students.filter(s => !this.selectedStudentIds.includes(s.id));
+        } else {
+          // Se o modal não estiver aberto, apenas inicializar
+          this.filteredStudents = this.students;
+        }
+      },
+      error: (err) => {
+        console.error('Erro ao carregar alunos:', err);
+        this.students = [];
+        this.filteredStudents = [];
+      }
     });
   }
 
   openAssignTeacher(classroom: Classroom) {
-    this.assignClassroomId = classroom.id;
-    this.assignMode = 'teacher';
-    this.selectedTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
-    this.searchTeacher = '';
-    this.filteredTeachers = this.teachers;
+    // Garantir que os professores estão carregados antes de abrir o modal
+    if (this.teachers.length === 0) {
+      this.loadTeachers();
+    }
+    
+    // Recarregar dados atualizados da sala antes de abrir o modal
+    this.classroomService.getClassroomById(classroom.id).subscribe({
+      next: (updatedClassroom) => {
+        this.assignClassroomId = updatedClassroom.id;
+        this.assignMode = 'teacher';
+        this.selectedTeacherIds = updatedClassroom.teachers ? updatedClassroom.teachers.map((t: any) => t.id) : [];
+        this.searchTeacher = '';
+        
+        // Aguardar um pouco para garantir que os professores foram carregados
+        setTimeout(() => {
+          this.filteredTeachers = this.teachers.filter(t => !this.selectedTeacherIds.includes(t.id));
+        }, 100);
+      },
+      error: (err) => {
+        console.error('Erro ao carregar dados da sala:', err);
+        // Mesmo com erro, tentar abrir o modal com os dados atuais
+        this.assignClassroomId = classroom.id;
+        this.assignMode = 'teacher';
+        this.selectedTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
+        this.searchTeacher = '';
+        this.filteredTeachers = this.teachers.filter(t => !this.selectedTeacherIds.includes(t.id));
+      }
+    });
   }
 
   openAssignStudent(classroom: Classroom) {
-    this.assignClassroomId = classroom.id;
-    this.assignMode = 'student';
-    this.selectedStudentIds = classroom.students ? classroom.students.map((s: any) => s.id) : [];
-    this.searchStudent = '';
-    this.filteredStudents = this.students;
+    // Garantir que os alunos estão carregados antes de abrir o modal
+    if (this.students.length === 0) {
+      this.loadStudents();
+    }
+    
+    // Recarregar dados atualizados da sala antes de abrir o modal
+    this.classroomService.getClassroomById(classroom.id).subscribe({
+      next: (updatedClassroom) => {
+        this.assignClassroomId = updatedClassroom.id;
+        this.assignMode = 'student';
+        this.selectedStudentIds = updatedClassroom.students ? updatedClassroom.students.map((s: any) => s.id) : [];
+        this.searchStudent = '';
+        
+        // Aguardar um pouco para garantir que os alunos foram carregados
+        setTimeout(() => {
+          this.filteredStudents = this.students.filter(s => !this.selectedStudentIds.includes(s.id));
+        }, 100);
+      },
+      error: (err) => {
+        console.error('Erro ao carregar dados da sala:', err);
+        // Mesmo com erro, tentar abrir o modal com os dados atuais
+        this.assignClassroomId = classroom.id;
+        this.assignMode = 'student';
+        this.selectedStudentIds = classroom.students ? classroom.students.map((s: any) => s.id) : [];
+        this.searchStudent = '';
+        this.filteredStudents = this.students.filter(s => !this.selectedStudentIds.includes(s.id));
+      }
+    });
   }
 
   filterTeachers() {
-    const search = this.searchTeacher.toLowerCase();
-    this.filteredTeachers = this.teachers.filter(t => t.email.toLowerCase().includes(search) && !this.selectedTeacherIds.includes(t.id));
+    if (!this.teachers || this.teachers.length === 0) {
+      this.filteredTeachers = [];
+      return;
+    }
+    const search = this.searchTeacher ? this.searchTeacher.toLowerCase().trim() : '';
+    this.filteredTeachers = this.teachers.filter(t => {
+      const matchesSearch = !search || 
+        (t.email && t.email.toLowerCase().includes(search)) || 
+        (t.name && t.name.toLowerCase().includes(search)) ||
+        (t.nomeCompleto && t.nomeCompleto.toLowerCase().includes(search));
+      const notSelected = !this.selectedTeacherIds.includes(t.id);
+      return matchesSearch && notSelected;
+    });
   }
 
   filterStudents() {
-    const search = this.searchStudent.toLowerCase();
-    this.filteredStudents = this.students.filter(s => s.email.toLowerCase().includes(search) && !this.selectedStudentIds.includes(s.id));
+    if (!this.students || this.students.length === 0) {
+      this.filteredStudents = [];
+      return;
+    }
+    const search = this.searchStudent ? this.searchStudent.toLowerCase().trim() : '';
+    this.filteredStudents = this.students.filter(s => {
+      const matchesSearch = !search || 
+        (s.email && s.email.toLowerCase().includes(search)) || 
+        (s.name && s.name.toLowerCase().includes(search)) ||
+        (s.nomeCompleto && s.nomeCompleto.toLowerCase().includes(search));
+      const notSelected = !this.selectedStudentIds.includes(s.id);
+      return matchesSearch && notSelected;
+    });
   }
 
   addTeacherToSelection(teacher: User) {
@@ -270,32 +368,139 @@ export class ClassroomsComponent implements OnInit {
   }
 
   saveTeachers() {
-    if (!this.assignClassroomId) return;
-    const classroom = this.classrooms.find(c => c.id === this.assignClassroomId);
-    if (!classroom) return;
-    // Adiciona professores que não estão na sala
-    const toAdd = this.selectedTeacherIds.filter(id => !classroom.teachers?.some((t: any) => t.id === id));
-    // Remove professores que foram desmarcados
-    const toRemove = (classroom.teachers || []).filter((t: any) => !this.selectedTeacherIds.includes(t.id)).map((t: any) => t.id);
-    toAdd.forEach(id => this.classroomService.addTeacher(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
-    toRemove.forEach(id => this.classroomService.removeTeacher(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
-    this.assignClassroomId = null;
-    this.selectedTeacherIds = [];
+    if (!this.assignClassroomId) {
+      console.error('Nenhuma sala selecionada para adicionar professores');
+      return;
+    }
+    
+    console.log('Salvando professores para a sala:', this.assignClassroomId);
+    console.log('IDs selecionados:', this.selectedTeacherIds);
+    
+    // Recarregar dados atualizados da sala antes de salvar
+    this.classroomService.getClassroomById(this.assignClassroomId).subscribe({
+      next: (classroom) => {
+        console.log('Dados da sala carregados:', classroom);
+        // Adiciona professores que não estão na sala
+        const currentTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
+        const toAdd = this.selectedTeacherIds.filter(id => !currentTeacherIds.includes(id));
+        // Remove professores que foram desmarcados
+        const toRemove = currentTeacherIds.filter((id: number) => !this.selectedTeacherIds.includes(id));
+        
+        console.log('Professores para adicionar:', toAdd);
+        console.log('Professores para remover:', toRemove);
+        
+        // Executar todas as operações e depois recarregar
+        const operations: Observable<any>[] = [];
+        
+        toAdd.forEach(id => {
+          console.log('Adicionando professor:', id);
+          operations.push(this.classroomService.addTeacher(this.assignClassroomId!, id));
+        });
+        
+        toRemove.forEach(id => {
+          console.log('Removendo professor:', id);
+          operations.push(this.classroomService.removeTeacher(this.assignClassroomId!, id));
+        });
+        
+        if (operations.length > 0) {
+          forkJoin(operations).subscribe({
+            next: () => {
+              console.log('Operações concluídas com sucesso');
+              this.loadClassrooms();
+              this.assignClassroomId = null;
+              this.selectedTeacherIds = [];
+              this.assignMode = null;
+            },
+            error: (err) => {
+              console.error('Erro ao salvar professores:', err);
+              console.error('Detalhes do erro:', err.error);
+              // Recarregar mesmo em caso de erro
+              this.loadClassrooms();
+              this.assignClassroomId = null;
+              this.selectedTeacherIds = [];
+              this.assignMode = null;
+            }
+          });
+        } else {
+          console.log('Nenhuma operação necessária');
+          // Se não há operações, apenas fechar o modal
+          this.assignClassroomId = null;
+          this.selectedTeacherIds = [];
+          this.assignMode = null;
+        }
+      },
+      error: (err) => {
+        console.error('Erro ao carregar dados da sala:', err);
+      }
+    });
   }
 
   saveStudents() {
-    if (!this.assignClassroomId) return;
-    const classroom = this.classrooms.find(c => c.id === this.assignClassroomId);
-    if (!classroom) return;
-    // Adiciona alunos que não estão na sala
-    const toAdd = this.selectedStudentIds.filter(id => !classroom.students?.some((s: any) => s.id === id));
-    // Remove alunos que foram desmarcados
-    const toRemove = (classroom.students || []).filter((s: any) => !this.selectedStudentIds.includes(s.id)).map((s: any) => s.id);
-    toAdd.forEach(id => this.classroomService.addStudent(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
-    toRemove.forEach(id => this.classroomService.removeStudent(this.assignClassroomId!, id).subscribe(() => this.loadClassrooms()));
-    this.assignClassroomId = null;
-    this.selectedStudentIds = [];
-    this.assignMode = null;
+    if (!this.assignClassroomId) {
+      console.error('Nenhuma sala selecionada para adicionar alunos');
+      return;
+    }
+    
+    console.log('Salvando alunos para a sala:', this.assignClassroomId);
+    console.log('IDs selecionados:', this.selectedStudentIds);
+    
+    // Recarregar dados atualizados da sala antes de salvar
+    this.classroomService.getClassroomById(this.assignClassroomId).subscribe({
+      next: (classroom) => {
+        console.log('Dados da sala carregados:', classroom);
+        // Adiciona alunos que não estão na sala
+        const currentStudentIds = classroom.students ? classroom.students.map((s: any) => s.id) : [];
+        const toAdd = this.selectedStudentIds.filter(id => !currentStudentIds.includes(id));
+        // Remove alunos que foram desmarcados
+        const toRemove = currentStudentIds.filter((id: number) => !this.selectedStudentIds.includes(id));
+        
+        console.log('Alunos para adicionar:', toAdd);
+        console.log('Alunos para remover:', toRemove);
+        
+        // Executar todas as operações e depois recarregar
+        const operations: Observable<any>[] = [];
+        
+        toAdd.forEach(id => {
+          console.log('Adicionando aluno:', id);
+          operations.push(this.classroomService.addStudent(this.assignClassroomId!, id));
+        });
+        
+        toRemove.forEach(id => {
+          console.log('Removendo aluno:', id);
+          operations.push(this.classroomService.removeStudent(this.assignClassroomId!, id));
+        });
+        
+        if (operations.length > 0) {
+          forkJoin(operations).subscribe({
+            next: () => {
+              console.log('Operações concluídas com sucesso');
+              this.loadClassrooms();
+              this.assignClassroomId = null;
+              this.selectedStudentIds = [];
+              this.assignMode = null;
+            },
+            error: (err) => {
+              console.error('Erro ao salvar alunos:', err);
+              console.error('Detalhes do erro:', err.error);
+              // Recarregar mesmo em caso de erro
+              this.loadClassrooms();
+              this.assignClassroomId = null;
+              this.selectedStudentIds = [];
+              this.assignMode = null;
+            }
+          });
+        } else {
+          console.log('Nenhuma operação necessária');
+          // Se não há operações, apenas fechar o modal
+          this.assignClassroomId = null;
+          this.selectedStudentIds = [];
+          this.assignMode = null;
+        }
+      },
+      error: (err) => {
+        console.error('Erro ao carregar dados da sala:', err);
+      }
+    });
   }
 
   cancelAssignTeacher() {
@@ -327,6 +532,26 @@ export class ClassroomsComponent implements OnInit {
   removeTeacherFromClassroom(classroom: Classroom, teacherId: number) {
     this.classroomService.removeTeacher(classroom.id, teacherId).subscribe(() => {
       classroom.teachers = (classroom.teachers || []).filter((t: any) => t.id !== teacherId);
+    });
+  }
+
+  exportClassroomUsersToPdf(classroom: Classroom) {
+    this.classroomService.exportClassroomUsersToPdf(classroom.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const filename = `usuarios_sala_${classroom.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        console.error('Erro ao gerar PDF:', error);
+        alert('Erro ao gerar PDF: ' + (error.error?.message || 'Erro desconhecido'));
+      }
     });
   }
 } 
