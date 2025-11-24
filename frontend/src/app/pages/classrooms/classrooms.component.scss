@@ -1006,6 +1006,10 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
+.modal-content-large {
+  max-width: 700px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -1087,6 +1091,108 @@
   padding: 2rem;
   color: var(--text-secondary);
   font-size: 0.875rem;
+}
+
+// Estilos para o modal de Notas PDF
+.notas-pdf-search-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.notas-pdf-search-input-wrapper {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  
+  .material-icons {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+  }
+}
+
+.notas-pdf-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+}
+
+.notas-pdf-export-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  
+  &:hover:not(:disabled) {
+    background: var(--button-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .material-icons {
+    font-size: 1.125rem;
+  }
+}
+
+.student-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-secondary);
+  margin-bottom: 0.75rem;
+
+  &:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.student-item-content {
+  flex: 1;
+}
+
+.student-item-icon {
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  margin-left: 1rem;
+}
+
+.student-item:hover .student-item-icon {
+  color: white;
 }
 
 // Extra Large Desktop (1280px+)

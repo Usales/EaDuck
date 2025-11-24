@@ -345,65 +345,43 @@ public class ClassroomController {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf, PageSize.A4);
+            Document document = new Document(pdf, PageSize.A4.rotate());
 
-            // Cabeçalho com nome da instituição
-            Paragraph institution = new Paragraph("EaDuck - Sistema de Ensino")
+            // Título
+            Paragraph title = new Paragraph("Relatório de Notas - EaDuck")
                     .setFontSize(16)
                     .setBold()
                     .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginBottom(10);
-            document.add(institution);
-
-            // Título
-            String studentName = student.getNomeCompleto() != null ? student.getNomeCompleto() : 
-                                (student.getName() != null ? student.getName() : student.getEmail());
-            Paragraph title = new Paragraph("Boletim de Notas – " + studentName)
-                    .setFontSize(14)
-                    .setBold()
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginBottom(20);
+                    .setMarginBottom(5);
             document.add(title);
 
-            // Informações do aluno
-            Paragraph studentInfo = new Paragraph()
+            // Data de geração
+            Paragraph date = new Paragraph("Data de geração: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
                     .setFontSize(10)
+                    .setTextAlignment(TextAlignment.CENTER)
                     .setMarginBottom(15);
-            studentInfo.add(new Paragraph("Nome Completo: " + (student.getNomeCompleto() != null ? student.getNomeCompleto() : "-")));
-            studentInfo.add(new Paragraph("Matrícula: " + student.getId()));
-            studentInfo.add(new Paragraph("CPF: " + (student.getCpf() != null ? student.getCpf() : "-")));
-            studentInfo.add(new Paragraph("Curso: " + (classroom.getName() != null ? classroom.getName() : "-")));
-            studentInfo.add(new Paragraph("Ano Letivo: " + (classroom.getAcademicYear() != null ? classroom.getAcademicYear() : "-")));
-            document.add(studentInfo);
+            document.add(date);
 
-            // Tabela de notas por disciplina
+            // Informações da Sala
+            Paragraph classroomInfo = new Paragraph()
+                    .setFontSize(11)
+                    .setBold()
+                    .setMarginBottom(10);
+            classroomInfo.add(new Paragraph("Nome da Sala: " + (classroom.getName() != null ? classroom.getName() : "-")));
+            classroomInfo.add(new Paragraph("Ano Letivo: " + (classroom.getAcademicYear() != null ? classroom.getAcademicYear() : "-")));
+            document.add(classroomInfo);
+
+            // Preparar dados do aluno
+            String studentName = student.getNomeCompleto() != null ? student.getNomeCompleto() : 
+                                (student.getName() != null ? student.getName() : student.getEmail());
+            java.util.List<java.util.Map<String, Object>> studentData = new java.util.ArrayList<>();
+
             if (!submissionsByDisciplina.isEmpty()) {
-                UnitValue[] columnWidths = {
-                    UnitValue.createPointValue(120),  // Disciplina
-                    UnitValue.createPointValue(50),    // Nota 1
-                    UnitValue.createPointValue(50),    // Nota 2
-                    UnitValue.createPointValue(50),    // Nota 3
-                    UnitValue.createPointValue(60)     // Média Final
-                };
-                Table gradesTable = new Table(columnWidths);
-                gradesTable.setWidth(UnitValue.createPercentValue(100));
-
-                // Cabeçalho
-                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Disciplina").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
-                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Nota 1").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
-                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Nota 2").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
-                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Nota 3").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
-                gradesTable.addHeaderCell(new Cell().add(new Paragraph("Média Final").setBold().setFontSize(9)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(5));
-
-                // Dados das disciplinas
-                double totalMedia = 0.0;
-                int countDisciplinas = 0;
-
                 for (java.util.Map.Entry<String, java.util.List<Submission>> entry : submissionsByDisciplina.entrySet()) {
                     String disciplinaName = entry.getKey();
                     java.util.List<Submission> submissions = entry.getValue();
                     
-                    // Ordenar submissions por data de avaliação (mais recente primeiro) ou por ID
+                    // Ordenar submissions por data de avaliação
                     submissions.sort((s1, s2) -> {
                         if (s1.getEvaluatedAt() != null && s2.getEvaluatedAt() != null) {
                             return s2.getEvaluatedAt().compareTo(s1.getEvaluatedAt());
@@ -430,56 +408,102 @@ public class ClassroomController {
                     }
                     Double mediaDisciplina = count > 0 ? sum / count : null;
 
+                    // Recuperação (não implementado ainda, deixar como "-")
+                    String recuperacao = "-";
+
+                    // Resultado final da disciplina
+                    String resultadoDisciplina = "-";
                     if (mediaDisciplina != null) {
-                        totalMedia += mediaDisciplina;
-                        countDisciplinas++;
+                        if (mediaDisciplina >= 6.0) {
+                            resultadoDisciplina = "Aprovado";
+                        } else {
+                            resultadoDisciplina = "Reprovado";
+                        }
                     }
 
-                    // Adicionar linha na tabela
-                    String disciplinaDisplay = disciplinaName != null ? (disciplinaName.length() > 30 ? disciplinaName.substring(0, 27) + "..." : disciplinaName) : "-";
-                    gradesTable.addCell(new Cell().add(new Paragraph(disciplinaDisplay)).setFontSize(8).setPadding(5));
-                    gradesTable.addCell(new Cell().add(new Paragraph(nota1 != null ? String.format("%.2f", nota1) : "-")).setFontSize(8).setPadding(5));
-                    gradesTable.addCell(new Cell().add(new Paragraph(nota2 != null ? String.format("%.2f", nota2) : "-")).setFontSize(8).setPadding(5));
-                    gradesTable.addCell(new Cell().add(new Paragraph(nota3 != null ? String.format("%.2f", nota3) : "-")).setFontSize(8).setPadding(5));
-                    gradesTable.addCell(new Cell().add(new Paragraph(mediaDisciplina != null ? String.format("%.2f", mediaDisciplina) : "-")).setFontSize(8).setPadding(5));
+                    java.util.Map<String, Object> row = new java.util.HashMap<>();
+                    row.put("nome", studentName);
+                    row.put("matricula", String.valueOf(student.getId()));
+                    row.put("disciplina", disciplinaName);
+                    row.put("nota1", nota1);
+                    row.put("nota2", nota2);
+                    row.put("nota3", nota3);
+                    row.put("media", mediaDisciplina);
+                    row.put("recuperacao", recuperacao);
+                    row.put("resultado", resultadoDisciplina);
+                    studentData.add(row);
                 }
-
-                document.add(gradesTable);
-                document.add(new Paragraph(" ").setMarginBottom(10));
-
-                // Resultado Final
-                Double mediaFinal = countDisciplinas > 0 ? totalMedia / countDisciplinas : null;
-                String resultadoFinal = getStudentFinalResult(mediaFinal);
-
-                Paragraph resultado = new Paragraph()
-                        .setFontSize(12)
-                        .setBold()
-                        .setMarginTop(15);
-                resultado.add(new Paragraph("Média Final: " + (mediaFinal != null ? String.format("%.2f", mediaFinal) : "-")));
-                resultado.add(new Paragraph("Resultado Final: " + resultadoFinal));
-                document.add(resultado);
             } else {
-                // Sem notas
-                Paragraph semNotas = new Paragraph("Nenhuma nota registrada para este aluno.")
-                        .setFontSize(10)
-                        .setTextAlignment(TextAlignment.CENTER)
-                        .setMarginTop(20);
-                document.add(semNotas);
-                
-                Paragraph resultado = new Paragraph()
-                        .setFontSize(12)
-                        .setBold()
-                        .setMarginTop(15);
-                resultado.add(new Paragraph("Resultado Final: Em andamento"));
-                document.add(resultado);
+                // Aluno sem notas - adicionar linha com "Em andamento"
+                java.util.Map<String, Object> row = new java.util.HashMap<>();
+                row.put("nome", studentName);
+                row.put("matricula", String.valueOf(student.getId()));
+                row.put("disciplina", "-");
+                row.put("nota1", null);
+                row.put("nota2", null);
+                row.put("nota3", null);
+                row.put("media", null);
+                row.put("recuperacao", "-");
+                row.put("resultado", "Em andamento");
+                studentData.add(row);
             }
 
-            // Rodapé com data de geração
-            Paragraph footer = new Paragraph("Data de geração: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
-                    .setFontSize(8)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginTop(30);
-            document.add(footer);
+            // Criar tabela única com os dados do aluno
+            UnitValue[] columnWidths = {
+                UnitValue.createPointValue(80),   // Nome do Aluno
+                UnitValue.createPointValue(40),   // Matrícula
+                UnitValue.createPointValue(80),   // Disciplina
+                UnitValue.createPointValue(35),   // Nota 1
+                UnitValue.createPointValue(35),   // Nota 2
+                UnitValue.createPointValue(35),   // Nota 3
+                UnitValue.createPointValue(40),   // Média
+                UnitValue.createPointValue(45),   // Recuperação
+                UnitValue.createPointValue(60)    // Resultado Final
+            };
+            Table mainTable = new Table(columnWidths);
+            mainTable.setWidth(UnitValue.createPercentValue(100));
+
+            // Cabeçalho
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOME DO ALUNO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("MATRÍCULA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("DISCIPLINA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 1").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 2").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 3").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("MÉDIA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("RECUPERAÇÃO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("RESULTADO FINAL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+
+            // Dados
+            for (java.util.Map<String, Object> row : studentData) {
+                String nome = (String) row.get("nome");
+                String nomeDisplay = nome != null ? (nome.length() > 20 ? nome.substring(0, 17) + "..." : nome) : "-";
+                mainTable.addCell(new Cell().add(new Paragraph(nomeDisplay)).setFontSize(6).setPadding(3));
+                
+                mainTable.addCell(new Cell().add(new Paragraph((String) row.get("matricula"))).setFontSize(6).setPadding(3));
+                
+                String disciplina = (String) row.get("disciplina");
+                String disciplinaDisplay = disciplina != null ? (disciplina.length() > 20 ? disciplina.substring(0, 17) + "..." : disciplina) : "-";
+                mainTable.addCell(new Cell().add(new Paragraph(disciplinaDisplay)).setFontSize(6).setPadding(3));
+                
+                Double nota1 = (Double) row.get("nota1");
+                mainTable.addCell(new Cell().add(new Paragraph(nota1 != null ? String.format("%.2f", nota1) : "-")).setFontSize(6).setPadding(3));
+                
+                Double nota2 = (Double) row.get("nota2");
+                mainTable.addCell(new Cell().add(new Paragraph(nota2 != null ? String.format("%.2f", nota2) : "-")).setFontSize(6).setPadding(3));
+                
+                Double nota3 = (Double) row.get("nota3");
+                mainTable.addCell(new Cell().add(new Paragraph(nota3 != null ? String.format("%.2f", nota3) : "-")).setFontSize(6).setPadding(3));
+                
+                Double media = (Double) row.get("media");
+                mainTable.addCell(new Cell().add(new Paragraph(media != null ? String.format("%.2f", media) : "-")).setFontSize(6).setPadding(3));
+                
+                mainTable.addCell(new Cell().add(new Paragraph((String) row.get("recuperacao"))).setFontSize(6).setPadding(3));
+                
+                mainTable.addCell(new Cell().add(new Paragraph((String) row.get("resultado"))).setFontSize(6).setPadding(3));
+            }
+
+            document.add(mainTable);
 
             document.close();
 
@@ -1035,6 +1059,235 @@ public class ClassroomController {
             return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Erro ao gerar PDF de dados da sala: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Erro ao gerar PDF: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{classroomId}/students/grades/pdf/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<?> exportAllStudentsGradesToPdf(
+            @PathVariable Long classroomId,
+            Authentication authentication) {
+        try {
+            User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (currentUser == null) {
+                return ResponseEntity.status(403).build();
+            }
+
+            Classroom classroom = classroomRepository.findById(classroomId).orElse(null);
+            if (classroom == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Verifica se o usuário tem acesso à sala
+            boolean hasAccess = false;
+            if (currentUser.getRole() == Role.ADMIN) {
+                hasAccess = true;
+            } else if (currentUser.getRole() == Role.TEACHER) {
+                hasAccess = classroom.getTeachers().contains(currentUser);
+            }
+
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+
+            List<User> students = new ArrayList<>(classroom.getStudents());
+            if (students.isEmpty()) {
+                return ResponseEntity.badRequest().body("Nenhum aluno encontrado nesta sala.");
+            }
+
+            // Buscar todas as tasks da sala
+            List<com.eaduck.backend.model.task.Task> tasks = new ArrayList<>(classroom.getTasks());
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf, PageSize.A4.rotate());
+
+            // Título
+            Paragraph title = new Paragraph("Relatório de Notas - EaDuck")
+                    .setFontSize(16)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(5);
+            document.add(title);
+
+            // Data de geração
+            Paragraph date = new Paragraph("Data de geração: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
+                    .setFontSize(10)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(15);
+            document.add(date);
+
+            // Informações da Sala
+            Paragraph classroomInfo = new Paragraph()
+                    .setFontSize(11)
+                    .setBold()
+                    .setMarginBottom(10);
+            classroomInfo.add(new Paragraph("Nome da Sala: " + (classroom.getName() != null ? classroom.getName() : "-")));
+            classroomInfo.add(new Paragraph("Ano Letivo: " + (classroom.getAcademicYear() != null ? classroom.getAcademicYear() : "-")));
+            document.add(classroomInfo);
+
+            // Preparar dados de todos os alunos
+            java.util.List<java.util.Map<String, Object>> allStudentData = new java.util.ArrayList<>();
+            
+            for (User student : students) {
+                String studentName = student.getNomeCompleto() != null ? student.getNomeCompleto() : 
+                                    (student.getName() != null ? student.getName() : student.getEmail());
+                
+                // Agrupar tasks por título (disciplina)
+                java.util.Map<String, java.util.List<Submission>> submissionsByDisciplina = new java.util.HashMap<>();
+                
+                for (com.eaduck.backend.model.task.Task task : tasks) {
+                    String disciplinaName = task.getTitle();
+                    Submission submission = submissionRepository.findByTaskIdAndStudentId(task.getId(), student.getId());
+                    if (submission != null && submission.getGrade() != null) {
+                        submissionsByDisciplina.computeIfAbsent(disciplinaName, k -> new java.util.ArrayList<>()).add(submission);
+                    }
+                }
+
+                // Para cada disciplina, criar uma linha
+                if (!submissionsByDisciplina.isEmpty()) {
+                    for (java.util.Map.Entry<String, java.util.List<Submission>> entry : submissionsByDisciplina.entrySet()) {
+                        String disciplinaName = entry.getKey();
+                        java.util.List<Submission> submissions = entry.getValue();
+                        
+                        // Ordenar submissions por data de avaliação
+                        submissions.sort((s1, s2) -> {
+                            if (s1.getEvaluatedAt() != null && s2.getEvaluatedAt() != null) {
+                                return s2.getEvaluatedAt().compareTo(s1.getEvaluatedAt());
+                            }
+                            return Long.compare(s2.getId(), s1.getId());
+                        });
+                        
+                        // Pegar as 3 primeiras notas
+                        Double nota1 = null, nota2 = null, nota3 = null;
+                        for (int i = 0; i < Math.min(3, submissions.size()); i++) {
+                            if (i == 0) nota1 = submissions.get(i).getGrade();
+                            else if (i == 1) nota2 = submissions.get(i).getGrade();
+                            else if (i == 2) nota3 = submissions.get(i).getGrade();
+                        }
+
+                        // Calcular média da disciplina
+                        double sum = 0.0;
+                        int count = 0;
+                        for (Submission sub : submissions) {
+                            if (sub.getGrade() != null) {
+                                sum += sub.getGrade();
+                                count++;
+                            }
+                        }
+                        Double mediaDisciplina = count > 0 ? sum / count : null;
+
+                        // Recuperação (não implementado ainda, deixar como "-")
+                        String recuperacao = "-";
+
+                        // Resultado final da disciplina
+                        String resultadoDisciplina = "-";
+                        if (mediaDisciplina != null) {
+                            if (mediaDisciplina >= 6.0) {
+                                resultadoDisciplina = "Aprovado";
+                            } else {
+                                resultadoDisciplina = "Reprovado";
+                            }
+                        }
+
+                        java.util.Map<String, Object> row = new java.util.HashMap<>();
+                        row.put("nome", studentName);
+                        row.put("matricula", String.valueOf(student.getId()));
+                        row.put("disciplina", disciplinaName);
+                        row.put("nota1", nota1);
+                        row.put("nota2", nota2);
+                        row.put("nota3", nota3);
+                        row.put("media", mediaDisciplina);
+                        row.put("recuperacao", recuperacao);
+                        row.put("resultado", resultadoDisciplina);
+                        allStudentData.add(row);
+                    }
+                } else {
+                    // Aluno sem notas - adicionar linha com "Em andamento"
+                    java.util.Map<String, Object> row = new java.util.HashMap<>();
+                    row.put("nome", studentName);
+                    row.put("matricula", String.valueOf(student.getId()));
+                    row.put("disciplina", "-");
+                    row.put("nota1", null);
+                    row.put("nota2", null);
+                    row.put("nota3", null);
+                    row.put("media", null);
+                    row.put("recuperacao", "-");
+                    row.put("resultado", "Em andamento");
+                    allStudentData.add(row);
+                }
+            }
+
+            // Criar tabela única com todos os dados
+            UnitValue[] columnWidths = {
+                UnitValue.createPointValue(80),   // Nome do Aluno
+                UnitValue.createPointValue(40),   // Matrícula
+                UnitValue.createPointValue(80),   // Disciplina
+                UnitValue.createPointValue(35),   // Nota 1
+                UnitValue.createPointValue(35),   // Nota 2
+                UnitValue.createPointValue(35),   // Nota 3
+                UnitValue.createPointValue(40),   // Média
+                UnitValue.createPointValue(45),   // Recuperação
+                UnitValue.createPointValue(60)    // Resultado Final
+            };
+            Table mainTable = new Table(columnWidths);
+            mainTable.setWidth(UnitValue.createPercentValue(100));
+
+            // Cabeçalho
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOME DO ALUNO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("MATRÍCULA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("DISCIPLINA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 1").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 2").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 3").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("MÉDIA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("RECUPERAÇÃO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("RESULTADO FINAL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+
+            // Dados
+            for (java.util.Map<String, Object> row : allStudentData) {
+                String nome = (String) row.get("nome");
+                String nomeDisplay = nome != null ? (nome.length() > 20 ? nome.substring(0, 17) + "..." : nome) : "-";
+                mainTable.addCell(new Cell().add(new Paragraph(nomeDisplay)).setFontSize(6).setPadding(3));
+                
+                mainTable.addCell(new Cell().add(new Paragraph((String) row.get("matricula"))).setFontSize(6).setPadding(3));
+                
+                String disciplina = (String) row.get("disciplina");
+                String disciplinaDisplay = disciplina != null ? (disciplina.length() > 20 ? disciplina.substring(0, 17) + "..." : disciplina) : "-";
+                mainTable.addCell(new Cell().add(new Paragraph(disciplinaDisplay)).setFontSize(6).setPadding(3));
+                
+                Double nota1 = (Double) row.get("nota1");
+                mainTable.addCell(new Cell().add(new Paragraph(nota1 != null ? String.format("%.2f", nota1) : "-")).setFontSize(6).setPadding(3));
+                
+                Double nota2 = (Double) row.get("nota2");
+                mainTable.addCell(new Cell().add(new Paragraph(nota2 != null ? String.format("%.2f", nota2) : "-")).setFontSize(6).setPadding(3));
+                
+                Double nota3 = (Double) row.get("nota3");
+                mainTable.addCell(new Cell().add(new Paragraph(nota3 != null ? String.format("%.2f", nota3) : "-")).setFontSize(6).setPadding(3));
+                
+                Double media = (Double) row.get("media");
+                mainTable.addCell(new Cell().add(new Paragraph(media != null ? String.format("%.2f", media) : "-")).setFontSize(6).setPadding(3));
+                
+                mainTable.addCell(new Cell().add(new Paragraph((String) row.get("recuperacao"))).setFontSize(6).setPadding(3));
+                
+                mainTable.addCell(new Cell().add(new Paragraph((String) row.get("resultado"))).setFontSize(6).setPadding(3));
+            }
+
+            document.add(mainTable);
+
+            document.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            String filename = "notas_todos_alunos_" + classroom.getName().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Erro ao gerar PDF de todas as notas: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Erro ao gerar PDF: " + e.getMessage());
         }
     }

@@ -43,6 +43,8 @@ export class ClassroomsComponent implements OnInit {
 
   showNotasPdfModal = false;
   notasPdfClassroom: Classroom | null = null;
+  notasPdfSearch = '';
+  filteredNotasPdfStudents: User[] = [];
 
   @ViewChild('teacherSearchInput') teacherSearchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('studentSearchInput') studentSearchInput?: ElementRef<HTMLInputElement>;
@@ -617,6 +619,8 @@ export class ClassroomsComponent implements OnInit {
                 ...fullClassroom,
                 students: classroomStudents
               };
+              this.filteredNotasPdfStudents = classroomStudents;
+              this.notasPdfSearch = '';
               this.showNotasPdfModal = true;
             },
             error: (error) => {
@@ -629,6 +633,8 @@ export class ClassroomsComponent implements OnInit {
             ...fullClassroom,
             students: []
           };
+          this.filteredNotasPdfStudents = [];
+          this.notasPdfSearch = '';
           this.showNotasPdfModal = true;
         }
       },
@@ -642,6 +648,51 @@ export class ClassroomsComponent implements OnInit {
   closeNotasPdfModal() {
     this.showNotasPdfModal = false;
     this.notasPdfClassroom = null;
+    this.notasPdfSearch = '';
+    this.filteredNotasPdfStudents = [];
+  }
+
+  filterNotasPdfStudents() {
+    if (!this.notasPdfClassroom || !this.notasPdfClassroom.students) {
+      this.filteredNotasPdfStudents = [];
+      return;
+    }
+
+    const search = this.notasPdfSearch ? this.notasPdfSearch.toLowerCase().trim() : '';
+    if (!search || search.length === 0) {
+      this.filteredNotasPdfStudents = this.notasPdfClassroom.students;
+      return;
+    }
+
+    this.filteredNotasPdfStudents = this.notasPdfClassroom.students.filter(s => {
+      const email = (s.email || '').toLowerCase();
+      const name = (s.name || '').toLowerCase();
+      const nomeCompleto = (s.nomeCompleto || '').toLowerCase();
+      return email.includes(search) || name.includes(search) || nomeCompleto.includes(search);
+    });
+  }
+
+  exportAllStudentsGradesToPdf() {
+    if (!this.notasPdfClassroom || !this.notasPdfClassroom.id) {
+      return;
+    }
+    this.classroomService.exportAllStudentsGradesToPdf(this.notasPdfClassroom.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const filename = `notas_todos_alunos_${this.notasPdfClassroom!.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        console.error('Erro ao gerar PDF de todas as notas:', error);
+        alert('Erro ao gerar PDF de todas as notas: ' + (error.error?.message || 'Erro desconhecido'));
+      }
+    });
   }
 
   exportStudentGradesToPdf(classroomId: number, studentId: number) {

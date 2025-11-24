@@ -262,21 +262,48 @@
 
   <!-- Modal para Seleção de Aluno - Notas PDF -->
   <div *ngIf="showNotasPdfModal" class="modal-overlay" (click)="closeNotasPdfModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-content modal-content-large" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Selecionar Aluno para Gerar Notas PDF</h3>
+        <h3>Notas PDF - {{ notasPdfClassroom?.name }}</h3>
         <button (click)="closeNotasPdfModal()" class="modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <div *ngIf="notasPdfClassroom && notasPdfClassroom.students && notasPdfClassroom.students.length > 0">
-          <div class="student-list">
-            <div *ngFor="let student of notasPdfClassroom.students" 
-                 (click)="exportStudentGradesToPdf(notasPdfClassroom.id, student.id)" 
-                 class="student-item">
+        <!-- Campo de pesquisa e botão de exportar todos -->
+        <div class="notas-pdf-search-bar">
+          <div class="notas-pdf-search-input-wrapper">
+            <span class="material-icons">search</span>
+            <input 
+              type="text" 
+              [(ngModel)]="notasPdfSearch" 
+              (input)="filterNotasPdfStudents()" 
+              placeholder="Pesquisar aluno por nome ou email..." 
+              class="notas-pdf-search-input"
+              autocomplete="off"
+            />
+          </div>
+          <button 
+            (click)="exportAllStudentsGradesToPdf()" 
+            class="notas-pdf-export-all-btn"
+            [disabled]="!notasPdfClassroom || !notasPdfClassroom.students || notasPdfClassroom.students.length === 0">
+            <span class="material-icons">picture_as_pdf</span>
+            Emitir Todas as Notas
+          </button>
+        </div>
+
+        <!-- Listagem de alunos -->
+        <div *ngIf="filteredNotasPdfStudents && filteredNotasPdfStudents.length > 0" class="student-list">
+          <div *ngFor="let student of filteredNotasPdfStudents" 
+               (click)="exportStudentGradesToPdf(notasPdfClassroom!.id, student.id)" 
+               class="student-item">
+            <div class="student-item-content">
               <div class="student-name">{{ student.nomeCompleto || student.name || student.email }}</div>
               <div class="student-email" *ngIf="student.nomeCompleto || student.name">{{ student.email }}</div>
             </div>
+            <span class="material-icons student-item-icon">picture_as_pdf</span>
           </div>
+        </div>
+        <div *ngIf="notasPdfSearch && filteredNotasPdfStudents && filteredNotasPdfStudents.length === 0 && notasPdfClassroom && notasPdfClassroom.students && notasPdfClassroom.students.length > 0" class="empty-state">
+          Nenhum aluno encontrado com essa pesquisa.
         </div>
         <div *ngIf="!notasPdfClassroom || !notasPdfClassroom.students || notasPdfClassroom.students.length === 0" class="empty-state">
           Nenhum aluno encontrado nesta sala.
