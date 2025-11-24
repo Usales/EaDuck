@@ -10,8 +10,9 @@ public class TaskSimpleDTO {
     private String type;
     private Long classroomId;
     private String classroomName;
+    private String academicYear;
 
-    public TaskSimpleDTO(Long id, String title, String description, LocalDateTime dueDate, String type, Long classroomId, String classroomName) {
+    public TaskSimpleDTO(Long id, String title, String description, LocalDateTime dueDate, String type, Long classroomId, String classroomName, String academicYear) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -19,6 +20,7 @@ public class TaskSimpleDTO {
         this.type = type;
         this.classroomId = classroomId;
         this.classroomName = classroomName;
+        this.academicYear = academicYear;
     }
 
     public Long getId() { return id; }
@@ -28,6 +30,7 @@ public class TaskSimpleDTO {
     public String getType() { return type; }
     public Long getClassroomId() { return classroomId; }
     public String getClassroomName() { return classroomName; }
+    public String getAcademicYear() { return academicYear; }
 
     public void setId(Long id) { this.id = id; }
     public void setTitle(String title) { this.title = title; }
@@ -36,4 +39,5 @@ public class TaskSimpleDTO {
     public void setType(String type) { this.type = type; }
     public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }
     public void setClassroomName(String classroomName) { this.classroomName = classroomName; }
+    public void setAcademicYear(String academicYear) { this.academicYear = academicYear; }
 } 

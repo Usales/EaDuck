@@ -604,12 +604,14 @@ export class ClassroomsComponent implements OnInit {
     this.classroomService.getClassroomById(classroom.id).subscribe({
       next: (fullClassroom) => {
         // Buscar dados completos dos alunos
-        if (fullClassroom.studentIds && fullClassroom.studentIds.length > 0) {
+        if (fullClassroom.students && fullClassroom.students.length > 0) {
+          // Extrair IDs dos alunos da sala
+          const studentIds = fullClassroom.students.map((s: any) => s.id);
           // Carregar lista completa de alunos e filtrar pelos IDs da sala
           this.userService.getStudents().subscribe({
             next: (allStudents) => {
               const classroomStudents = allStudents.filter(s => 
-                fullClassroom.studentIds?.includes(s.id)
+                studentIds.includes(s.id)
               );
               this.notasPdfClassroom = {
                 ...fullClassroom,

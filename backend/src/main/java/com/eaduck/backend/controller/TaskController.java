@@ -97,7 +97,8 @@ public class TaskController {
                     task.getDueDate(),
                     task.getType(),
                     task.getClassroom().getId(),
-                    task.getClassroom().getName()
+                    task.getClassroom().getName(),
+                    task.getClassroom().getAcademicYear()
                 ))
                 .collect(java.util.stream.Collectors.toList());
             return ResponseEntity.ok(dtos);
@@ -111,7 +112,8 @@ public class TaskController {
                     task.getDueDate(),
                     task.getType(),
                     classroom.getId(),
-                    classroom.getName()
+                    classroom.getName(),
+                    classroom.getAcademicYear()
                 )))
             );
             return ResponseEntity.ok(new java.util.ArrayList<>(teacherTasks));
@@ -125,7 +127,8 @@ public class TaskController {
                     task.getDueDate(),
                     task.getType(),
                     classroom.getId(),
-                    classroom.getName()
+                    classroom.getName(),
+                    classroom.getAcademicYear()
                 )))
             );
             return ResponseEntity.ok(new java.util.ArrayList<>(studentTasks));
@@ -149,7 +152,8 @@ public class TaskController {
                 task.getDueDate(),
                 task.getType(),
                 task.getClassroom().getId(),
-                task.getClassroom().getName()
+                task.getClassroom().getName(),
+                task.getClassroom().getAcademicYear()
             ))
             .collect(java.util.stream.Collectors.toList());
 
@@ -235,7 +239,8 @@ public class TaskController {
             savedTask.getDueDate(),
             savedTask.getType(),
             classroom.getId(),
-            classroom.getName()
+            classroom.getName(),
+            classroom.getAcademicYear()
         );
         return ResponseEntity.ok(dtoResp);
     }
@@ -333,7 +338,8 @@ public class TaskController {
                 task.getDueDate(),
                 task.getType(),
                 classroom.getId(),
-                classroom.getName()
+                classroom.getName(),
+                classroom.getAcademicYear()
             ))
             .collect(java.util.stream.Collectors.toList());
         return ResponseEntity.ok(dtos);
