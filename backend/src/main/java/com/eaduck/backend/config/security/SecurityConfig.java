@@ -66,6 +66,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/tasks/**").authenticated()
                 .requestMatchers("/api/classrooms/**").authenticated()
                 .requestMatchers("/api/submissions/**").authenticated()
+                .requestMatchers("/api/attendances/**").authenticated()
+                .requestMatchers("/api/disciplines/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
