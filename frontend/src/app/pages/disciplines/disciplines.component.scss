@@ -1,0 +1,415 @@
+// Container principal
+.disciplines-container {
+  min-height: 100vh;
+  padding: 1rem;
+  padding-top: 5rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+// Header
+.disciplines-header {
+  margin-bottom: 1.5rem;
+}
+
+.disciplines-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.disciplines-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.disciplines-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.disciplines-add-btn:hover:not(:disabled) {
+  background: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.disciplines-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disciplines-add-text {
+  font-size: 0.875rem;
+}
+
+// Formulário
+.disciplines-form {
+  background: var(--panel-bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.disciplines-form-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1.5rem 0;
+}
+
+.disciplines-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.disciplines-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.disciplines-form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.disciplines-form-input,
+.disciplines-form-textarea {
+  padding: 0.75rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-size: 0.875rem;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.disciplines-form-input:focus,
+.disciplines-form-textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.disciplines-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.disciplines-form-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+.disciplines-form-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.disciplines-form-submit,
+.disciplines-form-cancel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.disciplines-form-submit {
+  background: var(--button-bg);
+  color: var(--button-text);
+}
+
+.disciplines-form-submit:hover:not(:disabled) {
+  background: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.disciplines-form-cancel {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.disciplines-form-cancel:hover:not(:disabled) {
+  background: var(--text-secondary);
+  color: var(--panel-bg);
+}
+
+.disciplines-form-submit:disabled,
+.disciplines-form-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Busca
+.disciplines-search {
+  margin-bottom: 1.5rem;
+}
+
+.disciplines-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.disciplines-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.disciplines-search-input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.75rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease;
+}
+
+.disciplines-search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+// Lista
+.disciplines-list {
+  margin-bottom: 2rem;
+}
+
+.disciplines-loading,
+.disciplines-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.disciplines-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+// Card - Retângulo fino e comprido
+.discipline-card {
+  background: var(--panel-bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: auto;
+  max-height: 100px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.discipline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+// Lado esquerdo: Nome e Descrição (vertical)
+.discipline-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.discipline-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Lado direito: Status e Botões
+.discipline-card-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.discipline-status-active,
+.discipline-status-inactive {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.discipline-status-active {
+  background: #10b981;
+  color: white;
+}
+
+.discipline-status-inactive {
+  background: #6b7280;
+  color: white;
+}
+
+// Descrição abaixo do nome (com quebra de linha)
+.discipline-card-body {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.discipline-card-description {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.3;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discipline-card-description.empty {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+// Botões no topo (dentro do header)
+.discipline-card-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.discipline-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.discipline-action-btn .material-icons {
+  font-size: 1rem;
+}
+
+.discipline-action-btn.edit {
+  background: #3b82f6;
+  color: white;
+}
+
+.discipline-action-btn.edit:hover {
+  background: #2563eb;
+}
+
+.discipline-action-btn.activate {
+  background: #10b981;
+  color: white;
+}
+
+.discipline-action-btn.activate:hover {
+  background: #059669;
+}
+
+.discipline-action-btn.deactivate {
+  background: #f59e0b;
+  color: white;
+}
+
+.discipline-action-btn.deactivate:hover {
+  background: #d97706;
+}
+
+.discipline-action-btn.delete {
+  background: #ef4444;
+  color: white;
+}
+
+.discipline-action-btn.delete:hover {
+  background: #dc2626;
+}
+
+// Desktop
+@media (min-width: 768px) {
+  .disciplines-container {
+    padding: 2rem;
+    padding-top: 6rem;
+  }
+
+  .disciplines-header-content {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .disciplines-add-btn {
+    width: auto;
+  }
+
+  .disciplines-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .disciplines-form-actions {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (min-width: 1024px) {
+  .disciplines-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+

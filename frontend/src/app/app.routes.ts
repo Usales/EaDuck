@@ -13,6 +13,9 @@ import { ConfirmResetPasswordComponent } from './pages/confirm-reset-password/co
 import { ChatComponent } from './pages/chat/chat.component';
 import { ChatHubComponent } from './components/chat-hub/chat-hub.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { AttendanceComponent } from './pages/attendance/attendance.component';
+import { DisciplinesComponent } from './pages/disciplines/disciplines.component';
+import { EditGradesComponent } from './pages/edit-grades/edit-grades.component';
 // import { DashboardComponent } from './pages/dashboard/dashboard.component'; // será criado
 
 export const routes: Routes = [
@@ -29,6 +32,9 @@ export const routes: Routes = [
   { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] },
   { path: 'chat-hub', component: ChatHubComponent, canActivate: [AuthGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [AuthGuard] },
+  { path: 'attendance', component: AttendanceComponent, canActivate: [AuthGuard] },
+  { path: 'disciplines', component: DisciplinesComponent, canActivate: [AuthGuard] },
+  { path: 'edit-grades/:id', component: EditGradesComponent, canActivate: [AuthGuard] },
   { path: 'confirm-reset-password', component: ConfirmResetPasswordComponent },
   { path: '**', redirectTo: '/login' }
   // { path: 'dashboard', component: DashboardComponent },

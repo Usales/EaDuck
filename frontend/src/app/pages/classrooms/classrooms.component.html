@@ -124,24 +124,28 @@
               Cancelar
             </button>
           </ng-container>
-           <ng-template #editDeleteBtns>
-             <button *ngIf="isAdminOrTeacher" (click)="exportClassroomUsersToPdf(classroom)" class="classroom-action-btn classroom-action-pdf">
-               <span class="material-icons">picture_as_pdf</span>
-               Dados PDF
-             </button>
-             <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="startEdit(classroom)" class="classroom-action-btn classroom-action-edit">
-               <span class="material-icons">edit</span>
-               Editar
-             </button>
-             <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="deleteClassroom(classroom)" class="classroom-action-btn classroom-action-delete">
-               <span class="material-icons">delete</span>
-               Excluir
-             </button>
-             <button *ngIf="isAdminOrTeacher" (click)="openNotasPdfModal(classroom)" class="classroom-action-btn classroom-action-pdf">
-               <span class="material-icons">description</span>
-               Notas PDF
-             </button>
-           </ng-template>
+          <ng-template #editDeleteBtns>
+            <button *ngIf="isAdminOrTeacher" (click)="exportClassroomUsersToPdf(classroom)" class="classroom-action-btn classroom-action-pdf">
+              <span class="material-icons">picture_as_pdf</span>
+              Dados PDF
+            </button>
+            <button *ngIf="isAdminOrTeacher" (click)="openNotasPdfModal(classroom)" class="classroom-action-btn classroom-action-pdf">
+              <span class="material-icons">description</span>
+              Notas PDF
+            </button>
+            <button *ngIf="isAdminOrTeacher" (click)="openEditGrades(classroom)" class="classroom-action-btn classroom-action-edit-grades">
+              <span class="material-icons">picture_as_pdf</span>
+              Editar Notas
+            </button>
+            <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="startEdit(classroom)" class="classroom-action-btn classroom-action-edit">
+              <span class="material-icons">edit</span>
+              Editar
+            </button>
+            <button *ngIf="isAdminOrTeacher && currentUser?.role === 'ADMIN'" (click)="deleteClassroom(classroom)" class="classroom-action-btn classroom-action-delete">
+              <span class="material-icons">delete</span>
+              Excluir
+            </button>
+          </ng-template>
         </div>
         <!-- Atribuição de Professores -->
         <div *ngIf="assignClassroomId === classroom.id && assignMode === 'teacher'" class="classroom-assignment">

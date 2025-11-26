@@ -511,6 +511,15 @@
   background: #b91c1c;
 }
 
+.classroom-action-edit-grades {
+  background: #3b82f6;
+  color: white;
+}
+
+.classroom-action-edit-grades:hover {
+  background: #2563eb;
+}
+
 // Seção de atribuição
 .classroom-assignment {
   background: var(--bg-secondary);

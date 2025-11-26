@@ -1,0 +1,127 @@
+<app-sidebar></app-sidebar>
+
+<div class="edit-grades-container">
+  <div class="header">
+    <button (click)="goBack()" class="back-btn">
+      <span class="material-icons">arrow_back</span>
+      Voltar
+    </button>
+    <div class="header-info">
+      <h1>Editar Notas</h1>
+      <div class="classroom-info">
+        <span><strong>Nome da Sala:</strong> {{ classroom?.name }}</span>
+        <span><strong>Ano Letivo:</strong> {{ classroom?.academicYear }}</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button (click)="saveAllGrades()" [disabled]="saving || !canEdit()" class="save-all-btn">
+        <span class="material-icons">save</span>
+        {{ saving ? 'Salvando...' : 'Salvar Todas' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <p>Carregando notas...</p>
+  </div>
+
+  <div *ngIf="!loading && classroom && students.length === 0" class="empty-state">
+    <p>Nenhum aluno encontrado nesta sala.</p>
+  </div>
+
+  <div *ngIf="!loading && classroom && students.length > 0" class="content">
+    <div class="table-wrapper">
+      <table class="grades-table">
+        <thead>
+          <tr>
+            <th>NOME DO ALUNO</th>
+            <th>MATRÍCULA</th>
+            <th>E-MAIL</th>
+            <th>CPF</th>
+            <th>DISCIPLINA</th>
+            <th>NOTA 1</th>
+            <th>NOTA 2</th>
+            <th>NOTA 3</th>
+            <th>MÉDIA</th>
+            <th>RECUPERAÇÃO</th>
+            <th>RESULTADO FINAL</th>
+            <th *ngIf="canEdit()">AÇÕES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of gradeRows">
+            <td class="student-name">{{ row.student.nomeCompleto || row.student.email }}</td>
+            <td class="matricula">{{ row.student.id }}</td>
+            <td class="email">{{ row.student.email }}</td>
+            <td class="cpf">{{ row.student.cpf || '-' }}</td>
+            <td class="discipline">{{ row.discipline }}</td>
+            <td class="grade-cell">
+              <input 
+                *ngIf="canEdit()"
+                type="number" 
+                min="0" 
+                max="10" 
+                step="0.1"
+                [(ngModel)]="row.nota1"
+                (ngModelChange)="onGradeChange(row)"
+                class="grade-input"
+                placeholder="-">
+              <span *ngIf="!canEdit()">{{ row.nota1 !== undefined && row.nota1 !== null ? row.nota1.toFixed(1) : '-' }}</span>
+            </td>
+            <td class="grade-cell">
+              <input 
+                *ngIf="canEdit()"
+                type="number" 
+                min="0" 
+                max="10" 
+                step="0.1"
+                [(ngModel)]="row.nota2"
+                (ngModelChange)="onGradeChange(row)"
+                class="grade-input"
+                placeholder="-">
+              <span *ngIf="!canEdit()">{{ row.nota2 !== undefined && row.nota2 !== null ? row.nota2.toFixed(1) : '-' }}</span>
+            </td>
+            <td class="grade-cell">
+              <input 
+                *ngIf="canEdit()"
+                type="number" 
+                min="0" 
+                max="10" 
+                step="0.1"
+                [(ngModel)]="row.nota3"
+                (ngModelChange)="onGradeChange(row)"
+                class="grade-input"
+                placeholder="-">
+              <span *ngIf="!canEdit()">{{ row.nota3 !== undefined && row.nota3 !== null ? row.nota3.toFixed(1) : '-' }}</span>
+            </td>
+            <td class="average-cell">{{ row.media !== undefined && row.media !== null ? row.media.toFixed(1) : '-' }}</td>
+            <td class="recovery-cell">
+              <input 
+                *ngIf="canEdit()"
+                type="number" 
+                min="0" 
+                max="10" 
+                step="0.1"
+                [(ngModel)]="row.recuperacao"
+                class="grade-input"
+                placeholder="-">
+              <span *ngIf="!canEdit()">{{ row.recuperacao !== undefined && row.recuperacao !== null ? row.recuperacao.toFixed(1) : '-' }}</span>
+            </td>
+            <td class="result-cell" [ngClass]="{
+              'approved': row.resultadoFinal === 'Aprovado',
+              'failed': row.resultadoFinal === 'Reprovado',
+              'in-progress': row.resultadoFinal === 'Em andamento'
+            }">
+              {{ row.resultadoFinal }}
+            </td>
+            <td *ngIf="canEdit()" class="actions">
+              <button (click)="saveGrade(row)" class="save-btn" title="Salvar nota">
+                <span class="material-icons">save</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

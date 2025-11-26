@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { Observable, forkJoin } from 'rxjs';
 import { User } from '../../services/user.service';
 import { UserService } from '../../services/user.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-classrooms',
@@ -49,7 +50,12 @@ export class ClassroomsComponent implements OnInit {
   @ViewChild('teacherSearchInput') teacherSearchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('studentSearchInput') studentSearchInput?: ElementRef<HTMLInputElement>;
 
-  constructor(private classroomService: ClassroomService, private authService: AuthService, private userService: UserService) {
+  constructor(
+    private classroomService: ClassroomService, 
+    private authService: AuthService, 
+    private userService: UserService,
+    private router: Router
+  ) {
     this.currentUser$ = this.authService.currentUser$;
   }
 
@@ -216,7 +222,7 @@ export class ClassroomsComponent implements OnInit {
   loadTeachers() {
     this.userService.getTeachers().subscribe({
       next: (teachers) => {
-        this.teachers = teachers;
+      this.teachers = teachers;
         // Atualizar filtro se o modal estiver aberto
         if (this.assignMode === 'teacher') {
           // Filtrar professores que não estão selecionados
@@ -237,7 +243,7 @@ export class ClassroomsComponent implements OnInit {
   loadStudents() {
     this.userService.getStudents().subscribe({
       next: (students) => {
-        this.students = students;
+      this.students = students;
         // Atualizar filtro se o modal estiver aberto
         if (this.assignMode === 'student') {
           // Filtrar alunos que não estão selecionados
@@ -283,10 +289,10 @@ export class ClassroomsComponent implements OnInit {
       error: (err) => {
         console.error('Erro ao carregar dados da sala:', err);
         // Mesmo com erro, tentar abrir o modal com os dados atuais
-        this.assignClassroomId = classroom.id;
-        this.assignMode = 'teacher';
-        this.selectedTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
-        this.searchTeacher = '';
+    this.assignClassroomId = classroom.id;
+    this.assignMode = 'teacher';
+    this.selectedTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
+    this.searchTeacher = '';
         this.filteredTeachers = this.teachers.filter(t => !this.selectedTeacherIds.includes(t.id));
       }
     });
@@ -320,10 +326,10 @@ export class ClassroomsComponent implements OnInit {
       error: (err) => {
         console.error('Erro ao carregar dados da sala:', err);
         // Mesmo com erro, tentar abrir o modal com os dados atuais
-        this.assignClassroomId = classroom.id;
-        this.assignMode = 'student';
-        this.selectedStudentIds = classroom.students ? classroom.students.map((s: any) => s.id) : [];
-        this.searchStudent = '';
+    this.assignClassroomId = classroom.id;
+    this.assignMode = 'student';
+    this.selectedStudentIds = classroom.students ? classroom.students.map((s: any) => s.id) : [];
+    this.searchStudent = '';
         this.filteredStudents = this.students.filter(s => !this.selectedStudentIds.includes(s.id));
       }
     });
@@ -410,10 +416,10 @@ export class ClassroomsComponent implements OnInit {
     this.classroomService.getClassroomById(this.assignClassroomId).subscribe({
       next: (classroom) => {
         console.log('Dados da sala carregados:', classroom);
-        // Adiciona professores que não estão na sala
+    // Adiciona professores que não estão na sala
         const currentTeacherIds = classroom.teachers ? classroom.teachers.map((t: any) => t.id) : [];
         const toAdd = this.selectedTeacherIds.filter(id => !currentTeacherIds.includes(id));
-        // Remove professores que foram desmarcados
+    // Remove professores que foram desmarcados
         const toRemove = currentTeacherIds.filter((id: number) => !this.selectedTeacherIds.includes(id));
         
         console.log('Professores para adicionar:', toAdd);
@@ -454,8 +460,8 @@ export class ClassroomsComponent implements OnInit {
         } else {
           console.log('Nenhuma operação necessária');
           // Se não há operações, apenas fechar o modal
-          this.assignClassroomId = null;
-          this.selectedTeacherIds = [];
+    this.assignClassroomId = null;
+    this.selectedTeacherIds = [];
           this.assignMode = null;
         }
       },
@@ -478,10 +484,10 @@ export class ClassroomsComponent implements OnInit {
     this.classroomService.getClassroomById(this.assignClassroomId).subscribe({
       next: (classroom) => {
         console.log('Dados da sala carregados:', classroom);
-        // Adiciona alunos que não estão na sala
+    // Adiciona alunos que não estão na sala
         const currentStudentIds = classroom.students ? classroom.students.map((s: any) => s.id) : [];
         const toAdd = this.selectedStudentIds.filter(id => !currentStudentIds.includes(id));
-        // Remove alunos que foram desmarcados
+    // Remove alunos que foram desmarcados
         const toRemove = currentStudentIds.filter((id: number) => !this.selectedStudentIds.includes(id));
         
         console.log('Alunos para adicionar:', toAdd);
@@ -522,9 +528,9 @@ export class ClassroomsComponent implements OnInit {
         } else {
           console.log('Nenhuma operação necessária');
           // Se não há operações, apenas fechar o modal
-          this.assignClassroomId = null;
-          this.selectedStudentIds = [];
-          this.assignMode = null;
+    this.assignClassroomId = null;
+    this.selectedStudentIds = [];
+    this.assignMode = null;
         }
       },
       error: (err) => {
@@ -599,6 +605,10 @@ export class ClassroomsComponent implements OnInit {
         alert('Erro ao gerar PDF: ' + (error.error?.message || 'Erro desconhecido'));
       }
     });
+  }
+
+  openEditGrades(classroom: Classroom) {
+    this.router.navigate(['/edit-grades', classroom.id]);
   }
 
   openNotasPdfModal(classroom: Classroom) {

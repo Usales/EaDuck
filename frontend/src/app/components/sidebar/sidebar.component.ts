@@ -17,12 +17,16 @@ export class SidebarComponent {
   currentUser$: Observable<User | null>;
   isOpen = false;
   isMobile = false;
+  currentUser: User | null = null;
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {
     this.currentUser$ = this.authService.currentUser$;
+    this.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
     this.checkScreenSize();
   }
 

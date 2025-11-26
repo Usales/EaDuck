@@ -1,0 +1,156 @@
+<app-sidebar></app-sidebar>
+
+<div class="disciplines-container page-bg">
+  <!-- Header -->
+  <div class="disciplines-header">
+    <div class="disciplines-header-content">
+      <h1 class="disciplines-title">Disciplinas</h1>
+      <button *ngIf="canEdit" (click)="openNewForm()" class="disciplines-add-btn" [disabled]="showNewForm || showEditForm">
+        <span class="material-icons">add</span>
+        <span class="disciplines-add-text">Nova Disciplina</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Formulário de Nova Disciplina -->
+  <div *ngIf="canEdit && showNewForm" class="disciplines-form">
+    <h2 class="disciplines-form-title">Criar Nova Disciplina</h2>
+    <div class="disciplines-form-fields">
+      <div class="disciplines-form-field">
+        <label class="disciplines-form-label">Nome da Disciplina <span class="text-red-500">*</span></label>
+        <input 
+          type="text" 
+          placeholder="Digite o nome da disciplina" 
+          [(ngModel)]="newDiscipline.name" 
+          class="disciplines-form-input"
+          maxlength="255">
+      </div>
+      
+      <div class="disciplines-form-field">
+        <label class="disciplines-form-label">Descrição (opcional)</label>
+        <textarea 
+          placeholder="Digite uma descrição para a disciplina" 
+          [(ngModel)]="newDiscipline.description" 
+          class="disciplines-form-textarea"
+          rows="3"></textarea>
+      </div>
+      
+      <div class="disciplines-form-actions">
+        <button (click)="saveNewDiscipline()" [disabled]="saving" class="disciplines-form-submit">
+          <span class="material-icons">save</span>
+          {{ saving ? 'Salvando...' : 'Criar Disciplina' }}
+        </button>
+        <button (click)="closeNewForm()" [disabled]="saving" class="disciplines-form-cancel">
+          <span class="material-icons">close</span>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulário de Edição -->
+  <div *ngIf="canEdit && showEditForm" class="disciplines-form">
+    <h2 class="disciplines-form-title">Editar Disciplina</h2>
+    <div class="disciplines-form-fields">
+      <div class="disciplines-form-field">
+        <label class="disciplines-form-label">Nome da Disciplina <span class="text-red-500">*</span></label>
+        <input 
+          type="text" 
+          placeholder="Digite o nome da disciplina" 
+          [(ngModel)]="editDiscipline.name" 
+          class="disciplines-form-input"
+          maxlength="255">
+      </div>
+      
+      <div class="disciplines-form-field">
+        <label class="disciplines-form-label">Descrição (opcional)</label>
+        <textarea 
+          placeholder="Digite uma descrição para a disciplina" 
+          [(ngModel)]="editDiscipline.description" 
+          class="disciplines-form-textarea"
+          rows="3"></textarea>
+      </div>
+      
+      <div class="disciplines-form-field">
+        <label class="disciplines-form-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="editDiscipline.isActive" 
+            class="disciplines-form-checkbox">
+          <span>Disciplina ativa</span>
+        </label>
+      </div>
+      
+      <div class="disciplines-form-actions">
+        <button (click)="saveEditDiscipline()" [disabled]="saving" class="disciplines-form-submit">
+          <span class="material-icons">save</span>
+          {{ saving ? 'Salvando...' : 'Salvar Alterações' }}
+        </button>
+        <button (click)="closeEditForm()" [disabled]="saving" class="disciplines-form-cancel">
+          <span class="material-icons">close</span>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Busca -->
+  <div class="disciplines-search">
+    <div class="disciplines-search-wrapper">
+      <span class="disciplines-search-icon">
+        <span class="material-icons">search</span>
+      </span>
+      <input 
+        type="text" 
+        placeholder="Buscar disciplinas..." 
+        [(ngModel)]="filter" 
+        (input)="applyFilter()" 
+        class="disciplines-search-input">
+    </div>
+  </div>
+
+  <!-- Lista de Disciplinas -->
+  <div class="disciplines-list">
+    <div *ngIf="loading" class="disciplines-loading">
+      <p>Carregando disciplinas...</p>
+    </div>
+
+    <div *ngIf="!loading && filteredDisciplines.length === 0" class="disciplines-empty">
+      <p>Nenhuma disciplina encontrada</p>
+    </div>
+
+    <div *ngIf="!loading && filteredDisciplines.length > 0" class="disciplines-grid">
+      <div *ngFor="let discipline of filteredDisciplines" class="discipline-card">
+        <!-- Layout: Nome/Descrição (esquerda) | Status/Botões (direita) -->
+        <div class="discipline-card-left">
+          <h3 class="discipline-card-name">{{ discipline.name }}</h3>
+          <div class="discipline-card-body">
+            <p class="discipline-card-description" *ngIf="discipline.description">
+              {{ discipline.description }}
+            </p>
+            <p class="discipline-card-description empty" *ngIf="!discipline.description">
+              Sem descrição
+            </p>
+          </div>
+        </div>
+        
+        <div class="discipline-card-right">
+          <span [ngClass]="discipline.isActive !== false ? 'discipline-status-active' : 'discipline-status-inactive'">
+            {{ discipline.isActive !== false ? 'Ativa' : 'Inativa' }}
+          </span>
+          <div class="discipline-card-actions" *ngIf="canEdit">
+            <button (click)="openEditForm(discipline)" class="discipline-action-btn edit" title="Editar">
+              <span class="material-icons">edit</span>
+              Editar
+            </button>
+            <button (click)="deleteDiscipline(discipline)" class="discipline-action-btn delete" title="Excluir">
+              <span class="material-icons">delete</span>
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

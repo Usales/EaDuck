@@ -1,0 +1,251 @@
+<app-sidebar></app-sidebar>
+
+<div class="attendance-container">
+  <!-- Lista de Salas -->
+  <div *ngIf="!selectedClassroom" class="classrooms-list">
+    <div class="page-header">
+      <h1>Frequência</h1>
+      <p class="subtitle">Selecione uma sala para registrar a frequência</p>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      <p>Carregando salas...</p>
+    </div>
+
+    <div *ngIf="!loading && classrooms.length === 0" class="empty-state">
+      <p>Nenhuma sala disponível</p>
+    </div>
+
+    <div *ngIf="!loading && classrooms.length > 0" class="classrooms-grid">
+      <div 
+        *ngFor="let classroom of classrooms" 
+        class="classroom-card"
+        (click)="selectClassroom(classroom)">
+        <div class="classroom-header">
+          <h3>{{ classroom.name }}</h3>
+        </div>
+        <div class="classroom-info">
+          <div class="info-item">
+            <span class="label">Série / Ano:</span>
+            <span class="value">{{ classroom.academicYear || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Alunos:</span>
+            <span class="value">{{ classroom.studentCount }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Professor:</span>
+            <span class="value">{{ classroom.teacherName || '-' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ficha de Presença -->
+  <div *ngIf="selectedClassroom" class="attendance-sheet">
+    <div class="sheet-header">
+      <button (click)="backToClassrooms()" class="back-button">
+        <span class="material-icons">arrow_back</span>
+        Voltar
+      </button>
+      <h1>Ficha de Frequência - {{ selectedClassroom.name }}</h1>
+    </div>
+
+    <!-- Navegação de Data -->
+    <div class="date-navigation">
+      <button (click)="previousDay()" class="nav-button" type="button">
+        <span class="material-icons">chevron_left</span>
+        <span class="nav-button-text">Anterior</span>
+      </button>
+      
+      <div class="date-display">
+        <input 
+          type="date" 
+          [value]="getDateInputValue()" 
+          (change)="onDateChange($event)"
+          class="date-input"
+          title="Selecione a data">
+        <span class="date-text">{{ formatDateDisplay(currentDate) }}</span>
+      </div>
+      
+      <button (click)="nextDay()" class="nav-button" type="button">
+        <span class="nav-button-text">Próximo</span>
+        <span class="material-icons">chevron_right</span>
+      </button>
+    </div>
+
+    <!-- Informações da Ficha -->
+    <div class="sheet-info">
+      <div class="info-field">
+        <label>Disciplina (opcional):</label>
+        <select 
+          [(ngModel)]="discipline" 
+          class="info-select"
+          [disabled]="loadingDisciplines">
+          <option value="">Selecione uma disciplina</option>
+          <option *ngFor="let disc of disciplines" [value]="disc.name">
+            {{ disc.name }}
+          </option>
+        </select>
+        <small *ngIf="loadingDisciplines" style="color: var(--text-secondary); font-size: 0.75rem;">
+          Carregando disciplinas...
+        </small>
+      </div>
+      <div class="info-field">
+        <label>Período:</label>
+        <select [(ngModel)]="period" class="info-select">
+          <option value="MANHA">Manhã</option>
+          <option value="TARDE">Tarde</option>
+          <option value="INTEGRAL">Integral</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Planilha de Presença -->
+    <div *ngIf="loading" class="loading-state">
+      <p>Carregando frequência...</p>
+    </div>
+
+    <div *ngIf="!loading" class="attendance-table-wrapper">
+      <table class="attendance-table">
+        <thead>
+          <tr>
+            <th>Nº</th>
+            <th>Nome do Aluno</th>
+            <th class="mobile-hide">Presente (✔)</th>
+            <th class="mobile-hide">Ausente (✘)</th>
+            <th class="mobile-hide">Atrasado (⏱)</th>
+            <th>Status</th>
+            <th class="mobile-hide">Horário</th>
+            <th class="mobile-hide">Observações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let attendance of attendances; let i = index">
+            <td class="number-cell">{{ i + 1 }}</td>
+            <td class="name-cell">{{ attendance.studentName }}</td>
+            <td class="status-cell mobile-hide">
+              <button 
+                (click)="updateAttendanceStatus(attendance, 'PRESENT')"
+                [class.active]="attendance.status === 'PRESENT'"
+                class="status-button present"
+                type="button"
+                title="Presente">
+                ✔
+              </button>
+            </td>
+            <td class="status-cell mobile-hide">
+              <button 
+                (click)="updateAttendanceStatus(attendance, 'ABSENT')"
+                [class.active]="attendance.status === 'ABSENT'"
+                class="status-button absent"
+                type="button"
+                title="Ausente">
+                ✘
+              </button>
+            </td>
+            <td class="status-cell mobile-hide">
+              <button 
+                (click)="updateAttendanceStatus(attendance, 'LATE')"
+                [class.active]="attendance.status === 'LATE'"
+                class="status-button late"
+                type="button"
+                title="Atrasado">
+                ⏱
+              </button>
+            </td>
+            <td class="status-cell mobile-only">
+              <div class="status-buttons-group">
+                <button 
+                  (click)="updateAttendanceStatus(attendance, 'PRESENT')"
+                  [class.active]="attendance.status === 'PRESENT'"
+                  class="status-button present"
+                  type="button"
+                  title="Presente">
+                  ✔
+                </button>
+                <button 
+                  (click)="updateAttendanceStatus(attendance, 'ABSENT')"
+                  [class.active]="attendance.status === 'ABSENT'"
+                  class="status-button absent"
+                  type="button"
+                  title="Ausente">
+                  ✘
+                </button>
+                <button 
+                  (click)="updateAttendanceStatus(attendance, 'LATE')"
+                  [class.active]="attendance.status === 'LATE'"
+                  class="status-button late"
+                  type="button"
+                  title="Atrasado">
+                  ⏱
+                </button>
+              </div>
+            </td>
+            <td class="time-cell mobile-hide">
+              <input 
+                *ngIf="attendance.status === 'LATE'"
+                type="time" 
+                [(ngModel)]="attendance.arrivalTime"
+                class="time-input">
+              <span *ngIf="attendance.status !== 'LATE'" class="time-placeholder">-</span>
+            </td>
+            <td class="observations-cell mobile-hide">
+              <input 
+                type="text" 
+                [(ngModel)]="attendance.observations"
+                placeholder="Observações..."
+                class="observations-input">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Resumo Automático -->
+    <div class="summary-section">
+      <h3>Resumo da Frequência</h3>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="summary-label">Total de Alunos:</span>
+          <span class="summary-value">{{ totalStudents }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Presentes:</span>
+          <span class="summary-value present">{{ presentCount }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Ausentes:</span>
+          <span class="summary-value absent">{{ absentCount }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Atrasados:</span>
+          <span class="summary-value late">{{ lateCount }}</span>
+        </div>
+        <div class="summary-item highlight">
+          <span class="summary-label">Percentual de Presença:</span>
+          <span class="summary-value">{{ attendancePercentage.toFixed(2) }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="actions-section">
+      <button 
+        (click)="saveAttendance()" 
+        [disabled]="saving"
+        class="action-button save">
+        <span class="material-icons">save</span>
+        {{ saving ? 'Salvando...' : 'Salvar Frequência' }}
+      </button>
+      <button 
+        (click)="exportToPdf()" 
+        class="action-button export">
+        <span class="material-icons">picture_as_pdf</span>
+        Exportar PDF
+      </button>
+    </div>
+  </div>
+</div>
+
