@@ -158,9 +158,4 @@ export class LoginComponent implements OnInit, AfterViewInit {
     // Não permitir fechar o modal sem definir o nome
     // O usuário deve definir o nome para continuar
   }
-
-  loginWithGoogle() {
-    // Redirecionar para o endpoint OAuth2 do backend
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
-  }
 }

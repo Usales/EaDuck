@@ -46,6 +46,10 @@ export class UsersComponent implements OnInit {
 
   currentUser: User | null = null;
 
+  // Modal de detalhes do usuário
+  showUserDetailsModal = false;
+  selectedUser: User | null = null;
+
   constructor(
     private userService: UserService,
     private authService: AuthService,
@@ -270,9 +274,27 @@ export class UsersComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (error) => {
+        console.error('Erro ao criar usuário:', error);
+        let errorMessage = 'Ocorreu um erro ao criar o usuário. Por favor, tente novamente.';
+        
+        if (error.error) {
+          if (typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.error.message) {
+            errorMessage = error.error.message;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        // Verificar se é erro de conexão
+        if (error.status === 0 || error.status === undefined) {
+          errorMessage = 'Erro de conexão. Verifique se o backend está rodando.';
+        }
+        
         this.showErrorModal(
           'Erro ao Criar Usuário',
-          error.error?.message || 'Ocorreu um erro ao criar o usuário. Por favor, tente novamente.',
+          errorMessage,
           'error'
         );
       }
@@ -281,6 +303,10 @@ export class UsersComponent implements OnInit {
 
   get isAdmin(): boolean {
     return this.currentUser?.role === 'ADMIN';
+  }
+
+  get isAdminOrTeacher(): boolean {
+    return this.currentUser?.role === 'ADMIN' || this.currentUser?.role === 'TEACHER';
   }
 
   // Termômetro de senha
@@ -369,5 +395,47 @@ export class UsersComponent implements OnInit {
     if (this.showConfirmModal) {
       this.cancelDelete();
     }
+  }
+
+  exportUsersToPdf() {
+    this.userService.exportUsersToPdf().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'usuarios_eaduck.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        this.showErrorModal(
+          'Sucesso',
+          'PDF gerado e baixado com sucesso!',
+          'success'
+        );
+      },
+      error: (error) => {
+        this.showErrorModal(
+          'Erro',
+          'Erro ao gerar PDF: ' + (error.error?.message || 'Erro desconhecido'),
+          'error'
+        );
+      }
+    });
+  }
+
+  showUserDetails(user: User) {
+    this.selectedUser = user;
+    this.showUserDetailsModal = true;
+  }
+
+  closeUserDetails() {
+    this.showUserDetailsModal = false;
+    this.selectedUser = null;
+  }
+
+  hasUserDetails(user: User): boolean {
+    return !!(user.nomeCompleto || user.cpf || user.dataNascimento || 
+             user.nomeMae || user.nomePai || user.telefone || user.endereco);
   }
 }

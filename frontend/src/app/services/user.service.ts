@@ -5,7 +5,15 @@ import { Observable } from 'rxjs';
 export interface User {
   id: number;
   email: string;
-  name?: string;
+  name?: string; // Apelido/Nickname
+  nomeCompleto?: string;
+  cpf?: string;
+  dataNascimento?: string;
+  nomeMae?: string;
+  nomePai?: string;
+  telefone?: string;
+  endereco?: string;
+  titulacao?: string;
   role: string;
   isActive: boolean;
   needsNameSetup?: boolean;
@@ -55,5 +63,9 @@ export class UserService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  // Adicionar métodos para ativar/desativar usuário e outros conforme necessário
+  exportUsersToPdf(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/pdf`, {
+      responseType: 'blob'
+    });
+  }
 } 

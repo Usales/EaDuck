@@ -110,6 +110,7 @@
 <!-- Modal de configuração de nome -->
 <app-name-setup-modal 
   [isVisible]="showNameSetupModal"
+  [userRole]="currentUserRole"
   (nameSet)="onNameSet($event)"
   (close)="onCloseNameSetup()">
 </app-name-setup-modal>

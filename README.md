@@ -25,7 +25,6 @@ O EaDuck nasceu para resolver desafios reais na educação, como a comunicação
 - **Acesso facilitado a documentos**: upload e download de arquivos didáticos e tarefas.
 - **Relatórios e dashboards**: visão clara do desempenho acadêmico e engajamento.
 - **Bate-papo integrado**: comunicação instantânea entre usuários da plataforma.
-- **Login simplificado**: autenticação via Google para acesso rápido e seguro.
 - **Busca inteligente**: autocomplete em tempo real para localizar alunos e professores rapidamente.
 - **Exportação de dados**: geração de PDFs completos com informações de salas, alunos e professores.
 - **Boletim de notas**: PDF individual com notas por disciplina, médias e resultado final (Aprovado/Reprovado/Em andamento).
@@ -40,7 +39,6 @@ A EaDuck oferece um conjunto robusto de recursos para atender às necessidades e
 | Cadastro de Usuários | Gerenciamento de contas para alunos, professores e admins. | Alta |
 | Comunicação Interna | Envio de mensagens, notificações e fóruns. | Alta |
 | Bate-papo Responsivo | Chat integrado para comunicação em tempo real entre usuários. | Alta |
-| Login com Google | Autenticação simplificada via conta Google. | Alta |
 | Registro de Notas | Professores registram notas, frequência e observações. | Alta |
 | Materiais Didáticos | Publicação e acesso a arquivos, links e vídeos. | Alta |
 | Setup Inicial de Perfil | Coleta de dados pessoais obrigatórios no primeiro acesso (nome, CPF, endereço, etc.). | Alta |
@@ -92,7 +90,6 @@ Construímos a EaDuck com ferramentas modernas para garantir desempenho, escalab
 | Spring Boot | 3.4.0 | Framework para desenvolvimento de APIs REST |
 | Spring Data JPA | - | Abstração para acesso a dados |
 | Spring Security | - | Autenticação e autorização |
-| Spring OAuth2 Client | - | Integração com login Google |
 | Spring WebSocket | - | Comunicação em tempo real |
 | Spring Mail | - | Envio de e-mails |
 | JWT (jjwt) | 0.11.5 | Autenticação baseada em tokens |

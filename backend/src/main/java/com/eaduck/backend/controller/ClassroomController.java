@@ -5,7 +5,10 @@ import com.eaduck.backend.model.user.User;
 import com.eaduck.backend.repository.ClassroomRepository;
 import com.eaduck.backend.repository.UserRepository;
 import com.eaduck.backend.repository.SubmissionRepository;
+import com.eaduck.backend.repository.AttendanceRepository;
 import com.eaduck.backend.model.submission.Submission;
+import com.eaduck.backend.model.attendance.Attendance;
+import com.eaduck.backend.model.enums.AttendanceStatus;
 import com.eaduck.backend.model.classroom.dto.ClassroomDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomCreateDTO;
 import com.eaduck.backend.model.classroom.dto.ClassroomUpdateDTO;
@@ -53,6 +56,9 @@ public class ClassroomController {
 
     @Autowired
     private SubmissionRepository submissionRepository;
+
+    @Autowired
+    private AttendanceRepository attendanceRepository;
 
 
     @GetMapping
@@ -326,19 +332,36 @@ public class ClassroomController {
                 return ResponseEntity.badRequest().build();
             }
 
+            // Buscar todas as frequências do aluno na sala
+            List<Attendance> attendances = attendanceRepository.findByClassroom(classroom);
+            List<Attendance> studentAttendances = attendances.stream()
+                    .filter(a -> a.getStudent().getId().equals(studentId))
+                    .collect(java.util.stream.Collectors.toList());
+            
+            // Agrupar frequências por disciplina
+            java.util.Map<String, java.util.List<Attendance>> attendancesByDisciplina = new java.util.HashMap<>();
+            java.util.Set<String> allDisciplines = new java.util.HashSet<>();
+            
+            for (Attendance attendance : studentAttendances) {
+                String disciplina = attendance.getDiscipline();
+                if (disciplina != null && !disciplina.isEmpty()) {
+                    attendancesByDisciplina.computeIfAbsent(disciplina, k -> new java.util.ArrayList<>()).add(attendance);
+                    allDisciplines.add(disciplina);
+                }
+            }
+            
             // Buscar todas as tasks da sala
             List<com.eaduck.backend.model.task.Task> tasks = new ArrayList<>(classroom.getTasks());
             
             // Agrupar tasks por título (disciplina) - assumindo que tasks com mesmo título são da mesma disciplina
             java.util.Map<String, java.util.List<Submission>> submissionsByDisciplina = new java.util.HashMap<>();
-            java.util.Map<String, String> disciplinaNames = new java.util.HashMap<>();
             
             for (com.eaduck.backend.model.task.Task task : tasks) {
                 String disciplinaName = task.getTitle();
+                allDisciplines.add(disciplinaName); // Adicionar disciplinas que têm tasks
                 Submission submission = submissionRepository.findByTaskIdAndStudentId(task.getId(), studentId);
                 if (submission != null && submission.getGrade() != null) {
                     submissionsByDisciplina.computeIfAbsent(disciplinaName, k -> new java.util.ArrayList<>()).add(submission);
-                    disciplinaNames.put(disciplinaName, disciplinaName);
                 }
             }
 
@@ -376,65 +399,132 @@ public class ClassroomController {
                                 (student.getName() != null ? student.getName() : student.getEmail());
             java.util.List<java.util.Map<String, Object>> studentData = new java.util.ArrayList<>();
 
-            if (!submissionsByDisciplina.isEmpty()) {
-                for (java.util.Map.Entry<String, java.util.List<Submission>> entry : submissionsByDisciplina.entrySet()) {
-                    String disciplinaName = entry.getKey();
-                    java.util.List<Submission> submissions = entry.getValue();
-                    
-                    // Ordenar submissions por data de avaliação
-                    submissions.sort((s1, s2) -> {
-                        if (s1.getEvaluatedAt() != null && s2.getEvaluatedAt() != null) {
-                            return s2.getEvaluatedAt().compareTo(s1.getEvaluatedAt());
-                        }
-                        return Long.compare(s2.getId(), s1.getId());
-                    });
-                    
-                    // Pegar as 3 primeiras notas
-                    Double nota1 = null, nota2 = null, nota3 = null;
-                    for (int i = 0; i < Math.min(3, submissions.size()); i++) {
-                        if (i == 0) nota1 = submissions.get(i).getGrade();
-                        else if (i == 1) nota2 = submissions.get(i).getGrade();
-                        else if (i == 2) nota3 = submissions.get(i).getGrade();
+            // Processar todas as disciplinas (com notas e/ou frequência)
+            for (String disciplinaName : allDisciplines) {
+                java.util.List<Submission> submissions = submissionsByDisciplina.getOrDefault(disciplinaName, new java.util.ArrayList<>());
+                java.util.List<Attendance> disciplinaAttendances = attendancesByDisciplina.getOrDefault(disciplinaName, new java.util.ArrayList<>());
+                
+                // Ordenar submissions por data de avaliação
+                submissions.sort((s1, s2) -> {
+                    if (s1.getEvaluatedAt() != null && s2.getEvaluatedAt() != null) {
+                        return s2.getEvaluatedAt().compareTo(s1.getEvaluatedAt());
                     }
-
-                    // Calcular média da disciplina
-                    double sum = 0.0;
-                    int count = 0;
-                    for (Submission sub : submissions) {
-                        if (sub.getGrade() != null) {
-                            sum += sub.getGrade();
-                            count++;
-                        }
-                    }
-                    Double mediaDisciplina = count > 0 ? sum / count : null;
-
-                    // Recuperação (não implementado ainda, deixar como "-")
-                    String recuperacao = "-";
-
-                    // Resultado final da disciplina
-                    String resultadoDisciplina = "-";
-                    if (mediaDisciplina != null) {
-                        if (mediaDisciplina >= 6.0) {
-                            resultadoDisciplina = "Aprovado";
-                        } else {
-                            resultadoDisciplina = "Reprovado";
-                        }
-                    }
-
-                    java.util.Map<String, Object> row = new java.util.HashMap<>();
-                    row.put("nome", studentName);
-                    row.put("matricula", String.valueOf(student.getId()));
-                    row.put("disciplina", disciplinaName);
-                    row.put("nota1", nota1);
-                    row.put("nota2", nota2);
-                    row.put("nota3", nota3);
-                    row.put("media", mediaDisciplina);
-                    row.put("recuperacao", recuperacao);
-                    row.put("resultado", resultadoDisciplina);
-                    studentData.add(row);
+                    return Long.compare(s2.getId(), s1.getId());
+                });
+                
+                // Pegar as 3 primeiras notas
+                Double nota1 = null, nota2 = null, nota3 = null;
+                for (int i = 0; i < Math.min(3, submissions.size()); i++) {
+                    if (i == 0) nota1 = submissions.get(i).getGrade();
+                    else if (i == 1) nota2 = submissions.get(i).getGrade();
+                    else if (i == 2) nota3 = submissions.get(i).getGrade();
                 }
-            } else {
-                // Aluno sem notas - adicionar linha com "Em andamento"
+
+                // Calcular média da disciplina
+                double sum = 0.0;
+                int count = 0;
+                for (Submission sub : submissions) {
+                    if (sub.getGrade() != null) {
+                        sum += sub.getGrade();
+                        count++;
+                    }
+                }
+                Double mediaDisciplina = count > 0 ? sum / count : null;
+
+                // Calcular frequência por bimestre (1º, 2º e 3º)
+                double frequencia1 = 1.0; // Padrão: 100% (1.0)
+                double frequencia2 = 1.0;
+                double frequencia3 = 1.0;
+                
+                if (!disciplinaAttendances.isEmpty()) {
+                    // Determinar o ano letivo para calcular os bimestres
+                    int anoLetivo = java.time.LocalDate.now().getYear();
+                    try {
+                        if (classroom.getAcademicYear() != null && !classroom.getAcademicYear().isEmpty()) {
+                            anoLetivo = Integer.parseInt(classroom.getAcademicYear());
+                        }
+                    } catch (NumberFormatException e) {
+                        // Usar ano atual se não conseguir parsear
+                    }
+                    
+                    // Definir períodos dos bimestres (assumindo ano letivo de fevereiro a novembro)
+                    // 1º Bimestre: Fevereiro, Março, Abril (meses 2, 3, 4)
+                    // 2º Bimestre: Maio, Junho, Julho (meses 5, 6, 7)
+                    // 3º Bimestre: Agosto, Setembro, Outubro, Novembro (meses 8, 9, 10, 11)
+                    
+                    java.util.List<Attendance> bimestre1 = new java.util.ArrayList<>();
+                    java.util.List<Attendance> bimestre2 = new java.util.ArrayList<>();
+                    java.util.List<Attendance> bimestre3 = new java.util.ArrayList<>();
+                    
+                    for (Attendance att : disciplinaAttendances) {
+                        int month = att.getDate().getMonthValue();
+                        if (month >= 2 && month <= 4) {
+                            bimestre1.add(att);
+                        } else if (month >= 5 && month <= 7) {
+                            bimestre2.add(att);
+                        } else if (month >= 8 && month <= 11) {
+                            bimestre3.add(att);
+                        }
+                    }
+                    
+                    // Calcular frequência do 1º bimestre
+                    if (!bimestre1.isEmpty()) {
+                        long presentes1 = bimestre1.stream()
+                                .filter(a -> a.getStatus() == AttendanceStatus.PRESENT)
+                                .count();
+                        frequencia1 = (double) presentes1 / bimestre1.size();
+                    }
+                    
+                    // Calcular frequência do 2º bimestre
+                    if (!bimestre2.isEmpty()) {
+                        long presentes2 = bimestre2.stream()
+                                .filter(a -> a.getStatus() == AttendanceStatus.PRESENT)
+                                .count();
+                        frequencia2 = (double) presentes2 / bimestre2.size();
+                    }
+                    
+                    // Calcular frequência do 3º bimestre
+                    if (!bimestre3.isEmpty()) {
+                        long presentes3 = bimestre3.stream()
+                                .filter(a -> a.getStatus() == AttendanceStatus.PRESENT)
+                                .count();
+                        frequencia3 = (double) presentes3 / bimestre3.size();
+                    }
+                }
+
+                // Recuperação (não implementado ainda, deixar como "-")
+                String recuperacao = "-";
+
+                // Resultado final da disciplina
+                String resultadoDisciplina = "-";
+                if (mediaDisciplina != null) {
+                    if (mediaDisciplina >= 6.0) {
+                        resultadoDisciplina = "Aprovado";
+                    } else {
+                        resultadoDisciplina = "Reprovado";
+                    }
+                } else {
+                    resultadoDisciplina = "Em andamento";
+                }
+
+                java.util.Map<String, Object> row = new java.util.HashMap<>();
+                row.put("nome", studentName);
+                row.put("matricula", String.valueOf(student.getId()));
+                row.put("disciplina", disciplinaName);
+                row.put("nota1", nota1);
+                row.put("nota2", nota2);
+                row.put("nota3", nota3);
+                row.put("media", mediaDisciplina);
+                row.put("frequencia1", frequencia1);
+                row.put("frequencia2", frequencia2);
+                row.put("frequencia3", frequencia3);
+                row.put("recuperacao", recuperacao);
+                row.put("resultado", resultadoDisciplina);
+                studentData.add(row);
+            }
+            
+            // Se não houver nenhuma disciplina, adicionar linha vazia
+            if (studentData.isEmpty()) {
                 java.util.Map<String, Object> row = new java.util.HashMap<>();
                 row.put("nome", studentName);
                 row.put("matricula", String.valueOf(student.getId()));
@@ -443,6 +533,9 @@ public class ClassroomController {
                 row.put("nota2", null);
                 row.put("nota3", null);
                 row.put("media", null);
+                row.put("frequencia1", 1.0);
+                row.put("frequencia2", 1.0);
+                row.put("frequencia3", 1.0);
                 row.put("recuperacao", "-");
                 row.put("resultado", "Em andamento");
                 studentData.add(row);
@@ -450,15 +543,18 @@ public class ClassroomController {
 
             // Criar tabela única com os dados do aluno
             UnitValue[] columnWidths = {
-                UnitValue.createPointValue(80),   // Nome do Aluno
-                UnitValue.createPointValue(40),   // Matrícula
-                UnitValue.createPointValue(80),   // Disciplina
-                UnitValue.createPointValue(35),   // Nota 1
-                UnitValue.createPointValue(35),   // Nota 2
-                UnitValue.createPointValue(35),   // Nota 3
-                UnitValue.createPointValue(40),   // Média
-                UnitValue.createPointValue(45),   // Recuperação
-                UnitValue.createPointValue(60)    // Resultado Final
+                UnitValue.createPointValue(65),   // Nome do Aluno
+                UnitValue.createPointValue(30),   // Matrícula
+                UnitValue.createPointValue(65),   // Disciplina
+                UnitValue.createPointValue(28),   // Nota 1
+                UnitValue.createPointValue(28),   // Nota 2
+                UnitValue.createPointValue(28),   // Nota 3
+                UnitValue.createPointValue(32),   // Média
+                UnitValue.createPointValue(32),   // Freq. 1º Bim
+                UnitValue.createPointValue(32),   // Freq. 2º Bim
+                UnitValue.createPointValue(32),   // Freq. 3º Bim
+                UnitValue.createPointValue(35),   // Recuperação
+                UnitValue.createPointValue(50)    // Resultado Final
             };
             Table mainTable = new Table(columnWidths);
             mainTable.setWidth(UnitValue.createPercentValue(100));
@@ -471,19 +567,22 @@ public class ClassroomController {
             mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 2").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
             mainTable.addHeaderCell(new Cell().add(new Paragraph("NOTA 3").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
             mainTable.addHeaderCell(new Cell().add(new Paragraph("MÉDIA").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("FREQ. 1º BIM").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("FREQ. 2º BIM").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
+            mainTable.addHeaderCell(new Cell().add(new Paragraph("FREQ. 3º BIM").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
             mainTable.addHeaderCell(new Cell().add(new Paragraph("RECUPERAÇÃO").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
             mainTable.addHeaderCell(new Cell().add(new Paragraph("RESULTADO FINAL").setBold().setFontSize(7)).setBackgroundColor(ColorConstants.LIGHT_GRAY).setPadding(3));
 
             // Dados
             for (java.util.Map<String, Object> row : studentData) {
                 String nome = (String) row.get("nome");
-                String nomeDisplay = nome != null ? (nome.length() > 20 ? nome.substring(0, 17) + "..." : nome) : "-";
+                String nomeDisplay = nome != null ? (nome.length() > 18 ? nome.substring(0, 15) + "..." : nome) : "-";
                 mainTable.addCell(new Cell().add(new Paragraph(nomeDisplay)).setFontSize(6).setPadding(3));
                 
                 mainTable.addCell(new Cell().add(new Paragraph((String) row.get("matricula"))).setFontSize(6).setPadding(3));
                 
                 String disciplina = (String) row.get("disciplina");
-                String disciplinaDisplay = disciplina != null ? (disciplina.length() > 20 ? disciplina.substring(0, 17) + "..." : disciplina) : "-";
+                String disciplinaDisplay = disciplina != null ? (disciplina.length() > 18 ? disciplina.substring(0, 15) + "..." : disciplina) : "-";
                 mainTable.addCell(new Cell().add(new Paragraph(disciplinaDisplay)).setFontSize(6).setPadding(3));
                 
                 Double nota1 = (Double) row.get("nota1");
@@ -497,6 +596,19 @@ public class ClassroomController {
                 
                 Double media = (Double) row.get("media");
                 mainTable.addCell(new Cell().add(new Paragraph(media != null ? String.format("%.2f", media) : "-")).setFontSize(6).setPadding(3));
+                
+                // Frequências dos 3 bimestres (formato: 100% ou 0.85 = 85%)
+                Double frequencia1 = (Double) row.get("frequencia1");
+                String freq1Display = frequencia1 != null ? String.format("%.0f%%", frequencia1 * 100) : "100%";
+                mainTable.addCell(new Cell().add(new Paragraph(freq1Display)).setFontSize(6).setPadding(3));
+                
+                Double frequencia2 = (Double) row.get("frequencia2");
+                String freq2Display = frequencia2 != null ? String.format("%.0f%%", frequencia2 * 100) : "100%";
+                mainTable.addCell(new Cell().add(new Paragraph(freq2Display)).setFontSize(6).setPadding(3));
+                
+                Double frequencia3 = (Double) row.get("frequencia3");
+                String freq3Display = frequencia3 != null ? String.format("%.0f%%", frequencia3 * 100) : "100%";
+                mainTable.addCell(new Cell().add(new Paragraph(freq3Display)).setFontSize(6).setPadding(3));
                 
                 mainTable.addCell(new Cell().add(new Paragraph((String) row.get("recuperacao"))).setFontSize(6).setPadding(3));
                 
@@ -544,7 +656,7 @@ public class ClassroomController {
             if (!hasAccess) {
                 logger.warn("Professor {} não tem acesso à sala {}", user.getEmail(), id);
                 return ResponseEntity.status(403).build();
-            }
+        }
         }
 
         User student = userRepository.findById(studentId).orElse(null);

@@ -119,6 +119,12 @@
           Limpar Filtros
         </button>
       </div>
+      <div class="users-filter-group" *ngIf="isAdminOrTeacher">
+        <button (click)="exportUsersToPdf()" class="users-export-pdf-btn">
+          <span class="material-icons">picture_as_pdf</span>
+          Exportar PDF
+        </button>
+      </div>
     </div>
 
     <!-- Cards Mobile / Tabela Desktop -->
@@ -139,6 +145,16 @@
           </div>
           
           <div class="users-card-body">
+            <div class="users-card-field" *ngIf="user.name || user.nomeCompleto">
+              <span class="users-card-label">Nome:</span>
+              <span class="users-card-value">{{ user.name || user.nomeCompleto || '-' }}</span>
+              <button *ngIf="hasUserDetails(user)" 
+                      (click)="showUserDetails(user)" 
+                      class="users-action-btn users-action-info"
+                      title="Ver detalhes">
+                <span class="material-icons">info</span>
+              </button>
+            </div>
             <div class="users-card-field">
               <span class="users-card-label">Tipo:</span>
               <ng-container *ngIf="editUserId === user.id; else viewRole">
@@ -193,6 +209,13 @@
               </button>
             </ng-container>
             <ng-template #editDeleteBtns>
+              <button *ngIf="hasUserDetails(user)" 
+                      (click)="showUserDetails(user)" 
+                      class="users-action-btn users-action-info"
+                      title="Ver detalhes">
+                <span class="material-icons">info</span>
+                Detalhes
+              </button>
               <button *ngIf="canEditUser(user)" (click)="startEdit(user)" class="users-action-btn users-action-edit">
                 <span class="material-icons">edit</span>
                 Editar
@@ -217,6 +240,7 @@
             <tr class="users-table-header">
               <th class="users-table-th">ID</th>
               <th class="users-table-th">E-mail</th>
+              <th class="users-table-th">Nome</th>
               <th class="users-table-th">Tipo</th>
               <th class="users-table-th">Status</th>
               <th class="users-table-th users-table-th-actions">Ações</th>
@@ -226,6 +250,9 @@
             <tr *ngFor="let user of filteredUsers" class="users-table-row">
               <td class="users-table-td">{{ user.id }}</td>
               <td class="users-table-td">{{ user.email }}</td>
+              <td class="users-table-td">
+                {{ user.name || user.nomeCompleto || '-' }}
+              </td>
               <td class="users-table-td">
                 <ng-container *ngIf="editUserId === user.id; else viewRole">
                   <select [(ngModel)]="editRole" 
@@ -271,6 +298,12 @@
                   </button>
                 </ng-container>
                 <ng-template #editDeleteBtns>
+                  <button *ngIf="hasUserDetails(user)" 
+                          (click)="showUserDetails(user)" 
+                          class="users-table-action users-table-action-info"
+                          title="Ver detalhes">
+                    <span class="material-icons">info</span>
+                  </button>
                   <button *ngIf="canEditUser(user)" (click)="startEdit(user)" class="users-table-action users-table-action-edit">
                     <span class="material-icons">edit</span>
                   </button>
@@ -305,6 +338,105 @@
   [type]="modalType"
   (close)="showModal = false">
 </app-modal>
+
+<!-- Modal de Detalhes do Usuário -->
+<div *ngIf="showUserDetailsModal && selectedUser" class="users-confirm-modal-overlay" (click)="closeUserDetails()">
+  <div class="users-confirm-modal-content" (click)="$event.stopPropagation()">
+    <div class="users-confirm-modal-header">
+      <div class="users-confirm-modal-title-wrapper">
+        <span class="material-icons users-confirm-modal-icon">person</span>
+        <h2 class="users-confirm-modal-title">Detalhes do Usuário</h2>
+      </div>
+      <button (click)="closeUserDetails()" class="users-confirm-modal-close">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="users-details-content">
+      <div class="users-details-section">
+        <h3 class="users-details-section-title">Informações Básicas</h3>
+        <div class="users-details-grid">
+          <div class="users-details-item">
+            <span class="users-details-label">E-mail:</span>
+            <span class="users-details-value">{{ selectedUser.email }}</span>
+          </div>
+          <div class="users-details-item" *ngIf="selectedUser.name">
+            <span class="users-details-label">Apelido/Nickname:</span>
+            <span class="users-details-value">{{ selectedUser.name }}</span>
+          </div>
+          <div class="users-details-item" *ngIf="selectedUser.nomeCompleto">
+            <span class="users-details-label">Nome Completo:</span>
+            <span class="users-details-value">{{ selectedUser.nomeCompleto }}</span>
+          </div>
+          <div class="users-details-item" *ngIf="selectedUser.cpf">
+            <span class="users-details-label">CPF:</span>
+            <span class="users-details-value">{{ selectedUser.cpf }}</span>
+          </div>
+          <div class="users-details-item" *ngIf="selectedUser.dataNascimento">
+            <span class="users-details-label">Data de Nascimento:</span>
+            <span class="users-details-value">{{ selectedUser.dataNascimento }}</span>
+          </div>
+          <div class="users-details-item" *ngIf="selectedUser.telefone">
+            <span class="users-details-label">Telefone:</span>
+            <span class="users-details-value">{{ selectedUser.telefone }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="users-details-section" *ngIf="selectedUser.nomeMae || selectedUser.nomePai">
+        <h3 class="users-details-section-title">Informações Familiares</h3>
+        <div class="users-details-grid">
+          <div class="users-details-item" *ngIf="selectedUser.nomeMae">
+            <span class="users-details-label">Nome da Mãe:</span>
+            <span class="users-details-value">{{ selectedUser.nomeMae }}</span>
+          </div>
+          <div class="users-details-item" *ngIf="selectedUser.nomePai">
+            <span class="users-details-label">Nome do Pai:</span>
+            <span class="users-details-value">{{ selectedUser.nomePai }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="users-details-section" *ngIf="selectedUser.endereco || selectedUser.titulacao">
+        <h3 class="users-details-section-title" *ngIf="selectedUser.endereco">Endereço</h3>
+        <div class="users-details-item" *ngIf="selectedUser.endereco">
+          <span class="users-details-label">Endereço:</span>
+          <span class="users-details-value">{{ selectedUser.endereco }}</span>
+        </div>
+        <h3 class="users-details-section-title" *ngIf="selectedUser.titulacao" style="margin-top: 1rem;">Titulação</h3>
+        <div class="users-details-item" *ngIf="selectedUser.titulacao">
+          <span class="users-details-label">Titulação:</span>
+          <span class="users-details-value">{{ selectedUser.titulacao }}</span>
+        </div>
+      </div>
+      
+      <div class="users-details-section">
+        <h3 class="users-details-section-title">Informações do Sistema</h3>
+        <div class="users-details-grid">
+          <div class="users-details-item">
+            <span class="users-details-label">ID:</span>
+            <span class="users-details-value">{{ selectedUser.id }}</span>
+          </div>
+          <div class="users-details-item">
+            <span class="users-details-label">Tipo:</span>
+            <span class="users-details-value">{{ getRoleLabel(selectedUser.role) }}</span>
+          </div>
+          <div class="users-details-item">
+            <span class="users-details-label">Status:</span>
+            <span [ngClass]="selectedUser.isActive ? 'users-status-active' : 'users-status-inactive'">
+              {{ selectedUser.isActive ? 'Ativo' : 'Inativo' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="users-confirm-modal-actions">
+      <button (click)="closeUserDetails()" class="users-confirm-modal-btn users-confirm-modal-btn-cancel">
+        <span class="material-icons">close</span>
+        Fechar
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal de Confirmação de Exclusão -->
 <div *ngIf="showConfirmModal" class="users-confirm-modal-overlay" (click)="onConfirmModalOverlayClick($event)">

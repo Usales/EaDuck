@@ -13,7 +13,15 @@ import lombok.NoArgsConstructor;
 public class UserDTO {
     private Long id;
     private String email;
-    private String name;
+    private String name; // Apelido/Nickname
+    private String nomeCompleto;
+    private String cpf;
+    private String dataNascimento;
+    private String nomeMae;
+    private String nomePai;
+    private String telefone;
+    private String endereco;
+    private String titulacao;
     private Role role;
     private boolean isActive;
 } 

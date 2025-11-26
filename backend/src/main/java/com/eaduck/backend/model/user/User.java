@@ -31,7 +31,31 @@ public class User implements UserDetails {
     private String password;
 
     @Column
-    private String name;
+    private String name; // Apelido/Nickname
+
+    @Column(name = "nome_completo")
+    private String nomeCompleto;
+
+    @Column(name = "cpf")
+    private String cpf;
+
+    @Column(name = "data_nascimento")
+    private String dataNascimento; // Formato dd-MM-yyyy
+
+    @Column(name = "nome_mae")
+    private String nomeMae;
+
+    @Column(name = "nome_pai")
+    private String nomePai;
+
+    @Column(name = "telefone")
+    private String telefone;
+
+    @Column(name = "endereco")
+    private String endereco;
+
+    @Column(name = "titulacao", length = 1000)
+    private String titulacao; // Titulações separadas por ponto e vírgula (;)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -51,11 +75,19 @@ public class User implements UserDetails {
     // Construtores
     public User() {}
 
-    public User(Long id, String email, String password, String name, Role role, boolean isActive, Set<Classroom> classrooms, Set<Classroom> classroomsAsTeacher) {
+    public User(Long id, String email, String password, String name, String nomeCompleto, String cpf, String dataNascimento, String nomeMae, String nomePai, String telefone, String endereco, String titulacao, Role role, boolean isActive, Set<Classroom> classrooms, Set<Classroom> classroomsAsTeacher) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.name = name;
+        this.nomeCompleto = nomeCompleto;
+        this.cpf = cpf;
+        this.dataNascimento = dataNascimento;
+        this.nomeMae = nomeMae;
+        this.nomePai = nomePai;
+        this.telefone = telefone;
+        this.endereco = endereco;
+        this.titulacao = titulacao;
         this.role = role;
         this.isActive = isActive;
         this.classrooms = classrooms;
@@ -89,6 +121,70 @@ public class User implements UserDetails {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getNomeCompleto() {
+        return nomeCompleto;
+    }
+
+    public void setNomeCompleto(String nomeCompleto) {
+        this.nomeCompleto = nomeCompleto;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public String getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(String dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
+    public String getNomeMae() {
+        return nomeMae;
+    }
+
+    public void setNomeMae(String nomeMae) {
+        this.nomeMae = nomeMae;
+    }
+
+    public String getNomePai() {
+        return nomePai;
+    }
+
+    public void setNomePai(String nomePai) {
+        this.nomePai = nomePai;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
+    }
+
+    public String getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(String endereco) {
+        this.endereco = endereco;
+    }
+
+    public String getTitulacao() {
+        return titulacao;
+    }
+
+    public void setTitulacao(String titulacao) {
+        this.titulacao = titulacao;
     }
 
     public Role getRole() {
@@ -133,6 +229,14 @@ public class User implements UserDetails {
         private String email;
         private String password;
         private String name;
+        private String nomeCompleto;
+        private String cpf;
+        private String dataNascimento;
+        private String nomeMae;
+        private String nomePai;
+        private String telefone;
+        private String endereco;
+        private String titulacao;
         private Role role;
         private boolean isActive;
         private Set<Classroom> classrooms = new java.util.HashSet<>();
@@ -158,6 +262,46 @@ public class User implements UserDetails {
             return this;
         }
 
+        public UserBuilder nomeCompleto(String nomeCompleto) {
+            this.nomeCompleto = nomeCompleto;
+            return this;
+        }
+
+        public UserBuilder cpf(String cpf) {
+            this.cpf = cpf;
+            return this;
+        }
+
+        public UserBuilder dataNascimento(String dataNascimento) {
+            this.dataNascimento = dataNascimento;
+            return this;
+        }
+
+        public UserBuilder nomeMae(String nomeMae) {
+            this.nomeMae = nomeMae;
+            return this;
+        }
+
+        public UserBuilder nomePai(String nomePai) {
+            this.nomePai = nomePai;
+            return this;
+        }
+
+        public UserBuilder telefone(String telefone) {
+            this.telefone = telefone;
+            return this;
+        }
+
+        public UserBuilder endereco(String endereco) {
+            this.endereco = endereco;
+            return this;
+        }
+
+        public UserBuilder titulacao(String titulacao) {
+            this.titulacao = titulacao;
+            return this;
+        }
+
         public UserBuilder role(Role role) {
             this.role = role;
             return this;
@@ -179,7 +323,7 @@ public class User implements UserDetails {
         }
 
         public User build() {
-            return new User(id, email, password, name, role, isActive, classrooms, classroomsAsTeacher);
+            return new User(id, email, password, name, nomeCompleto, cpf, dataNascimento, nomeMae, nomePai, telefone, endereco, titulacao, role, isActive, classrooms, classroomsAsTeacher);
         }
     }
 
