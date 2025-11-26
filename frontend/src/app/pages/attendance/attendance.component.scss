@@ -6,6 +6,10 @@
   padding-top: 5rem; // Espaço para o header fixo
   position: relative;
   overflow-x: hidden;
+  width: 100%;
+  display: block;
+  visibility: visible;
+  opacity: 1;
 }
 
 // Lista de Salas
@@ -98,6 +102,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .info-item {
@@ -112,6 +117,59 @@
   .value {
     color: var(--text-primary);
     font-weight: 500;
+  }
+}
+
+.classroom-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  width: 100%;
+  
+  .material-icons {
+    font-size: 1.125rem;
+  }
+  
+  &.primary {
+    background: var(--accent-color);
+    color: white;
+    
+    &:hover {
+      background: var(--button-bg);
+      transform: translateY(-1px);
+    }
+  }
+  
+  &.secondary {
+    background: var(--button-bg);
+    color: var(--button-text);
+    
+    &:hover {
+      background: var(--accent-color);
+      color: white;
+      transform: translateY(-1px);
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
 }
 
@@ -745,6 +803,370 @@
     
     &:active {
       transform: translateY(0);
+    }
+  }
+
+  &.view {
+    background: #3b82f6;
+    color: white;
+    
+    &:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// Visualização de Frequências
+.attendance-view {
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.view-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+  }
+}
+
+.view-header .classroom-info {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+
+  span {
+    strong {
+      color: var(--text-primary);
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+// Estilos similares à tela de Editar Notas
+.content {
+  background: var(--panel-bg);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 200px;
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    select {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+    }
+  }
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.grades-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 1200px;
+
+  thead {
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    
+    th {
+      padding: 1rem 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: none;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background: var(--bg-secondary);
+      }
+
+      &.new-student-row {
+        border-top: 1px solid var(--border-color);
+      }
+
+      &:first-child {
+        border-top: none;
+      }
+    }
+
+    td {
+      padding: 0.75rem;
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    // Células vazias para informações do aluno (quando não é a primeira linha)
+    td.student-name:empty {
+      padding: 0.75rem;
+      border: none;
+    }
+  }
+}
+
+.student-name {
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discipline {
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date, .period, .time, .observations {
+  font-size: 0.875rem;
+}
+
+.status-cell {
+  text-align: center;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+
+  &.present {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+
+  &.absent {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  &.late {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+}
+
+.actions {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.history-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  height: 32px;
+
+  .material-icons {
+    font-size: 1.125rem;
+  }
+
+  &:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+  }
+}
+
+// Modal de Histórico
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--panel-bg);
+  border-radius: 0.75rem;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .student-name-header {
+    flex: 1;
+    min-width: 200px;
+
+    p {
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+  }
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+
+  .material-icons {
+    font-size: 1.5rem;
+  }
+
+  &:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.history-table-wrapper {
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  thead {
+    background: var(--bg-secondary);
+    
+    th {
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--border-color);
+
+      &:hover {
+        background: var(--bg-secondary);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      padding: 0.75rem;
+      color: var(--text-primary);
+      vertical-align: middle;
     }
   }
 }

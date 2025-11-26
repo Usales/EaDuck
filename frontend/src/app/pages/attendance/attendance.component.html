@@ -14,13 +14,15 @@
 
     <div *ngIf="!loading && classrooms.length === 0" class="empty-state">
       <p>Nenhuma sala disponível</p>
+      <p style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--text-secondary);">
+        Você precisa ter acesso a pelo menos uma sala para registrar frequências.
+      </p>
     </div>
 
     <div *ngIf="!loading && classrooms.length > 0" class="classrooms-grid">
       <div 
         *ngFor="let classroom of classrooms" 
-        class="classroom-card"
-        (click)="selectClassroom(classroom)">
+        class="classroom-card">
         <div class="classroom-header">
           <h3>{{ classroom.name }}</h3>
         </div>
@@ -38,12 +40,114 @@
             <span class="value">{{ classroom.teacherName || '-' }}</span>
           </div>
         </div>
+        <div class="classroom-actions">
+          <button (click)="selectClassroom(classroom); $event.stopPropagation()" class="action-btn primary">
+            <span class="material-icons">edit</span>
+            Registrar Frequência
+          </button>
+          <button (click)="viewAttendance(classroom); $event.stopPropagation()" class="action-btn secondary">
+            <span class="material-icons">visibility</span>
+            Ver Frequência
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visualização de Frequências -->
+  <div *ngIf="selectedClassroom && viewMode === 'view'" class="attendance-view">
+    <div class="view-header">
+      <button (click)="backToClassrooms()" class="back-button">
+        <span class="material-icons">arrow_back</span>
+        Voltar
+      </button>
+      <div class="header-info">
+        <h1>Frequências</h1>
+        <div class="classroom-info">
+          <span><strong>Nome da Sala:</strong> {{ selectedClassroom.name }}</span>
+          <span><strong>Ano Letivo:</strong> {{ selectedClassroom.academicYear }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      <p>Carregando frequências...</p>
+    </div>
+
+    <div *ngIf="!loading && filteredAttendances.length === 0" class="empty-state">
+      <p>Nenhuma frequência encontrada com os filtros selecionados.</p>
+    </div>
+
+    <div *ngIf="!loading && filteredAttendances.length > 0" class="content">
+      <!-- Filtros -->
+      <div class="filters">
+        <div class="filter-group">
+          <label for="disciplineFilter">Disciplina</label>
+          <select id="disciplineFilter" [(ngModel)]="disciplineFilter">
+            <option value="">Todas</option>
+            <option *ngFor="let disc of uniqueDisciplines" [value]="disc">
+              {{ disc }}
+            </option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="studentFilter">Aluno</label>
+          <select id="studentFilter" [(ngModel)]="studentFilter">
+            <option value="">Todos</option>
+            <option *ngFor="let student of uniqueStudents" [value]="student.id">
+              {{ student.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tabela de Frequências -->
+      <div class="table-wrapper">
+        <table class="grades-table">
+          <thead>
+            <tr>
+              <th>NOME DO ALUNO</th>
+              <th>DISCIPLINA</th>
+              <th>DATA</th>
+              <th>PERÍODO</th>
+              <th>STATUS</th>
+              <th>HORÁRIO</th>
+              <th>OBSERVAÇÕES</th>
+              <th>AÇÕES</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let attendance of filteredAttendances; let i = index" 
+                [class.new-student-row]="isNewStudentRow(i)">
+              <td class="student-name" *ngIf="shouldShowStudentInfo(i)">{{ attendance.studentName }}</td>
+              <td class="student-name" *ngIf="!shouldShowStudentInfo(i)"></td>
+              <td class="discipline">{{ attendance.discipline || '-' }}</td>
+              <td class="date">{{ formatDateDisplayFromString(attendance.date) }}</td>
+              <td class="period">{{ attendance.period || '-' }}</td>
+              <td class="status-cell">
+                <span [class]="'status-badge ' + attendance.status.toLowerCase()">
+                  {{ getStatusIcon(attendance.status) }} {{ getStatusLabel(attendance.status) }}
+                </span>
+              </td>
+              <td class="time">{{ attendance.arrivalTime || '-' }}</td>
+              <td class="observations">{{ attendance.observations || '-' }}</td>
+              <td class="actions">
+                <button 
+                  (click)="viewStudentHistory(attendance.studentId)" 
+                  class="history-btn"
+                  title="Ver histórico">
+                  <span class="material-icons">history</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <!-- Ficha de Presença -->
-  <div *ngIf="selectedClassroom" class="attendance-sheet">
+  <div *ngIf="selectedClassroom && viewMode === 'register'" class="attendance-sheet">
     <div class="sheet-header">
       <button (click)="backToClassrooms()" class="back-button">
         <span class="material-icons">arrow_back</span>
@@ -129,9 +233,10 @@
               <button 
                 (click)="updateAttendanceStatus(attendance, 'PRESENT')"
                 [class.active]="attendance.status === 'PRESENT'"
+                [disabled]="!canEditAttendance(attendance)"
                 class="status-button present"
                 type="button"
-                title="Presente">
+                [title]="canEditAttendance(attendance) ? 'Presente' : 'Não é possível editar após 1 dia'">
                 ✔
               </button>
             </td>
@@ -139,9 +244,10 @@
               <button 
                 (click)="updateAttendanceStatus(attendance, 'ABSENT')"
                 [class.active]="attendance.status === 'ABSENT'"
+                [disabled]="!canEditAttendance(attendance)"
                 class="status-button absent"
                 type="button"
-                title="Ausente">
+                [title]="canEditAttendance(attendance) ? 'Ausente' : 'Não é possível editar após 1 dia'">
                 ✘
               </button>
             </td>
@@ -149,9 +255,10 @@
               <button 
                 (click)="updateAttendanceStatus(attendance, 'LATE')"
                 [class.active]="attendance.status === 'LATE'"
+                [disabled]="!canEditAttendance(attendance)"
                 class="status-button late"
                 type="button"
-                title="Atrasado">
+                [title]="canEditAttendance(attendance) ? 'Atrasado' : 'Não é possível editar após 1 dia'">
                 ⏱
               </button>
             </td>
@@ -160,25 +267,28 @@
                 <button 
                   (click)="updateAttendanceStatus(attendance, 'PRESENT')"
                   [class.active]="attendance.status === 'PRESENT'"
+                  [disabled]="!canEditAttendance(attendance)"
                   class="status-button present"
                   type="button"
-                  title="Presente">
+                  [title]="canEditAttendance(attendance) ? 'Presente' : 'Não é possível editar após 1 dia'">
                   ✔
                 </button>
                 <button 
                   (click)="updateAttendanceStatus(attendance, 'ABSENT')"
                   [class.active]="attendance.status === 'ABSENT'"
+                  [disabled]="!canEditAttendance(attendance)"
                   class="status-button absent"
                   type="button"
-                  title="Ausente">
+                  [title]="canEditAttendance(attendance) ? 'Ausente' : 'Não é possível editar após 1 dia'">
                   ✘
                 </button>
                 <button 
                   (click)="updateAttendanceStatus(attendance, 'LATE')"
                   [class.active]="attendance.status === 'LATE'"
+                  [disabled]="!canEditAttendance(attendance)"
                   class="status-button late"
                   type="button"
-                  title="Atrasado">
+                  [title]="canEditAttendance(attendance) ? 'Atrasado' : 'Não é possível editar após 1 dia'">
                   ⏱
                 </button>
               </div>
@@ -235,9 +345,17 @@
       <button 
         (click)="saveAttendance()" 
         [disabled]="saving"
-        class="action-button save">
+        class="action-button save"
+        [title]="!canEditCurrentDate() ? 'Você pode registrar frequências para hoje ou até 7 dias no futuro' : 'Salvar frequência (será sincronizada automaticamente)'">
         <span class="material-icons">save</span>
         {{ saving ? 'Salvando...' : 'Salvar Frequência' }}
+      </button>
+      <button 
+        *ngIf="canViewAttendance()"
+        (click)="viewAttendance(selectedClassroom!)" 
+        class="action-button view">
+        <span class="material-icons">visibility</span>
+        Ver Frequência
       </button>
       <button 
         (click)="exportToPdf()" 
@@ -245,6 +363,57 @@
         <span class="material-icons">picture_as_pdf</span>
         Exportar PDF
       </button>
+    </div>
+  </div>
+
+  <!-- Modal de Histórico do Aluno -->
+  <div *ngIf="showHistoryModal" class="modal-overlay" (click)="closeHistoryModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Histórico de Frequência</h2>
+        <div *ngIf="selectedStudentForHistory && uniqueStudents.length > 0" class="student-name-header">
+          <p>{{ getStudentNameById(selectedStudentForHistory) }}</p>
+        </div>
+        <button (click)="closeHistoryModal()" class="modal-close">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="loading" class="loading-state">
+          <p>Carregando histórico...</p>
+        </div>
+        <div *ngIf="!loading && studentHistory.length === 0" class="empty-state">
+          <p>Nenhum registro de frequência encontrado.</p>
+        </div>
+        <div *ngIf="!loading && studentHistory.length > 0" class="history-table-wrapper">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>DATA</th>
+                <th>DISCIPLINA</th>
+                <th>PERÍODO</th>
+                <th>STATUS</th>
+                <th>HORÁRIO</th>
+                <th>OBSERVAÇÕES</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let record of studentHistory">
+                <td>{{ formatDateDisplayFromString(record.date) }}</td>
+                <td>{{ record.discipline || '-' }}</td>
+                <td>{{ record.period || '-' }}</td>
+                <td>
+                  <span [class]="'status-badge ' + record.status.toLowerCase()">
+                    {{ getStatusIcon(record.status) }} {{ getStatusLabel(record.status) }}
+                  </span>
+                </td>
+                <td>{{ record.arrivalTime || '-' }}</td>
+                <td>{{ record.observations || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

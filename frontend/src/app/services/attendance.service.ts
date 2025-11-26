@@ -62,5 +62,17 @@ export class AttendanceService {
       responseType: 'blob'
     });
   }
+
+  getAttendanceByClassroom(classroomId: number): Observable<Attendance[]> {
+    return this.http.get<Attendance[]>(`${this.apiUrl}/classroom/${classroomId}`);
+  }
+
+  getAttendanceByStudent(studentId: number, classroomId?: number): Observable<Attendance[]> {
+    let url = `${this.apiUrl}/student/${studentId}`;
+    if (classroomId) {
+      url += `?classroomId=${classroomId}`;
+    }
+    return this.http.get<Attendance[]>(url);
+  }
 }
 

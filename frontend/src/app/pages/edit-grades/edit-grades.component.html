@@ -30,6 +30,27 @@
   </div>
 
   <div *ngIf="!loading && classroom && students.length > 0" class="content">
+    <div class="filters">
+      <div class="filter-group">
+        <label for="studentFilter">Aluno</label>
+        <select id="studentFilter" [(ngModel)]="studentFilter">
+          <option value="">Todos</option>
+          <option *ngFor="let student of students" [value]="student.id">
+            {{ getStudentDisplayName(student) }}
+          </option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="disciplineFilter">Disciplina</label>
+        <select id="disciplineFilter" [(ngModel)]="disciplineFilter">
+          <option value="">Todas</option>
+          <option *ngFor="let task of tasks" [value]="task.title">
+            {{ task.title }}
+          </option>
+        </select>
+      </div>
+    </div>
+
     <div class="table-wrapper">
       <table class="grades-table">
         <thead>
@@ -49,11 +70,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let row of gradeRows">
-            <td class="student-name">{{ row.student.nomeCompleto || row.student.email }}</td>
-            <td class="matricula">{{ row.student.id }}</td>
-            <td class="email">{{ row.student.email }}</td>
-            <td class="cpf">{{ row.student.cpf || '-' }}</td>
+          <tr *ngFor="let row of filteredGradeRows; let i = index" [class.new-student-row]="isNewStudentRow(i)">
+            <td class="student-name" *ngIf="shouldShowStudentInfo(i)">{{ getStudentDisplayName(row.student) }}</td>
+            <td class="student-name" *ngIf="!shouldShowStudentInfo(i)"></td>
+            <td class="matricula" *ngIf="shouldShowStudentInfo(i)">{{ row.student.id }}</td>
+            <td class="matricula" *ngIf="!shouldShowStudentInfo(i)"></td>
+            <td class="email" *ngIf="shouldShowStudentInfo(i)">{{ row.student.email }}</td>
+            <td class="email" *ngIf="!shouldShowStudentInfo(i)"></td>
+            <td class="cpf" *ngIf="shouldShowStudentInfo(i)">{{ row.student.cpf || '-' }}</td>
+            <td class="cpf" *ngIf="!shouldShowStudentInfo(i)"></td>
             <td class="discipline">{{ row.discipline }}</td>
             <td class="grade-cell">
               <input 

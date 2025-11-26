@@ -37,6 +37,8 @@ export class EditGradesComponent implements OnInit {
   students: User[] = [];
   tasks: Task[] = [];
   gradeRows: GradeRow[] = [];
+  studentFilter: string = '';
+  disciplineFilter: string = '';
   loading = true;
   saving = false;
   currentUser: User | null = null;
@@ -81,7 +83,9 @@ export class EditGradesComponent implements OnInit {
   }
 
   loadStudents() {
-    if (!this.classroom) {
+    const classroom = this.classroom;
+    
+    if (!classroom) {
       this.loading = false;
       return;
     }
@@ -90,18 +94,18 @@ export class EditGradesComponent implements OnInit {
     let studentIds: number[] = [];
     
     // Verificar se há studentIds direto no objeto
-    if ((this.classroom as any).studentIds && Array.isArray((this.classroom as any).studentIds)) {
-      studentIds = (this.classroom as any).studentIds;
-    } else if (this.classroom.students && this.classroom.students.length > 0) {
+    if ((classroom as any).studentIds && Array.isArray((classroom as any).studentIds)) {
+      studentIds = (classroom as any).studentIds;
+    } else if (classroom.students && classroom.students.length > 0) {
       // Se students é um array de objetos
-      studentIds = this.classroom.students.map((s: any) => {
+      studentIds = classroom.students.map((s: any) => {
         if (typeof s === 'number') return s;
         return s.id;
       }).filter(id => id !== undefined && id !== null);
     }
 
     console.log('Student IDs encontrados:', studentIds);
-    console.log('Classroom data:', this.classroom);
+    console.log('Classroom data:', classroom);
 
     if (studentIds.length === 0) {
       console.warn('Nenhum aluno encontrado na sala');
@@ -130,8 +134,8 @@ export class EditGradesComponent implements OnInit {
         if (this.students.length === 0) {
           console.warn('Nenhum aluno corresponde aos IDs da sala. Verificando se os IDs estão corretos...');
           // Tentar usar os dados dos alunos que já vêm no classroom
-          if (this.classroom.students && this.classroom.students.length > 0) {
-            this.students = this.classroom.students as any;
+          if (classroom.students && classroom.students.length > 0) {
+            this.students = classroom.students as any;
             console.log('Usando alunos do classroom diretamente:', this.students);
           }
         }
@@ -141,8 +145,8 @@ export class EditGradesComponent implements OnInit {
       error: (error) => {
         console.error('Erro ao carregar alunos:', error);
         // Tentar usar os alunos que já vêm no classroom
-        if (this.classroom.students && this.classroom.students.length > 0) {
-          this.students = this.classroom.students as any;
+        if (classroom.students && classroom.students.length > 0) {
+          this.students = classroom.students as any;
           this.loadGrades();
         } else {
           this.loading = false;
@@ -241,6 +245,37 @@ export class EditGradesComponent implements OnInit {
 
     console.log('Linhas de notas criadas:', this.gradeRows.length);
     this.loading = false;
+  }
+
+  get filteredGradeRows(): GradeRow[] {
+    return this.gradeRows.filter(row => {
+      const matchesStudent = this.studentFilter
+        ? row.student?.id?.toString() === this.studentFilter
+        : true;
+      const matchesDiscipline = this.disciplineFilter
+        ? row.discipline === this.disciplineFilter
+        : true;
+      return matchesStudent && matchesDiscipline;
+    });
+  }
+
+  getStudentDisplayName(student: User | undefined | null): string {
+    if (!student) return '-';
+    return student.nomeCompleto?.trim()
+      || student.name?.trim()
+      || student.email;
+  }
+
+  isNewStudentRow(index: number): boolean {
+    if (index === 0) return true;
+    const currentRow = this.filteredGradeRows[index];
+    const previousRow = this.filteredGradeRows[index - 1];
+    if (!currentRow || !previousRow) return true;
+    return currentRow.student?.id !== previousRow.student?.id;
+  }
+
+  shouldShowStudentInfo(index: number): boolean {
+    return this.isNewStudentRow(index);
   }
 
   calculateMedia(row: GradeRow): number | undefined {

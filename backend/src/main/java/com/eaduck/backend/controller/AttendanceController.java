@@ -612,6 +612,153 @@ public class AttendanceController {
         }
     }
 
+    @GetMapping("/classroom/{classroomId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<?> getAttendanceByClassroom(
+            @PathVariable Long classroomId,
+            Authentication authentication) {
+        try {
+            User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (currentUser == null) {
+                return ResponseEntity.status(403).build();
+            }
+
+            Classroom classroom = classroomRepository.findById(classroomId).orElse(null);
+            if (classroom == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Verificar acesso
+            boolean hasAccess = false;
+            if (currentUser.getRole() == Role.ADMIN) {
+                hasAccess = true;
+            } else if (currentUser.getRole() == Role.TEACHER) {
+                hasAccess = classroom.getTeachers().contains(currentUser);
+            }
+
+            if (!hasAccess) {
+                return ResponseEntity.status(403).build();
+            }
+
+            // Buscar todas as frequências da sala
+            List<Attendance> attendances = attendanceRepository.findByClassroom(classroom);
+
+            // Converter para DTOs
+            List<AttendanceDTO> result = new ArrayList<>();
+            for (Attendance att : attendances) {
+                AttendanceDTO dto = new AttendanceDTO();
+                dto.setId(att.getId());
+                dto.setClassroomId(classroom.getId());
+                dto.setClassroomName(classroom.getName());
+                dto.setStudentId(att.getStudent().getId());
+                dto.setStudentName(att.getStudent().getNomeCompleto() != null ? 
+                                 att.getStudent().getNomeCompleto() : 
+                                 (att.getStudent().getName() != null ? 
+                                  att.getStudent().getName() : 
+                                  att.getStudent().getEmail()));
+                dto.setDate(att.getDate());
+                dto.setStatus(att.getStatus());
+                dto.setArrivalTime(att.getArrivalTime());
+                dto.setObservations(att.getObservations());
+                dto.setDiscipline(att.getDiscipline());
+                dto.setPeriod(att.getPeriod());
+                if (att.getTeacher() != null) {
+                    dto.setTeacherId(att.getTeacher().getId());
+                    dto.setTeacherName(att.getTeacher().getNomeCompleto() != null ? 
+                                      att.getTeacher().getNomeCompleto() : 
+                                      att.getTeacher().getName());
+                }
+                result.add(dto);
+            }
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Erro ao buscar frequências da sala: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Erro ao buscar frequências: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/student/{studentId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<?> getAttendanceByStudent(
+            @PathVariable Long studentId,
+            @RequestParam(required = false) Long classroomId,
+            Authentication authentication) {
+        try {
+            User currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (currentUser == null) {
+                return ResponseEntity.status(403).build();
+            }
+
+            User student = userRepository.findById(studentId).orElse(null);
+            if (student == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Buscar frequências do aluno
+            List<Attendance> attendances;
+            if (classroomId != null) {
+                Classroom classroom = classroomRepository.findById(classroomId).orElse(null);
+                if (classroom == null) {
+                    return ResponseEntity.badRequest().body("Sala não encontrada");
+                }
+
+                // Verificar acesso
+                boolean hasAccess = false;
+                if (currentUser.getRole() == Role.ADMIN) {
+                    hasAccess = true;
+                } else if (currentUser.getRole() == Role.TEACHER) {
+                    hasAccess = classroom.getTeachers().contains(currentUser);
+                }
+
+                if (!hasAccess) {
+                    return ResponseEntity.status(403).build();
+                }
+
+                attendances = attendanceRepository.findByClassroomAndStudent(classroom, student);
+            } else {
+                // Se for admin ou se o aluno for o próprio usuário, pode ver todas
+                if (currentUser.getRole() != Role.ADMIN && !currentUser.getId().equals(studentId)) {
+                    return ResponseEntity.status(403).build();
+                }
+                attendances = attendanceRepository.findByStudent(student);
+            }
+
+            // Converter para DTOs
+            List<AttendanceDTO> result = new ArrayList<>();
+            for (Attendance att : attendances) {
+                AttendanceDTO dto = new AttendanceDTO();
+                dto.setId(att.getId());
+                dto.setClassroomId(att.getClassroom().getId());
+                dto.setClassroomName(att.getClassroom().getName());
+                dto.setStudentId(att.getStudent().getId());
+                dto.setStudentName(att.getStudent().getNomeCompleto() != null ? 
+                                 att.getStudent().getNomeCompleto() : 
+                                 (att.getStudent().getName() != null ? 
+                                  att.getStudent().getName() : 
+                                  att.getStudent().getEmail()));
+                dto.setDate(att.getDate());
+                dto.setStatus(att.getStatus());
+                dto.setArrivalTime(att.getArrivalTime());
+                dto.setObservations(att.getObservations());
+                dto.setDiscipline(att.getDiscipline());
+                dto.setPeriod(att.getPeriod());
+                if (att.getTeacher() != null) {
+                    dto.setTeacherId(att.getTeacher().getId());
+                    dto.setTeacherName(att.getTeacher().getNomeCompleto() != null ? 
+                                      att.getTeacher().getNomeCompleto() : 
+                                      att.getTeacher().getName());
+                }
+                result.add(dto);
+            }
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Erro ao buscar frequências do aluno: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Erro ao buscar frequências: " + e.getMessage());
+        }
+    }
+
     // Classe auxiliar para resposta
     private static class ClassroomAttendanceInfo {
         public Long id;

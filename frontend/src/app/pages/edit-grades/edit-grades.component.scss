@@ -114,6 +114,42 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 200px;
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    select {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+    }
+  }
+}
+
 .table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -147,15 +183,19 @@
 
   tbody {
     tr {
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: none;
       transition: background-color 0.2s ease;
 
       &:hover {
         background: var(--bg-secondary);
       }
 
-      &:last-child {
-        border-bottom: none;
+      &.new-student-row {
+        border-top: 1px solid var(--border-color);
+      }
+
+      &:first-child {
+        border-top: none;
       }
     }
 
@@ -163,6 +203,15 @@
       padding: 0.75rem;
       color: var(--text-primary);
       vertical-align: middle;
+    }
+
+    // Células vazias para informações do aluno (quando não é a primeira linha)
+    td.student-name:empty,
+    td.matricula:empty,
+    td.email:empty,
+    td.cpf:empty {
+      padding: 0.75rem;
+      border: none;
     }
   }
 }

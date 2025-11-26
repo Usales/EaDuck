@@ -33,10 +33,10 @@
     <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/classrooms']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">school</span> Salas
     </a>
-    <a *ngIf="currentUser?.role === 'ADMIN' || currentUser?.role === 'TEACHER'" [routerLink]="['/attendance']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
+    <a *ngIf="(currentUser$ | async)?.role === 'ADMIN' || (currentUser$ | async)?.role === 'TEACHER'" [routerLink]="['/attendance']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">check_circle</span> Frequência
     </a>
-    <a *ngIf="currentUser?.role === 'ADMIN' || currentUser?.role === 'TEACHER'" [routerLink]="['/disciplines']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
+    <a *ngIf="(currentUser$ | async)?.role === 'ADMIN' || (currentUser$ | async)?.role === 'TEACHER'" [routerLink]="['/disciplines']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
       <span class="material-icons">menu_book</span> Disciplinas
     </a>
     <a *ngIf="['ADMIN','TEACHER','STUDENT'].includes((currentUser$ | async)?.role || '')" [routerLink]="['/notifications']" routerLinkActive="active" class="nav-link" (click)="closeSidebar()">
