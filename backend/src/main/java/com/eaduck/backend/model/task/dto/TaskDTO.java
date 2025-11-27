@@ -21,4 +21,5 @@ public class TaskDTO {
     private String createdByName;
     private LocalDateTime createdAt;
     private String type;
+    private String discipline;
 }

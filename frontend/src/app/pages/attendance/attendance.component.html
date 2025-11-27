@@ -62,11 +62,14 @@
         Voltar
       </button>
       <div class="header-info">
-        <h1>Frequências</h1>
+        <h1>Histórico de Frequências</h1>
         <div class="classroom-info">
           <span><strong>Nome da Sala:</strong> {{ selectedClassroom.name }}</span>
           <span><strong>Ano Letivo:</strong> {{ selectedClassroom.academicYear }}</span>
         </div>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">
+          Visualize todas as frequências registradas de todos os alunos em dias anteriores
+        </p>
       </div>
     </div>
 
@@ -81,6 +84,14 @@
     <div *ngIf="!loading && filteredAttendances.length > 0" class="content">
       <!-- Filtros -->
       <div class="filters">
+        <div class="filter-group">
+          <label for="dateFilter">Data</label>
+          <input 
+            type="date" 
+            id="dateFilter" 
+            [(ngModel)]="dateFilter"
+            class="date-filter-input">
+        </div>
         <div class="filter-group">
           <label for="disciplineFilter">Disciplina</label>
           <select id="disciplineFilter" [(ngModel)]="disciplineFilter">
@@ -98,6 +109,15 @@
               {{ student.name }}
             </option>
           </select>
+        </div>
+        <div class="filter-group">
+          <button 
+            (click)="dateFilter = ''; disciplineFilter = ''; studentFilter = ''" 
+            class="clear-filters-btn"
+            title="Limpar filtros">
+            <span class="material-icons">clear</span>
+            Limpar Filtros
+          </button>
         </div>
       </div>
 
@@ -119,7 +139,7 @@
           <tbody>
             <tr *ngFor="let attendance of filteredAttendances; let i = index" 
                 [class.new-student-row]="isNewStudentRow(i)">
-              <td class="student-name" *ngIf="shouldShowStudentInfo(i)">{{ attendance.studentName }}</td>
+              <td class="student-name" *ngIf="shouldShowStudentInfo(i)">{{ getStudentDisplayName(attendance.studentName) }}</td>
               <td class="student-name" *ngIf="!shouldShowStudentInfo(i)"></td>
               <td class="discipline">{{ attendance.discipline || '-' }}</td>
               <td class="date">{{ formatDateDisplayFromString(attendance.date) }}</td>
@@ -349,6 +369,13 @@
         [title]="!canEditCurrentDate() ? 'Você pode registrar frequências para hoje ou até 7 dias no futuro' : 'Salvar frequência (será sincronizada automaticamente)'">
         <span class="material-icons">save</span>
         {{ saving ? 'Salvando...' : 'Salvar Frequência' }}
+      </button>
+      <button 
+        *ngIf="canViewAttendance()"
+        (click)="viewAllStudentsHistory()" 
+        class="action-button history">
+        <span class="material-icons">history</span>
+        Ver Histórico de Alunos
       </button>
       <button 
         *ngIf="canViewAttendance()"

@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 import { User } from '../../services/user.service';
 import { LoadingModalComponent } from '../../components/loading-modal/loading-modal.component';
 import { UserService } from '../../services/user.service';
+import { DisciplineService, Discipline } from '../../services/discipline.service';
 
 @Component({
   selector: 'app-tasks',
@@ -24,9 +25,10 @@ export class TasksComponent implements OnInit, OnDestroy {
   editTitle = '';
   editDescription = '';
   editDueDate = '';
+  editDiscipline: string | undefined = undefined;
 
   showCreateModal = false;
-  taskForm: Partial<Task> = { title: '', description: '', dueDate: '', classroomId: undefined, type: 'TAREFA' };
+  taskForm: Partial<Task> = { title: '', description: '', dueDate: '', classroomId: undefined, type: 'TAREFA', discipline: undefined };
   
   // Upload de arquivos
   selectedFiles: File[] = [];
@@ -35,6 +37,7 @@ export class TasksComponent implements OnInit, OnDestroy {
   fileErrors: string[] = [];
 
   classrooms: Classroom[] = [];
+  disciplines: Discipline[] = [];
 
   selectedTask: Task | null = null;
   submissions: Submission[] = [];
@@ -112,7 +115,8 @@ export class TasksComponent implements OnInit, OnDestroy {
     private classroomService: ClassroomService,
     private submissionService: SubmissionService,
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private disciplineService: DisciplineService
   ) {
     this.currentUser$ = this.authService.currentUser$;
   }
@@ -127,6 +131,7 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.loadTasks();
     this.loadClassrooms();
     this.loadAllStudents();
+    this.loadDisciplines();
   }
 
   ngOnDestroy(): void {
@@ -187,6 +192,10 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.classroomService.getAllClassrooms().subscribe(cs => this.classrooms = cs);
   }
 
+  loadDisciplines() {
+    this.disciplineService.getAllDisciplines(true).subscribe(ds => this.disciplines = ds);
+  }
+
   applyFilters() {
     this.filteredTasks = this.tasks.filter(task => {
       const statusMatch = this.filterStatus === 'all' || this.getTaskStatus(task) === this.filterStatus;
@@ -209,6 +218,7 @@ export class TasksComponent implements OnInit, OnDestroy {
     this.editTaskId = task.id;
     this.editTitle = task.title;
     this.editDescription = task.description;
+    this.editDiscipline = task.discipline;
     if (task.dueDate) {
       const date = new Date(task.dueDate);
       this.editDueDate = date.toISOString().slice(0, 10);
@@ -240,7 +250,8 @@ export class TasksComponent implements OnInit, OnDestroy {
       title: this.editTitle,
       description: this.editDescription,
       dueDate: dueDate,
-      type: task.type
+      type: task.type,
+      discipline: this.editDiscipline
     }).subscribe({
       next: (updated) => {
         const index = this.tasks.findIndex(t => t.id === task.id);

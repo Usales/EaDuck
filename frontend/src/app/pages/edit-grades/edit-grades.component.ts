@@ -230,7 +230,7 @@ export class EditGradesComponent implements OnInit {
 
         this.gradeRows.push({
           student,
-          discipline: task.title,
+          discipline: task.discipline || task.title,
           nota1,
           nota2: undefined,
           nota3: undefined,

@@ -1,0 +1,406 @@
+<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="5.0" version="21.0.0" etag="diagram-er" type="device">
+  <diagram name="Diagrama ER" id="er-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Users Table -->
+        <mxCell id="users-table" value="users&#xa;─────────────&#xa;PK id: BIGINT&#xa;   email: VARCHAR(255) UNIQUE&#xa;   password: VARCHAR(255)&#xa;   role: VARCHAR(50)&#xa;   is_active: BOOLEAN&#xa;   name: VARCHAR(255)&#xa;   nome_completo: VARCHAR(255)&#xa;   cpf: VARCHAR(255)&#xa;   data_nascimento: VARCHAR(255)&#xa;   nome_mae: VARCHAR(255)&#xa;   nome_pai: VARCHAR(255)&#xa;   telefone: VARCHAR(255)&#xa;   endereco: VARCHAR(255)&#xa;   titulacao: VARCHAR(1000)&#xa;   created_at: TIMESTAMP" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="280" height="380" as="geometry" />
+        </mxCell>
+        
+        <!-- Classrooms Table -->
+        <mxCell id="classrooms-table" value="classrooms&#xa;─────────────&#xa;PK id: BIGINT&#xa;   name: VARCHAR(100)&#xa;   academic_year: VARCHAR(10)&#xa;   is_active: BOOLEAN&#xa;   created_at: TIMESTAMP" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="40" width="240" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- Classroom Students (Junction Table) -->
+        <mxCell id="classroom-students-table" value="classroom_students&#xa;─────────────&#xa;PK,FK classroom_id: BIGINT&#xa;PK,FK student_id: BIGINT" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="480" width="200" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Classroom Teachers (Junction Table) -->
+        <mxCell id="classroom-teachers-table" value="classroom_teachers&#xa;─────────────&#xa;PK,FK classroom_id: BIGINT&#xa;PK,FK teacher_id: BIGINT" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="480" y="480" width="200" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Tasks Table -->
+        <mxCell id="tasks-table" value="tasks&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK classroom_id: BIGINT&#xa;FK created_by: BIGINT&#xa;   title: VARCHAR(255)&#xa;   description: TEXT&#xa;   due_date: TIMESTAMP&#xa;   created_at: TIMESTAMP&#xa;   type: VARCHAR(255)&#xa;   discipline: VARCHAR(255)" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="720" y="40" width="240" height="200" as="geometry" />
+        </mxCell>
+        
+        <!-- Task Attachments Table -->
+        <mxCell id="task-attachments-table" value="task_attachments&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK task_id: BIGINT&#xa;   file_name: VARCHAR(255)&#xa;   file_size: BIGINT&#xa;   file_type: VARCHAR(255)&#xa;   file_url: VARCHAR(255)&#xa;   uploaded_at: TIMESTAMP" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1040" y="40" width="220" height="180" as="geometry" />
+        </mxCell>
+        
+        <!-- Submissions Table -->
+        <mxCell id="submissions-table" value="submissions&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK task_id: BIGINT&#xa;FK student_id: BIGINT&#xa;   content: TEXT&#xa;   submitted_at: TIMESTAMP&#xa;   file_url: VARCHAR(255)&#xa;   grade: DECIMAL&#xa;   feedback: TEXT&#xa;   evaluated_at: TIMESTAMP" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="480" width="220" height="220" as="geometry" />
+        </mxCell>
+        
+        <!-- Attendances Table -->
+        <mxCell id="attendances-table" value="attendances&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK classroom_id: BIGINT&#xa;FK student_id: BIGINT&#xa;FK teacher_id: BIGINT&#xa;   date: DATE&#xa;   status: VARCHAR(50)&#xa;   arrival_time: TIME&#xa;   observations: TEXT&#xa;   discipline: VARCHAR(255)&#xa;   period: VARCHAR(50)" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="720" y="480" width="240" height="240" as="geometry" />
+        </mxCell>
+        
+        <!-- Disciplines Table -->
+        <mxCell id="disciplines-table" value="disciplines&#xa;─────────────&#xa;PK id: BIGINT&#xa;   name: VARCHAR(255) UNIQUE&#xa;   description: TEXT&#xa;   is_active: BOOLEAN&#xa;   created_at: TIMESTAMP&#xa;   updated_at: TIMESTAMP" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1040" y="480" width="220" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Notifications Table -->
+        <mxCell id="notifications-table" value="notifications&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK user_id: BIGINT&#xa;FK task_id: BIGINT&#xa;   message: VARCHAR(255)&#xa;   notification_type: VARCHAR(255)&#xa;   created_at: TIMESTAMP&#xa;   title: VARCHAR(255)&#xa;   is_read: BOOLEAN" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1320" y="40" width="220" height="200" as="geometry" />
+        </mxCell>
+        
+        <!-- Messages Table -->
+        <mxCell id="messages-table" value="messages&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK sender_id: BIGINT&#xa;FK receiver_id: BIGINT&#xa;   content: TEXT&#xa;   sent_at: TIMESTAMP" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1320" y="480" width="220" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- Chat Messages Table -->
+        <mxCell id="chat-messages-table" value="chat_messages&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK replied_to_message_id: BIGINT&#xa;   sender_email: VARCHAR(255)&#xa;   sender_name: VARCHAR(255)&#xa;   sender_role: VARCHAR(255)&#xa;   content: TEXT&#xa;   message_type: VARCHAR(50)&#xa;   classroom_id: BIGINT&#xa;   file_url: VARCHAR(500)&#xa;   file_type: VARCHAR(100)&#xa;   file_name: VARCHAR(255)&#xa;   file_size: BIGINT&#xa;   created_at: TIMESTAMP&#xa;   updated_at: TIMESTAMP" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1600" y="40" width="240" height="320" as="geometry" />
+        </mxCell>
+        
+        <!-- Message Reactions Table -->
+        <mxCell id="message-reactions-table" value="message_reactions&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK message_id: BIGINT&#xa;   user_email: VARCHAR(255)&#xa;   emoji: VARCHAR(10)&#xa;   created_at: TIMESTAMP&#xa;   UNIQUE(message_id, user_email, emoji)" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1600" y="400" width="240" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Message Views Table -->
+        <mxCell id="message-views-table" value="message_views&#xa;─────────────&#xa;PK id: BIGINT&#xa;FK message_id: BIGINT&#xa;   user_email: VARCHAR(255)&#xa;   viewed_at: TIMESTAMP&#xa;   UNIQUE(message_id, user_email)" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1600" y="600" width="240" height="140" as="geometry" />
+        </mxCell>
+        
+        <!-- Relationships -->
+        <!-- Users - Classroom Students (Many-to-Many) -->
+        <mxCell id="rel-users-classroom-students" value="" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="classroom-students-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="400" y="500" as="sourcePoint" />
+            <mxPoint x="500" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-classroom-students-label" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="440" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Classroom Students - Classrooms -->
+        <mxCell id="rel-classroom-students-classrooms" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="classroom-students-table" target="classrooms-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="530" />
+              <mxPoint x="400" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-classroom-students-classrooms-label" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="380" y="310" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Classroom Teachers (Many-to-Many) -->
+        <mxCell id="rel-users-classroom-teachers" value="" style="endArrow=ERmany;startArrow=ERone;html=1;rounded=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="classroom-teachers-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="400" y="500" as="sourcePoint" />
+            <mxPoint x="500" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="250" y="420" />
+              <mxPoint x="250" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-classroom-teachers-label" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="440" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Classroom Teachers - Classrooms -->
+        <mxCell id="rel-classroom-teachers-classrooms" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="classroom-teachers-table" target="classrooms-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="480" y="530" />
+              <mxPoint x="520" y="530" />
+              <mxPoint x="520" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-classroom-teachers-classrooms-label" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="520" y="350" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Classrooms - Tasks -->
+        <mxCell id="rel-classrooms-tasks" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="classrooms-table" target="tasks-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-classrooms-tasks-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="640" y="130" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-classrooms-tasks-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="130" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Tasks - Task Attachments -->
+        <mxCell id="rel-tasks-attachments" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="tasks-table" target="task-attachments-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-tasks-attachments-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="960" y="120" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-tasks-attachments-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="120" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Tasks (created_by) -->
+        <mxCell id="rel-users-tasks" value="created_by" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="tasks-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="320" y="135" />
+              <mxPoint x="320" y="180" />
+              <mxPoint x="720" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-tasks-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="300" y="155" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-users-tasks-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="155" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Tasks - Submissions -->
+        <mxCell id="rel-tasks-submissions" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="tasks-table" target="submissions-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="840" y="240" />
+              <mxPoint x="150" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-tasks-submissions-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="230" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-tasks-submissions-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="840" y="230" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Submissions (student) -->
+        <mxCell id="rel-users-submissions" value="student" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="submissions-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="180" y="420" />
+              <mxPoint x="40" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-submissions-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="20" y="410" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-users-submissions-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="180" y="410" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Classrooms - Attendances -->
+        <mxCell id="rel-classrooms-attendances" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="classrooms-table" target="attendances-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="520" y="180" />
+              <mxPoint x="720" y="180" />
+              <mxPoint x="720" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-classrooms-attendances-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="380" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-classrooms-attendances-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="520" y="380" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Attendances (student) -->
+        <mxCell id="rel-users-attendances-student" value="student" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="attendances-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="250" y="420" />
+              <mxPoint x="250" y="540" />
+              <mxPoint x="720" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-attendances-student-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="530" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-users-attendances-student-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="250" y="410" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Attendances (teacher) -->
+        <mxCell id="rel-users-attendances-teacher" value="teacher" style="endArrow=ERzeroToOne;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="attendances-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="320" y="390" />
+              <mxPoint x="320" y="660" />
+              <mxPoint x="720" y="660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-attendances-teacher-label1" value="0..1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="650" width="40" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-users-attendances-teacher-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="380" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Notifications -->
+        <mxCell id="rel-users-notifications" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="notifications-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="320" y="390" />
+              <mxPoint x="1320" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-notifications-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="380" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-users-notifications-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="380" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Tasks - Notifications -->
+        <mxCell id="rel-tasks-notifications" value="" style="endArrow=ERzeroToOne;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="tasks-table" target="notifications-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="960" y="200" />
+              <mxPoint x="1430" y="200" />
+              <mxPoint x="1430" y="40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-tasks-notifications-label1" value="0..1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="30" width="40" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-tasks-notifications-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="960" y="190" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Messages (sender) -->
+        <mxCell id="rel-users-messages-sender" value="sender" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="messages-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="320" y="390" />
+              <mxPoint x="1320" y="390" />
+              <mxPoint x="1320" y="515" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-messages-sender-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="505" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-users-messages-sender-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="380" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Users - Messages (receiver) -->
+        <mxCell id="rel-users-messages-receiver" value="receiver" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=1;exitY=0.6;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="users-table" target="messages-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="320" y="428" />
+              <mxPoint x="1320" y="428" />
+              <mxPoint x="1320" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-users-messages-receiver-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="580" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-users-messages-receiver-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="418" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Chat Messages - Message Reactions -->
+        <mxCell id="rel-chat-reactions" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="chat-messages-table" target="message-reactions-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-chat-reactions-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="360" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-chat-reactions-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="380" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Chat Messages - Message Views -->
+        <mxCell id="rel-chat-views" value="" style="endArrow=ERone;startArrow=ERmany;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="chat-messages-table" target="message-views-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="400" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1720" y="360" />
+              <mxPoint x="1720" y="560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-chat-views-label1" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="560" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-chat-views-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="360" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Chat Messages Self-reference -->
+        <mxCell id="rel-chat-self" value="replied_to_message" style="endArrow=ERzeroToOne;startArrow=ERmany;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;dashed=1;" edge="1" parent="1" source="chat-messages-table" target="chat-messages-table">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="1720" y="360" as="sourcePoint" />
+            <mxPoint x="1820" y="260" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1720" y="380" />
+              <mxPoint x="1900" y="380" />
+              <mxPoint x="1900" y="40" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel-chat-self-label1" value="0..1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1900" y="30" width="40" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-chat-self-label2" value="N" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1720" y="370" width="30" height="20" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+

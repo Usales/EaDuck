@@ -11,8 +11,9 @@ public class TaskSimpleDTO {
     private Long classroomId;
     private String classroomName;
     private String academicYear;
+    private String discipline;
 
-    public TaskSimpleDTO(Long id, String title, String description, LocalDateTime dueDate, String type, Long classroomId, String classroomName, String academicYear) {
+    public TaskSimpleDTO(Long id, String title, String description, LocalDateTime dueDate, String type, Long classroomId, String classroomName, String academicYear, String discipline) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -21,6 +22,7 @@ public class TaskSimpleDTO {
         this.classroomId = classroomId;
         this.classroomName = classroomName;
         this.academicYear = academicYear;
+        this.discipline = discipline;
     }
 
     public Long getId() { return id; }
@@ -37,7 +39,9 @@ public class TaskSimpleDTO {
     public void setDescription(String description) { this.description = description; }
     public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
     public void setType(String type) { this.type = type; }
-    public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }
+        public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }
     public void setClassroomName(String classroomName) { this.classroomName = classroomName; }
     public void setAcademicYear(String academicYear) { this.academicYear = academicYear; }
+    public String getDiscipline() { return discipline; }
+    public void setDiscipline(String discipline) { this.discipline = discipline; }
 } 

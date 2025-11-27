@@ -44,6 +44,9 @@ public class Task {
     @Column(name = "type", nullable = false)
     private String type;
 
+    @Column(name = "discipline")
+    private String discipline;
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TaskAttachment> attachments;
 }

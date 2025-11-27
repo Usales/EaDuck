@@ -98,7 +98,8 @@ public class TaskController {
                     task.getType(),
                     task.getClassroom().getId(),
                     task.getClassroom().getName(),
-                    task.getClassroom().getAcademicYear()
+                    task.getClassroom().getAcademicYear(),
+                    task.getDiscipline()
                 ))
                 .collect(java.util.stream.Collectors.toList());
             return ResponseEntity.ok(dtos);
@@ -113,7 +114,8 @@ public class TaskController {
                     task.getType(),
                     classroom.getId(),
                     classroom.getName(),
-                    classroom.getAcademicYear()
+                    classroom.getAcademicYear(),
+                    task.getDiscipline()
                 )))
             );
             return ResponseEntity.ok(new java.util.ArrayList<>(teacherTasks));
@@ -128,7 +130,8 @@ public class TaskController {
                     task.getType(),
                     classroom.getId(),
                     classroom.getName(),
-                    classroom.getAcademicYear()
+                    classroom.getAcademicYear(),
+                    task.getDiscipline()
                 )))
             );
             return ResponseEntity.ok(new java.util.ArrayList<>(studentTasks));
@@ -153,7 +156,8 @@ public class TaskController {
                 task.getType(),
                 task.getClassroom().getId(),
                 task.getClassroom().getName(),
-                task.getClassroom().getAcademicYear()
+                task.getClassroom().getAcademicYear(),
+                task.getDiscipline()
             ))
             .collect(java.util.stream.Collectors.toList());
 
@@ -219,6 +223,7 @@ public class TaskController {
             .description(dto.getDescription())
             .dueDate(dto.getDueDate())
             .type(dto.getType())
+            .discipline(dto.getDiscipline())
             .classroom(classroom)
             .createdBy(user)
             .createdAt(LocalDateTime.now())
@@ -240,7 +245,8 @@ public class TaskController {
             savedTask.getType(),
             classroom.getId(),
             classroom.getName(),
-            classroom.getAcademicYear()
+            classroom.getAcademicYear(),
+            savedTask.getDiscipline()
         );
         return ResponseEntity.ok(dtoResp);
     }
@@ -277,6 +283,7 @@ public class TaskController {
         if (taskDTO.getDescription() != null) existingTask.setDescription(taskDTO.getDescription());
         if (taskDTO.getDueDate() != null) existingTask.setDueDate(taskDTO.getDueDate());
         if (taskDTO.getType() != null) existingTask.setType(taskDTO.getType());
+        if (taskDTO.getDiscipline() != null) existingTask.setDiscipline(taskDTO.getDiscipline());
 
         Task updatedTask = taskRepository.save(existingTask);
         return ResponseEntity.ok(updatedTask);
@@ -339,7 +346,8 @@ public class TaskController {
                 task.getType(),
                 classroom.getId(),
                 classroom.getName(),
-                classroom.getAcademicYear()
+                classroom.getAcademicYear(),
+                task.getDiscipline()
             ))
             .collect(java.util.stream.Collectors.toList());
         return ResponseEntity.ok(dtos);

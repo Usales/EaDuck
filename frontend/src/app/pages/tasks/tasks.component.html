@@ -246,6 +246,13 @@
           <option value="NOTIFICACAO">Notificação</option>
         </select>
       </div>
+      <div class="mb-4" *ngIf="isAdminOrTeacher">
+        <label class="block text-gray-400 mb-1">Disciplina (opcional)</label>
+        <select [(ngModel)]="taskForm.discipline" name="discipline" class="w-full px-3 py-2 rounded-lg bg-[#1a2233] text-white border border-[#2d3650]">
+          <option [ngValue]="undefined">Selecione uma disciplina</option>
+          <option *ngFor="let disc of disciplines" [ngValue]="disc.name">{{ disc.name }}</option>
+        </select>
+      </div>
       
       <!-- Seção de Upload de Arquivos -->
       <div class="mb-4">

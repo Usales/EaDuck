@@ -14,6 +14,7 @@ export interface Task {
   createdByName?: string;
   createdAt?: string;
   type: string;
+  discipline?: string;
   attachments?: TaskAttachment[];
 }
 

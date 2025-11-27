@@ -432,9 +432,9 @@ public class ClassroomController {
                 Double mediaDisciplina = count > 0 ? sum / count : null;
 
                 // Calcular frequência por bimestre (1º, 2º e 3º)
-                double frequencia1 = 1.0; // Padrão: 100% (1.0)
-                double frequencia2 = 1.0;
-                double frequencia3 = 1.0;
+                Double frequencia1 = null; // null = não há frequência registrada
+                Double frequencia2 = null;
+                Double frequencia3 = null;
                 
                 if (!disciplinaAttendances.isEmpty()) {
                     // Determinar o ano letivo para calcular os bimestres
@@ -597,17 +597,17 @@ public class ClassroomController {
                 Double media = (Double) row.get("media");
                 mainTable.addCell(new Cell().add(new Paragraph(media != null ? String.format("%.2f", media) : "-")).setFontSize(6).setPadding(3));
                 
-                // Frequências dos 3 bimestres (formato: 100% ou 0.85 = 85%)
+                // Frequências dos 3 bimestres (formato: 85% ou "-" se não houver dados)
                 Double frequencia1 = (Double) row.get("frequencia1");
-                String freq1Display = frequencia1 != null ? String.format("%.0f%%", frequencia1 * 100) : "100%";
+                String freq1Display = frequencia1 != null ? String.format("%.0f%%", frequencia1 * 100) : "-";
                 mainTable.addCell(new Cell().add(new Paragraph(freq1Display)).setFontSize(6).setPadding(3));
                 
                 Double frequencia2 = (Double) row.get("frequencia2");
-                String freq2Display = frequencia2 != null ? String.format("%.0f%%", frequencia2 * 100) : "100%";
+                String freq2Display = frequencia2 != null ? String.format("%.0f%%", frequencia2 * 100) : "-";
                 mainTable.addCell(new Cell().add(new Paragraph(freq2Display)).setFontSize(6).setPadding(3));
                 
                 Double frequencia3 = (Double) row.get("frequencia3");
-                String freq3Display = frequencia3 != null ? String.format("%.0f%%", frequencia3 * 100) : "100%";
+                String freq3Display = frequencia3 != null ? String.format("%.0f%%", frequencia3 * 100) : "-";
                 mainTable.addCell(new Cell().add(new Paragraph(freq3Display)).setFontSize(6).setPadding(3));
                 
                 mainTable.addCell(new Cell().add(new Paragraph((String) row.get("recuperacao"))).setFontSize(6).setPadding(3));

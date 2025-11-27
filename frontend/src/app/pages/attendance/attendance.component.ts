@@ -6,7 +6,9 @@ import { AttendanceService, ClassroomAttendanceInfo, Attendance, AttendanceBulk 
 import { DisciplineCacheService } from '../../services/discipline-cache.service';
 import { Discipline } from '../../services/discipline.service';
 import { AuthService } from '../../services/auth.service';
-import { Subscription } from 'rxjs';
+import { UserService, User } from '../../services/user.service';
+import { ClassroomService } from '../../services/classroom.service';
+import { Subscription, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-attendance',
@@ -19,7 +21,7 @@ export class AttendanceComponent implements OnInit, OnDestroy {
   // Lista de salas
   classrooms: ClassroomAttendanceInfo[] = [];
   selectedClassroom: ClassroomAttendanceInfo | null = null;
-  viewMode: 'register' | 'view' = 'register';
+  viewMode: 'register' | 'view' | 'history' = 'register';
   
   // Frequência
   attendances: Attendance[] = [];
@@ -45,11 +47,15 @@ export class AttendanceComponent implements OnInit, OnDestroy {
   // Filtros para visualização
   disciplineFilter: string = '';
   studentFilter: string = '';
+  dateFilter: string = ''; // Filtro por data
   
   // Histórico
   selectedStudentForHistory: number | null = null;
   studentHistory: Attendance[] = [];
   showHistoryModal = false;
+  
+  // Alunos completos para exibir nomes corretos
+  allStudents: User[] = [];
   
   loading: boolean = false;
   saving: boolean = false;
@@ -57,7 +63,9 @@ export class AttendanceComponent implements OnInit, OnDestroy {
   constructor(
     private attendanceService: AttendanceService,
     private disciplineCacheService: DisciplineCacheService,
-    private authService: AuthService
+    private authService: AuthService,
+    private userService: UserService,
+    private classroomService: ClassroomService
   ) {}
 
   ngOnInit() {
@@ -164,41 +172,143 @@ export class AttendanceComponent implements OnInit, OnDestroy {
     this.loading = true;
     const dateStr = this.formatDateForApi(this.currentDate);
     
-    // Tentar carregar do cache primeiro
-    const cachedBulk = this.loadAttendanceFromCache(this.selectedClassroom.id, dateStr);
-    if (cachedBulk) {
-      // Aplicar dados do cache aos attendances
-      this.attendances.forEach(att => {
-        const cachedStudent = cachedBulk.students.find(s => s.studentId === att.studentId);
-        if (cachedStudent) {
-          att.status = cachedStudent.status as 'PRESENT' | 'ABSENT' | 'LATE';
-          att.arrivalTime = cachedStudent.arrivalTime;
-          att.observations = cachedStudent.observations;
+    // Carregar sala completa, alunos e frequências em paralelo
+    forkJoin({
+      classroom: this.classroomService.getClassroomById(this.selectedClassroom.id),
+      attendances: this.attendanceService.getAttendanceByClassroomAndDate(
+        this.selectedClassroom.id, 
+        dateStr
+      ),
+      students: this.userService.getStudents()
+    }).subscribe({
+      next: ({ classroom, attendances, students }) => {
+        // Armazenar alunos completos para uso posterior
+        this.allStudents = students;
+        
+        // Obter todos os alunos da sala
+        const allStudents = classroom.students || [];
+        
+        // Criar lista de frequências garantindo que todos os alunos apareçam
+        const attendanceMap = new Map<number, Attendance>();
+        
+        // Mapear frequências existentes
+        attendances.forEach((att: Attendance) => {
+          attendanceMap.set(att.studentId, att);
+        });
+        
+        // Criar frequências para alunos que não têm registro
+        const allAttendances: Attendance[] = [];
+        allStudents.forEach((student: any) => {
+          const existingAttendance = attendanceMap.get(student.id);
+          if (existingAttendance) {
+            // Garantir que o nome do aluno está correto
+            const studentObj = this.allStudents.find((s: User) => s.id === student.id);
+            if (studentObj) {
+              existingAttendance.studentName = this.getStudentDisplayNameFromUser(studentObj);
+            } else if (!existingAttendance.studentName || existingAttendance.studentName.includes('@')) {
+              existingAttendance.studentName = student.name || student.email || `Aluno ${student.id}`;
+            }
+            allAttendances.push(existingAttendance);
+          } else {
+            // Criar frequência vazia para aluno sem registro
+            if (this.selectedClassroom) {
+              // Buscar aluno completo para ter o nome correto
+              const studentObj = this.allStudents.find((s: User) => s.id === student.id);
+              const studentName = studentObj 
+                ? this.getStudentDisplayNameFromUser(studentObj)
+                : (student.name || student.email || `Aluno ${student.id}`);
+              
+              const newAttendance: Attendance = {
+                classroomId: this.selectedClassroom.id,
+                classroomName: this.selectedClassroom.name,
+                studentId: student.id,
+                studentName: studentName,
+                date: dateStr,
+                status: 'PRESENT', // Status padrão
+                arrivalTime: undefined,
+                observations: undefined,
+                discipline: undefined,
+                period: undefined
+              };
+              allAttendances.push(newAttendance);
+            }
+          }
+        });
+        
+        // Tentar carregar do cache e aplicar se houver
+        if (this.selectedClassroom) {
+          const cachedBulk = this.loadAttendanceFromCache(this.selectedClassroom.id, dateStr);
+          if (cachedBulk) {
+            allAttendances.forEach(att => {
+              const cachedStudent = cachedBulk.students.find((s: any) => s.studentId === att.studentId);
+              if (cachedStudent) {
+                att.status = cachedStudent.status as 'PRESENT' | 'ABSENT' | 'LATE';
+                att.arrivalTime = cachedStudent.arrivalTime;
+                att.observations = cachedStudent.observations;
+              }
+            });
+          }
         }
-      });
-      this.calculateSummary();
-    }
-    
-    // Tentar carregar do servidor
-    this.attendanceService.getAttendanceByClassroomAndDate(
-      this.selectedClassroom.id, 
-      dateStr
-    ).subscribe({
-      next: (attendances) => {
-        // Se conseguiu carregar do servidor, usar esses dados (mais atualizados)
-        this.attendances = attendances;
+        
+        this.attendances = allAttendances;
         this.calculateSummary();
         this.loading = false;
       },
       error: (error) => {
-        console.error('Erro ao carregar frequência do servidor:', error);
-        // Se já carregou do cache, não mostrar erro
-        if (!cachedBulk) {
-          alert('Erro ao carregar frequência. Usando dados locais se disponíveis.');
-        }
-        this.loading = false;
-        // Tentar sincronizar frequências em cache
-        this.syncCachedAttendances();
+        console.error('Erro ao carregar frequência:', error);
+        // Tentar carregar apenas frequências (fallback)
+        this.attendanceService.getAttendanceByClassroomAndDate(
+          this.selectedClassroom!.id, 
+          dateStr
+        ).subscribe({
+          next: (attendances) => {
+            this.attendances = attendances;
+            this.calculateSummary();
+            this.loading = false;
+          },
+          error: (error2) => {
+            console.error('Erro ao carregar frequência do servidor:', error2);
+            // Tentar carregar do cache
+            const cachedBulk = this.loadAttendanceFromCache(this.selectedClassroom!.id, dateStr);
+            if (cachedBulk) {
+              // Criar attendances do cache
+              this.userService.getStudents().subscribe({
+                next: (students) => {
+                  const attendanceMap = new Map<number, Attendance>();
+                  students.forEach((student: User) => {
+                    const cachedStudent = cachedBulk.students.find((s: any) => s.studentId === student.id);
+                    if (cachedStudent) {
+                      const att: Attendance = {
+                        classroomId: this.selectedClassroom!.id,
+                        classroomName: this.selectedClassroom!.name,
+                        studentId: student.id,
+                        studentName: student.nomeCompleto || student.name || student.email,
+                        date: dateStr,
+                        status: cachedStudent.status as 'PRESENT' | 'ABSENT' | 'LATE',
+                        arrivalTime: cachedStudent.arrivalTime,
+                        observations: cachedStudent.observations,
+                        discipline: cachedBulk.discipline,
+                        period: cachedBulk.period as 'MANHA' | 'TARDE' | 'INTEGRAL'
+                      };
+                      attendanceMap.set(student.id, att);
+                    }
+                  });
+                  this.attendances = Array.from(attendanceMap.values());
+                  this.calculateSummary();
+                  this.loading = false;
+                },
+                error: () => {
+                  this.loading = false;
+                  alert('Erro ao carregar frequência. Verifique sua conexão.');
+                }
+              });
+            } else {
+              this.loading = false;
+              alert('Erro ao carregar frequência. Verifique sua conexão.');
+            }
+            this.syncCachedAttendances();
+          }
+        });
       }
     });
   }
@@ -443,6 +553,7 @@ export class AttendanceComponent implements OnInit, OnDestroy {
     this.viewMode = 'register';
     this.disciplineFilter = '';
     this.studentFilter = '';
+    this.dateFilter = '';
     this.selectedStudentForHistory = null;
     this.studentHistory = [];
     this.showHistoryModal = false;
@@ -454,26 +565,66 @@ export class AttendanceComponent implements OnInit, OnDestroy {
     this.loadAllAttendances();
   }
 
+  viewAllStudentsHistory() {
+    if (!this.selectedClassroom) return;
+    this.viewMode = 'view';
+    this.loadAllAttendances();
+  }
+
   loadAllAttendances() {
     if (!this.selectedClassroom) return;
     
     this.loading = true;
-    this.attendanceService.getAttendanceByClassroom(this.selectedClassroom.id).subscribe({
-      next: (attendances) => {
-        // Normalizar arrivalTime para formato HH:mm se necessário
-        this.allAttendances = attendances.map(att => {
-          if (att.arrivalTime && att.arrivalTime.length > 5) {
-            // Se vier no formato HH:mm:ss, pegar apenas HH:mm
-            att.arrivalTime = att.arrivalTime.substring(0, 5);
+    
+    // Carregar alunos primeiro para ter os nomes completos
+    this.userService.getStudents().subscribe({
+      next: (students) => {
+        this.allStudents = students;
+        
+        // Agora carregar frequências
+        this.attendanceService.getAttendanceByClassroom(this.selectedClassroom!.id).subscribe({
+          next: (attendances) => {
+            // Normalizar arrivalTime para formato HH:mm se necessário
+            // E atualizar studentName com o nome completo do aluno
+            this.allAttendances = attendances.map(att => {
+              if (att.arrivalTime && att.arrivalTime.length > 5) {
+                att.arrivalTime = att.arrivalTime.substring(0, 5);
+              }
+              // Buscar aluno completo para ter o nome correto
+              const student = this.allStudents.find(s => s.id === att.studentId);
+              if (student) {
+                att.studentName = this.getStudentDisplayNameFromUser(student);
+              }
+              return att;
+            });
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Erro ao carregar frequências:', error);
+            this.loading = false;
+            alert('Erro ao carregar frequências');
           }
-          return att;
         });
-        this.loading = false;
       },
       error: (error) => {
-        console.error('Erro ao carregar frequências:', error);
-        this.loading = false;
-        alert('Erro ao carregar frequências');
+        console.error('Erro ao carregar alunos:', error);
+        // Continuar mesmo sem alunos, usar o que veio do backend
+        this.attendanceService.getAttendanceByClassroom(this.selectedClassroom!.id).subscribe({
+          next: (attendances) => {
+            this.allAttendances = attendances.map(att => {
+              if (att.arrivalTime && att.arrivalTime.length > 5) {
+                att.arrivalTime = att.arrivalTime.substring(0, 5);
+              }
+              return att;
+            });
+            this.loading = false;
+          },
+          error: (error2) => {
+            console.error('Erro ao carregar frequências:', error2);
+            this.loading = false;
+            alert('Erro ao carregar frequências');
+          }
+        });
       }
     });
   }
@@ -482,15 +633,25 @@ export class AttendanceComponent implements OnInit, OnDestroy {
     let filtered = this.allAttendances;
     
     if (this.disciplineFilter) {
-      filtered = filtered.filter(a => a.discipline === this.disciplineFilter);
+      filtered = filtered.filter((a: Attendance) => a.discipline === this.disciplineFilter);
     }
     
     if (this.studentFilter) {
-      filtered = filtered.filter(a => a.studentId.toString() === this.studentFilter);
+      filtered = filtered.filter((a: Attendance) => a.studentId.toString() === this.studentFilter);
+    }
+    
+    if (this.dateFilter) {
+      filtered = filtered.filter((a: Attendance) => {
+        const attendanceDate = new Date(a.date);
+        const filterDate = new Date(this.dateFilter);
+        attendanceDate.setHours(0, 0, 0, 0);
+        filterDate.setHours(0, 0, 0, 0);
+        return attendanceDate.getTime() === filterDate.getTime();
+      });
     }
     
     // Ordenar por aluno e depois por data (mais recente primeiro)
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: Attendance, b: Attendance) => {
       // Primeiro ordenar por ID do aluno
       if (a.studentId !== b.studentId) {
         return a.studentId - b.studentId;
@@ -504,7 +665,7 @@ export class AttendanceComponent implements OnInit, OnDestroy {
 
   get uniqueDisciplines(): string[] {
     const disciplines = new Set<string>();
-    this.allAttendances.forEach(a => {
+    this.allAttendances.forEach((a: Attendance) => {
       if (a.discipline) {
         disciplines.add(a.discipline);
       }
@@ -514,14 +675,14 @@ export class AttendanceComponent implements OnInit, OnDestroy {
 
   get uniqueStudents(): { id: number; name: string }[] {
     const studentsMap = new Map<number, string>();
-    this.allAttendances.forEach(a => {
+    this.allAttendances.forEach((a: Attendance) => {
       if (!studentsMap.has(a.studentId)) {
         studentsMap.set(a.studentId, a.studentName);
       }
     });
     return Array.from(studentsMap.entries())
       .map(([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a: { id: number; name: string }, b: { id: number; name: string }) => a.name.localeCompare(b.name));
   }
 
   viewStudentHistory(studentId: number) {
@@ -533,21 +694,21 @@ export class AttendanceComponent implements OnInit, OnDestroy {
       studentId, 
       this.selectedClassroom?.id
     ).subscribe({
-      next: (history) => {
+      next: (history: Attendance[]) => {
         // Normalizar arrivalTime para formato HH:mm se necessário
-        this.studentHistory = history.map(att => {
+        this.studentHistory = history.map((att: Attendance) => {
           if (att.arrivalTime && att.arrivalTime.length > 5) {
             att.arrivalTime = att.arrivalTime.substring(0, 5);
           }
           return att;
-        }).sort((a, b) => {
+        }).sort((a: Attendance, b: Attendance) => {
           const dateA = new Date(a.date);
           const dateB = new Date(b.date);
           return dateB.getTime() - dateA.getTime(); // Mais recente primeiro
         });
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Erro ao carregar histórico:', error);
         this.loading = false;
         alert('Erro ao carregar histórico do aluno');
@@ -620,6 +781,31 @@ export class AttendanceComponent implements OnInit, OnDestroy {
     }
     const student = this.uniqueStudents.find(s => s.id === studentId);
     return student?.name || 'Aluno';
+  }
+
+  getStudentDisplayName(studentName: string | undefined | null): string {
+    if (!studentName) return '-';
+    // Se já é um nome válido (não parece email), retornar como está
+    if (!studentName.includes('@')) {
+      return studentName.trim();
+    }
+    // Se parece email, tentar buscar no array de alunos
+    const attendance = this.allAttendances.find((a: Attendance) => a.studentName === studentName);
+    if (attendance) {
+      const student = this.allStudents.find((s: User) => s.id === attendance.studentId);
+      if (student) {
+        return this.getStudentDisplayNameFromUser(student);
+      }
+    }
+    // Se não encontrou, retornar o que veio (pode ser email se aluno não tem nome)
+    return studentName.trim();
+  }
+
+  getStudentDisplayNameFromUser(student: User): string {
+    if (!student) return '-';
+    return student.nomeCompleto?.trim()
+      || student.name?.trim()
+      || student.email;
   }
 
   isNewStudentRow(index: number): boolean {
