@@ -236,22 +236,6 @@
     border-top: 8px solid transparent;
   }
   
-  // Mensagens de áudio próprias mantêm o fundo azul
-  &[data-message-type="AUDIO"] {
-    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%);
-    color: white;
-    
-    &::before {
-      border-left: 8px solid var(--accent-hover);
-    }
-    
-    // Áudio player dentro de mensagem azul
-    audio {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 0.5rem;
-      padding: 0.25rem;
-    }
-  }
 }
 
 .other-message {
@@ -845,107 +829,6 @@ input:focus {
   }
 }
 
-// Estilos para player de áudio
-audio {
-  height: 32px;
-  width: 100%;
-  
-  &::-webkit-media-controls-panel {
-    background-color: var(--bg-secondary);
-  }
-}
-
-// Estilos para indicador de gravação
-.recording-indicator {
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.recording-indicator-container {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  
-  canvas {
-    width: 100% !important;
-    height: auto !important;
-    max-width: 100%;
-    display: block;
-  }
-  
-  @media (max-width: 375px) {
-    canvas {
-      height: 60px !important;
-    }
-  }
-}
-
-// Estilos para preview de áudio gravado
-.audio-preview-container {
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  max-width: 100%;
-  overflow: hidden;
-  
-  @media (min-width: 640px) {
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    }
-  }
-  
-  .audio-preview-player {
-    min-width: 0;
-    max-width: 100%;
-    
-    &::-webkit-media-controls-panel {
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: 0.5rem;
-    }
-    
-    &::-webkit-media-controls-play-button {
-      background-color: rgba(59, 130, 246, 0.8);
-      border-radius: 50%;
-    }
-    
-    // Ajustes para mobile
-    @media (max-width: 640px) {
-      height: 28px;
-      
-      &::-webkit-media-controls-panel {
-        padding: 4px;
-      }
-    }
-  }
-  
-  // Ajustes específicos para iPhone SE e telas pequenas
-  @media (max-width: 375px) {
-    padding: 0.75rem;
-    
-    button {
-      font-size: 0.75rem;
-      padding: 0.5rem 0.75rem;
-      
-      svg {
-        width: 14px;
-        height: 14px;
-      }
-    }
-  }
-}
-
-// Estilos para espectrograma
-.audio-spectrogram-wrapper {
-  position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  
-  .audio-spectrogram-image {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-  }
-}
 
 // Estilos para botões de anexo
 .attachment-button {
@@ -962,11 +845,6 @@ audio {
   img {
     max-width: 100%;
     border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  audio {
-    width: 100%;
     margin-bottom: 0.5rem;
   }
 }

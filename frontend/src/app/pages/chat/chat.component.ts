@@ -18,7 +18,7 @@ interface MessageReaction {
 }
 
 interface ChatMessage {
-  type: 'CHAT' | 'JOIN' | 'LEAVE' | 'IMAGE' | 'AUDIO';
+  type: 'CHAT' | 'JOIN' | 'LEAVE' | 'IMAGE';
   content: string;
   sender: string;
   senderName: string;
@@ -42,9 +42,6 @@ interface ChatMessage {
   
   // Reações
   reactions?: MessageReaction[];
-  
-  // Espectrograma de áudio
-  spectrogram?: string;
 }
 
 @Component({
@@ -90,26 +87,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     if (typingArray.length <= 3) return `${typingArray[0].name}, ${typingArray[1].name} e ${typingArray[2].name} estão digitando`;
     return 'Várias pessoas estão digitando';
   }
-  selectedFile: File | null = null;
   selectedFiles: File[] = [];
   filePreviews: { file: File; preview: string }[] = [];
-  isRecording: boolean = false;
-  mediaRecorder: MediaRecorder | null = null;
-  recordingStream: MediaStream | null = null;
-  recordedAudio: Blob | null = null;
-  recordingTime: number = 0;
   showReactionPicker: string | null = null; // messageId
   typingTimer: any = null;
   emojiPickerTimer: any = null;
-
-  // Audio visualization
-  audioContext: AudioContext | null = null;
-  analyser: AnalyserNode | null = null;
-  canvasElement: HTMLCanvasElement | null = null;
-  canvasContext: CanvasRenderingContext2D | null = null;
-    animationFrameId: number | null = null;
-    recordedAudioSpectrogram: string | null = null; // Base64 image do espectrograma
-    audioPlayingStates: Map<string, boolean> = new Map(); // Estado de reprodução por messageId
 
     // Room properties
   classroomId: string | null = null;
@@ -732,8 +714,8 @@ export class ChatComponent implements OnInit, OnDestroy {
       message.isMine = message.sender === user.email;
     }
 
-    // Only add CHAT, IMAGE, AUDIO messages to the display, not JOIN/LEAVE messages
-    if (message.type === 'CHAT' || message.type === 'IMAGE' || message.type === 'AUDIO') {
+    // Only add CHAT, IMAGE messages to the display, not JOIN/LEAVE messages
+    if (message.type === 'CHAT' || message.type === 'IMAGE') {
       // Verificar se a mensagem já existe para evitar duplicação
       let messageExists = false;
       let existingMessageIndex = -1;
@@ -1143,10 +1125,9 @@ export class ChatComponent implements OnInit, OnDestroy {
     files.forEach(file => {
       // Verificar tipo
       const isImage = file.type.startsWith('image/');
-      const isAudio = file.type.startsWith('audio/');
       
-      if (!isImage && !isAudio) {
-        alert(`${file.name}: Apenas imagens e áudios são permitidos`);
+      if (!isImage) {
+        alert(`${file.name}: Apenas imagens são permitidas`);
         return;
       }
       
@@ -1166,9 +1147,6 @@ export class ChatComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         };
         reader.readAsDataURL(file);
-      } else if (isAudio) {
-        // Para áudio, usar apenas um arquivo (compatibilidade)
-        this.selectedFile = file;
       }
     });
     
@@ -1198,23 +1176,6 @@ export class ChatComponent implements OnInit, OnDestroy {
       this.uploadMultipleImages();
       return;
     }
-    
-    // Upload de arquivo único (áudio)
-    if (!this.selectedFile) return;
-    
-    const formData = new FormData();
-    formData.append('file', this.selectedFile);
-    
-    this.uploadSingleFile(formData, (response: any) => {
-      const messageContent = this.newMessage.trim() || (this.selectedFile?.name || '');
-      this.sendFileMessage(response, messageContent);
-      
-      // Limpar arquivo após envio
-      this.selectedFile = null;
-      this.newMessage = '';
-      this.replyingTo = null;
-      this.cdr.markForCheck();
-    });
   }
   
   uploadMultipleImages(): void {
@@ -1275,8 +1236,7 @@ export class ChatComponent implements OnInit, OnDestroy {
         fileType: response.fileType,
         fileName: response.fileName,
         fileSize: response.fileSize,
-        repliedToMessageId: this.replyingTo?.id,
-        spectrogram: response.spectrogram || undefined
+        repliedToMessageId: this.replyingTo?.id
       };
       
       // Enviar via WebSocket em tempo real
@@ -1295,288 +1255,9 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
   
   cancelFileUpload(): void {
-    this.selectedFile = null;
     this.selectedFiles = [];
     this.filePreviews = [];
     this.cdr.markForCheck();
-  }
-  
-  // Gravação de áudio
-  async startRecording(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.recordingStream = stream;
-      this.mediaRecorder = new MediaRecorder(stream);
-      const chunks: BlobPart[] = [];
-      
-      // Configurar análise de áudio para espectrograma
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const source = this.audioContext.createMediaStreamSource(stream);
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 2048;
-      this.analyser.smoothingTimeConstant = 0.8;
-      source.connect(this.analyser);
-      
-      // Inicializar canvas para espectrograma
-      setTimeout(() => {
-        this.initSpectrogramCanvas();
-        if (this.canvasElement) {
-          this.drawSpectrogram();
-        }
-      }, 100);
-      
-      this.mediaRecorder.ondataavailable = (event) => {
-        chunks.push(event.data);
-      };
-      
-      this.mediaRecorder.onstop = () => {
-        // Parar a visualização
-        if (this.animationFrameId) {
-          cancelAnimationFrame(this.animationFrameId);
-          this.animationFrameId = null;
-        }
-        
-        // Salvar espectrograma final
-        if (this.canvasElement) {
-          this.recordedAudioSpectrogram = this.canvasElement.toDataURL('image/png');
-        }
-        
-        // Só criar o áudio se houver chunks (não foi cancelado)
-        if (chunks.length > 0) {
-          this.recordedAudio = new Blob(chunks, { type: 'audio/webm' });
-        }
-        
-        // Parar o stream se ainda estiver ativo
-        if (this.recordingStream) {
-          this.recordingStream.getTracks().forEach(track => {
-            if (track.readyState === 'live') {
-              track.stop();
-            }
-          });
-          this.recordingStream = null;
-        }
-        
-        // Limpar contexto de áudio
-        if (this.audioContext) {
-          this.audioContext.close().catch(() => {});
-          this.audioContext = null;
-        }
-        this.analyser = null;
-        
-        this.isRecording = false;
-        this.recordingTime = 0;
-        this.cdr.markForCheck();
-      };
-      
-      this.mediaRecorder.start();
-      this.isRecording = true;
-      this.recordingTime = 0;
-      
-      // Timer para duração
-      const timer = setInterval(() => {
-        if (this.isRecording) {
-          this.recordingTime++;
-          this.cdr.markForCheck();
-        } else {
-          clearInterval(timer);
-        }
-      }, 1000);
-      
-      this.cdr.markForCheck();
-    } catch (error) {
-      console.error('Erro ao iniciar gravação:', error);
-      alert('Erro ao acessar o microfone');
-    }
-  }
-  
-  initSpectrogramCanvas(): void {
-    // Limpar canvas anterior se existir
-    const existingCanvas = document.getElementById('recordingSpectrogram');
-    if (existingCanvas) {
-      existingCanvas.remove();
-    }
-    
-    // Criar novo canvas
-    const canvas = document.createElement('canvas');
-    canvas.id = 'recordingSpectrogram';
-    
-    // Obter largura do container
-    const recordingIndicator = document.querySelector('.recording-indicator-container');
-    const containerWidth = recordingIndicator?.clientWidth || 300;
-    
-    // Ajustar tamanho do canvas baseado na largura da tela
-    const isMobile = window.innerWidth <= 640;
-    canvas.width = isMobile ? Math.min(containerWidth, 300) : 300;
-    canvas.height = isMobile ? 60 : 80;
-    
-    canvas.style.width = '100%';
-    canvas.style.height = isMobile ? '60px' : '80px';
-    canvas.style.display = 'block';
-    canvas.style.borderRadius = '0.5rem';
-    canvas.style.maxWidth = '100%';
-    
-    if (recordingIndicator) {
-      recordingIndicator.appendChild(canvas);
-      this.canvasElement = canvas;
-      this.canvasContext = canvas.getContext('2d');
-      
-      // Configurar contexto do canvas com gradiente
-      if (this.canvasContext) {
-        const gradient = this.canvasContext.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, 'rgb(30, 41, 59)'); // slate-800
-        gradient.addColorStop(1, 'rgb(15, 23, 42)'); // slate-900
-        this.canvasContext.fillStyle = gradient;
-        this.canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-      }
-    } else {
-      // Se não encontrar o container, tentar novamente após um pequeno delay
-      setTimeout(() => {
-        this.initSpectrogramCanvas();
-      }, 100);
-    }
-  }
-  
-  drawSpectrogram(): void {
-    if (!this.analyser || !this.canvasContext || !this.canvasElement || !this.isRecording) {
-      return;
-    }
-    
-    const bufferLength = this.analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    const draw = () => {
-      if (!this.analyser || !this.canvasContext || !this.canvasElement || !this.isRecording) {
-        return;
-      }
-      
-      this.analyser.getByteFrequencyData(dataArray);
-      
-      const width = this.canvasElement.width;
-      const height = this.canvasElement.height;
-      
-      // Limpar canvas com gradiente de fundo
-      const gradient = this.canvasContext.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, 'rgb(30, 41, 59)'); // slate-800
-      gradient.addColorStop(1, 'rgb(15, 23, 42)'); // slate-900
-      this.canvasContext.fillStyle = gradient;
-      this.canvasContext.fillRect(0, 0, width, height);
-      
-      const barWidth = width / bufferLength * 2.5;
-      let barHeight;
-      let x = 0;
-      
-      for (let i = 0; i < bufferLength; i++) {
-        barHeight = (dataArray[i] / 255) * height;
-        
-        // Cores vibrantes do espectrograma (gradiente azul-roxo)
-        const intensity = dataArray[i] / 255;
-        const r = Math.floor(99 + (156 * intensity)); // 99-255 (azul para branco)
-        const g = Math.floor(102 + (153 * intensity)); // 102-255
-        const b = Math.floor(241 + (14 * intensity)); // 241-255
-        
-        // Criar gradiente vertical para cada barra
-        const barGradient = this.canvasContext.createLinearGradient(x, height - barHeight, x, height);
-        barGradient.addColorStop(0, `rgb(${r}, ${g}, ${b})`);
-        barGradient.addColorStop(0.5, `rgb(${Math.floor(r * 0.8)}, ${Math.floor(g * 0.8)}, ${Math.floor(b * 0.8)})`);
-        barGradient.addColorStop(1, `rgb(${Math.floor(r * 0.6)}, ${Math.floor(g * 0.6)}, ${Math.floor(b * 0.6)})`);
-        
-        this.canvasContext.fillStyle = barGradient;
-        this.canvasContext.fillRect(x, height - barHeight, barWidth, barHeight);
-        
-        x += barWidth + 1;
-      }
-      
-      this.animationFrameId = requestAnimationFrame(draw);
-    };
-    
-    draw();
-  }
-  
-  stopRecording(): void {
-    if (this.mediaRecorder && this.isRecording) {
-      this.mediaRecorder.stop();
-      // O stream será parado no onstop callback do MediaRecorder
-    }
-  }
-  
-  cancelRecording(): void {
-    // Parar a visualização
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-    
-    // Se estiver gravando, parar a gravação
-    if (this.mediaRecorder && this.isRecording) {
-      this.mediaRecorder.stop();
-    }
-    
-    // Parar o stream de áudio se estiver ativo
-    if (this.recordingStream) {
-      this.recordingStream.getTracks().forEach(track => track.stop());
-      this.recordingStream = null;
-    }
-    
-    // Limpar contexto de áudio
-    if (this.audioContext) {
-      this.audioContext.close().catch(() => {});
-      this.audioContext = null;
-    }
-    this.analyser = null;
-    
-    // Limpar canvas
-    const canvas = document.getElementById('recordingSpectrogram');
-    if (canvas) {
-      canvas.remove();
-    }
-    this.canvasElement = null;
-    this.canvasContext = null;
-    
-    // Limpar tudo relacionado ao áudio
-    this.mediaRecorder = null;
-    this.isRecording = false;
-    this.recordedAudio = null;
-    this.recordedAudioSpectrogram = null;
-    this.recordingTime = 0;
-    this.cdr.markForCheck();
-  }
-  
-  async sendRecordedAudio(): Promise<void> {
-    if (!this.recordedAudio) return;
-    
-    // Parar indicador de digitação
-    this.stopTyping();
-    
-    // Converter blob para File
-    const audioFile = new File([this.recordedAudio], 'recording.webm', { type: 'audio/webm' });
-    this.selectedFile = audioFile;
-    
-    const formData = new FormData();
-    formData.append('file', audioFile);
-    
-    // Salvar espectrograma temporariamente
-    const spectrogramData = this.recordedAudioSpectrogram;
-    
-    this.uploadSingleFile(formData, (response: any) => {
-      // Incluir espectrograma na mensagem
-      response.spectrogram = spectrogramData;
-      this.sendFileMessage(response, 'Áudio');
-      
-      // Limpar áudio após envio
-      this.recordedAudio = null;
-      this.recordedAudioSpectrogram = null;
-      this.selectedFile = null;
-      
-      // Limpar canvas
-      const canvas = document.getElementById('recordingSpectrogram');
-      if (canvas) {
-        canvas.remove();
-      }
-      this.canvasElement = null;
-      this.canvasContext = null;
-      
-      this.cdr.markForCheck();
-    });
   }
   
   // Sistema de digitação
@@ -1629,57 +1310,12 @@ export class ChatComponent implements OnInit, OnDestroy {
     });
   }
   
-  formatRecordingTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
-  
   scrollToMessage(messageId: string | undefined): void {
     if (!messageId) return;
     const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
     if (messageElement) {
       messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }
-  
-  getAudioUrl(): string {
-    if (!this.recordedAudio) return '';
-    return URL.createObjectURL(this.recordedAudio);
-  }
-
-  toggleAudioPlayback(messageId: string, audioUrl: string): void {
-    const audioElement = document.getElementById(`audio-${messageId}`) as HTMLAudioElement;
-    if (!audioElement) return;
-
-    const isCurrentlyPlaying = this.getAudioPlayingState(messageId);
-    
-    if (isCurrentlyPlaying) {
-      audioElement.pause();
-      this.setAudioPlayingState(messageId, false);
-    } else {
-      // Pausar todos os outros áudios
-      this.audioPlayingStates.forEach((isPlaying: boolean, id: string) => {
-        if (isPlaying) {
-          const otherAudioElement = document.getElementById(`audio-${id}`) as HTMLAudioElement;
-          if (otherAudioElement) {
-            otherAudioElement.pause();
-          }
-          this.setAudioPlayingState(id, false);
-        }
-      });
-      audioElement.play().catch(e => console.error("Erro ao tentar tocar áudio:", e));
-      this.setAudioPlayingState(messageId, true);
-    }
-  }
-
-  getAudioPlayingState(messageId: string): boolean {
-    return this.audioPlayingStates.get(messageId) || false;
-  }
-
-  setAudioPlayingState(messageId: string, isPlaying: boolean): void {
-    this.audioPlayingStates.set(messageId, isPlaying);
-    this.cdr.markForCheck();
   }
   
   openImageInNewTab(fileUrl: string | undefined): void {
