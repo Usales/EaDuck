@@ -1,0 +1,78 @@
+<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="5.0" version="21.0.0" etag="bpmn-collab" type="device">
+  <diagram name="EaDuck - BPMN: Collaboration - Avaliação de Tarefa" id="bpmn-collab">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Pools -->
+        <mxCell id="pool-student" value="Estudante" style="swimlane;html=1;startSize=30;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="100" y="200" width="300" height="600" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="pool-system" value="Sistema EaDuck" style="swimlane;html=1;startSize=30;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="200" width="400" height="600" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="pool-teacher" value="Professor" style="swimlane;html=1;startSize=30;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1000" y="200" width="300" height="600" as="geometry" />
+        </mxCell>
+        
+        <!-- Student Tasks -->
+        <mxCell id="task-student-submit" value="Submeter Tarefa" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="pool-student">
+          <mxGeometry x="40" y="60" width="220" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="task-student-revise" value="Revisar Feedback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="pool-student">
+          <mxGeometry x="40" y="480" width="220" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- System Tasks -->
+        <mxCell id="task-system-receive" value="Receber Submissão" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="pool-system">
+          <mxGeometry x="40" y="60" width="320" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="task-system-notify" value="Notificar Professor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="pool-system">
+          <mxGeometry x="40" y="160" width="320" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="task-system-notify-student" value="Notificar Estudante" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="pool-system">
+          <mxGeometry x="40" y="380" width="320" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Teacher Tasks -->
+        <mxCell id="task-teacher-evaluate" value="Avaliar Tarefa" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="pool-teacher">
+          <mxGeometry x="40" y="220" width="220" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Message Flows -->
+        <mxCell id="msg-1" value="Submissão" style="endArrow=block;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;strokeColor=#000000;" edge="1" parent="1" source="task-student-submit" target="task-system-receive">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="msg-2" value="Notificação" style="endArrow=block;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;strokeColor=#000000;" edge="1" parent="1" source="task-system-notify" target="task-teacher-evaluate">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="msg-3" value="Avaliação" style="endArrow=block;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;strokeColor=#000000;" edge="1" parent="1" source="task-teacher-evaluate" target="task-system-notify-student">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="msg-4" value="Feedback" style="endArrow=block;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;dashed=1;strokeColor=#000000;" edge="1" parent="1" source="task-system-notify-student" target="task-student-revise">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Sequence Flows within Pools -->
+        <mxCell id="flow-1" value="" style="endArrow=block;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="task-system-receive" target="task-system-notify">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="flow-2" value="" style="endArrow=block;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="task-system-notify" target="task-system-notify-student">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+

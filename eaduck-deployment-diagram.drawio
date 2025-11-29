@@ -1,0 +1,80 @@
+<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="5.0" version="21.0.0" etag="deployment" type="device">
+  <diagram name="EaDuck - Diagrama de Implantação" id="deployment-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Client Device -->
+        <mxCell id="device-client" value="Cliente&#xa;(Navegador Web)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="200" y="200" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="artifact-frontend" value="Frontend&#xa;(Angular)" style="shape=umlArtifact;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="180" y="400" width="160" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Web Server -->
+        <mxCell id="node-webserver" value="Servidor Web&#xa;(Nginx/Apache)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="600" y="200" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Application Server -->
+        <mxCell id="node-appserver" value="Servidor de Aplicação&#xa;(Spring Boot)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="600" y="450" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="artifact-backend" value="Backend API&#xa;(REST)" style="shape=umlArtifact;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="580" y="640" width="160" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Database Server -->
+        <mxCell id="node-database" value="Servidor de Banco&#xa;(PostgreSQL)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="450" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Cache Server -->
+        <mxCell id="node-cache" value="Servidor de Cache&#xa;(Redis)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="200" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- File Storage -->
+        <mxCell id="node-storage" value="Armazenamento&#xa;de Arquivos" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="450" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Email Server -->
+        <mxCell id="node-email" value="Servidor de Email&#xa;(SMTP)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="200" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- Communication Links -->
+        <mxCell id="comm-1" value="HTTP/HTTPS" style="endArrow=block;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="device-client" target="node-webserver">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comm-2" value="Reverse Proxy" style="endArrow=block;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="node-webserver" target="node-appserver">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comm-3" value="JDBC" style="endArrow=block;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="node-appserver" target="node-database">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comm-4" value="Redis Protocol" style="endArrow=block;html=1;rounded=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="node-appserver" target="node-cache">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comm-5" value="File I/O" style="endArrow=block;html=1;rounded=0;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="node-appserver" target="node-storage">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comm-6" value="SMTP" style="endArrow=block;html=1;rounded=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="node-appserver" target="node-email">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+

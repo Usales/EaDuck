@@ -4,8 +4,8 @@ Este documento descreve os diagramas de classe UML e de Entidade-Relacionamento 
 
 ## Arquivos dos Diagramas
 
-- **`diagrama-classe.drawio`** - Diagrama UML de classes representando as entidades do backend (Java) e interfaces do frontend (TypeScript)
-- **`diagrama-er.drawio`** - Diagrama de Entidade-Relacionamento representando o modelo de dados do banco de dados
+- **`eaduck-uml-class-diagram.drawio`** - Diagrama UML de classes representando as entidades do backend (Java) e interfaces do frontend (TypeScript)
+- **`eaduck-entity-relationship-diagram.drawio`** - Diagrama de Entidade-Relacionamento representando o modelo de dados do banco de dados
 
 ## Como Visualizar os Diagramas
 

@@ -1,0 +1,139 @@
+<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="5.0" version="21.0.0" etag="component" type="device">
+  <diagram name="EaDuck - Diagrama de Componentes" id="component-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Frontend Components -->
+        <mxCell id="comp-frontend" value="Frontend Application&#xa;(Angular)" style="swimlane;html=1;startSize=20;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="600" height="400" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-auth" value="Auth Component" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="comp-frontend">
+          <mxGeometry x="40" y="60" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-classroom" value="Classroom Component" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="comp-frontend">
+          <mxGeometry x="200" y="60" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-task" value="Task Component" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="comp-frontend">
+          <mxGeometry x="360" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-chat" value="Chat Component" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="comp-frontend">
+          <mxGeometry x="40" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-notification" value="Notification Component" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="comp-frontend">
+          <mxGeometry x="200" y="160" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-services" value="Services Layer" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="comp-frontend">
+          <mxGeometry x="40" y="260" width="440" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-http" value="HTTP Client" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="comp-frontend">
+          <mxGeometry x="40" y="340" width="440" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Backend Components -->
+        <mxCell id="comp-backend" value="Backend Application&#xa;(Spring Boot)" style="swimlane;html=1;startSize=20;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="100" y="600" width="600" height="500" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-controllers" value="REST Controllers" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="comp-backend">
+          <mxGeometry x="40" y="60" width="520" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-services-backend" value="Business Services" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="comp-backend">
+          <mxGeometry x="40" y="160" width="520" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-repositories" value="Repositories (JPA)" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="comp-backend">
+          <mxGeometry x="40" y="260" width="520" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-security" value="Security Layer" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="comp-backend">
+          <mxGeometry x="40" y="360" width="240" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-websocket" value="WebSocket Handler" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="comp-backend">
+          <mxGeometry x="320" y="360" width="240" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-config" value="Configuration" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="comp-backend">
+          <mxGeometry x="40" y="460" width="520" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- Database -->
+        <mxCell id="comp-database" value="PostgreSQL Database" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="800" y="700" width="120" height="160" as="geometry" />
+        </mxCell>
+        
+        <!-- External Services -->
+        <mxCell id="comp-email" value="Email Service&#xa;(SMTP)" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="700" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-storage" value="File Storage" style="shape=component;perimeter=rectangle;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="800" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Dependencies -->
+        <mxCell id="dep-1" value="" style="endArrow=block;endSize=16;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="comp-http" target="comp-controllers">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="500" as="sourcePoint" />
+            <mxPoint x="650" y="450" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="700" y="500" />
+              <mxPoint x="700" y="630" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="dep-2" value="" style="endArrow=block;endSize=16;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="comp-controllers" target="comp-services-backend">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="630" as="sourcePoint" />
+            <mxPoint x="750" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="dep-3" value="" style="endArrow=block;endSize=16;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="comp-services-backend" target="comp-repositories">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="730" as="sourcePoint" />
+            <mxPoint x="750" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="dep-4" value="" style="endArrow=block;endSize=16;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="comp-repositories" target="comp-database">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="dep-5" value="" style="endArrow=block;endSize=16;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="comp-services-backend" target="comp-email">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="730" as="sourcePoint" />
+            <mxPoint x="750" y="680" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="920" y="730" />
+              <mxPoint x="920" y="730" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="dep-6" value="" style="endArrow=block;endSize=16;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="comp-services-backend" target="comp-storage">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="730" as="sourcePoint" />
+            <mxPoint x="750" y="680" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="920" y="830" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+

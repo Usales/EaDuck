@@ -1,0 +1,109 @@
+<mxfile host="app.diagrams.net" modified="2024-01-01T00:00:00.000Z" agent="5.0" version="21.0.0" etag="architecture" type="device">
+  <diagram name="EaDuck - Diagrama de Arquitetura" id="architecture-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="2339" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Presentation Layer -->
+        <mxCell id="layer-presentation" value="Camada de Apresentação" style="swimlane;html=1;startSize=30;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="1200" height="200" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-angular" value="Angular Frontend&#xa;(TypeScript)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="layer-presentation">
+          <mxGeometry x="40" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-websocket-client" value="WebSocket Client&#xa;(STOMP)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="layer-presentation">
+          <mxGeometry x="280" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-http-client" value="HTTP Client&#xa;(REST API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="layer-presentation">
+          <mxGeometry x="520" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Application Layer -->
+        <mxCell id="layer-application" value="Camada de Aplicação" style="swimlane;html=1;startSize=30;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="100" y="350" width="1200" height="250" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-controllers" value="REST Controllers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="layer-application">
+          <mxGeometry x="40" y="50" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-websocket-handler" value="WebSocket Handler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="layer-application">
+          <mxGeometry x="280" y="50" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-services" value="Business Services" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="layer-application">
+          <mxGeometry x="520" y="50" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-security" value="Security Layer&#xa;(JWT, OAuth2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="layer-application">
+          <mxGeometry x="760" y="50" width="200" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-dto" value="DTOs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="layer-application">
+          <mxGeometry x="1000" y="50" width="180" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Domain Layer -->
+        <mxCell id="layer-domain" value="Camada de Domínio" style="swimlane;html=1;startSize=30;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="100" y="650" width="1200" height="200" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-entities" value="Domain Entities&#xa;(JPA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="layer-domain">
+          <mxGeometry x="40" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-repositories" value="Repositories&#xa;(Spring Data JPA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="layer-domain">
+          <mxGeometry x="280" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-enums" value="Enums" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="layer-domain">
+          <mxGeometry x="520" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Infrastructure Layer -->
+        <mxCell id="layer-infrastructure" value="Camada de Infraestrutura" style="swimlane;html=1;startSize=30;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="100" y="900" width="1200" height="200" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-database" value="PostgreSQL Database" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="layer-infrastructure">
+          <mxGeometry x="40" y="50" width="160" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-redis" value="Redis Cache" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="layer-infrastructure">
+          <mxGeometry x="240" y="50" width="160" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-filestorage" value="File Storage" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="layer-infrastructure">
+          <mxGeometry x="440" y="50" width="160" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-email" value="Email Service&#xa;(SMTP)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="layer-infrastructure">
+          <mxGeometry x="640" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="comp-flyway" value="Flyway&#xa;(Migrations)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="layer-infrastructure">
+          <mxGeometry x="880" y="50" width="200" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- Connections -->
+        <mxCell id="conn-1" value="" style="endArrow=block;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="layer-presentation" target="layer-application">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="conn-2" value="" style="endArrow=block;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="layer-application" target="layer-domain">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="conn-3" value="" style="endArrow=block;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="layer-domain" target="layer-infrastructure">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+
