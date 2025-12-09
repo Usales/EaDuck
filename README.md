@@ -1,4 +1,4 @@
-# EaDuck: Plataforma de Gestão e Comunicação Escolar 🦆📚
+# EaDuck: Plataforma de Gestão e Comunicação Escolar 🦆
 
 Bem-vindo ao **EaDuck**, uma solução digital inovadora para revolucionar a gestão escolar! Desenvolvida como projeto de conclusão do curso de Engenharia de Software na **FATESG SENAI**, a EaDuck conecta alunos, professores e gestores em um ambiente integrado, promovendo comunicação eficiente, acompanhamento acadêmico e acesso fácil a recursos educacionais. 🚀
 
